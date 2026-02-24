@@ -101,7 +101,7 @@ const findOnMap = (Id: string) => {
     </h2>
     <div class="flex gap-3 flex-wrap">
       <Card
-        v-for="obj in Objects.entries()"
+        v-for="(obj, idx) in Objects.entries()"
         :key="obj[0]"
         class="relative mx-auto w-full max-w-sm pt-0 min-w-58"
       >
@@ -243,7 +243,7 @@ const findOnMap = (Id: string) => {
           </CardDescription>
         </CardContent>
         <CardFooter class="flex justify-end">
-          <Badge variant="secondary">№ {{ obj[1].options.order }}</Badge>
+          <Badge variant="secondary">№ {{ idx + 1 }}</Badge>
         </CardFooter>
       </Card>
     </div>
