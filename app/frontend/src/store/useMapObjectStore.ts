@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import * as L from "leaflet";
 import { v6 as uuidv6 } from "uuid";
-import type { CircleMarkerOptions, LatLng, PolylineOptions } from "leaflet";
+import { useApi } from "@/composables";
 
 declare module "leaflet" {
   interface PolylineOptions {
@@ -18,10 +18,6 @@ declare module "leaflet" {
     CustomName?: string;
     description?: string;
   }
-}
-interface ObjectCreate {
-  latlng: LatLng[];
-  options: PolylineOptions | CircleMarkerOptions;
 }
 
 export class ObjectEditor {}
@@ -41,17 +37,6 @@ interface MapObjectStore {
   MapObject: Objects | ObjectEditor | null;
   ClickedObjId: string | null;
 }
-
-// const getObjects = () => {
-//   // const ls = localStorage.getItem("objects");
-//   // const Objects = new Map();
-//   // if (ls) {
-//   //   const objects = JSON.parse(ls);
-//   //   for (obj of objects){
-//   //     Objects.set(obj.options.Id, obj)
-//   //   }
-//   // }
-// };
 
 export const useMapObjectStore = defineStore("mapobjects", {
   state: (): MapObjectStore => {
@@ -115,26 +100,10 @@ export const useMapObjectStore = defineStore("mapobjects", {
     },
     async setObject(Obj: Objects) {
       const Id = Obj.options.Id;
+      const { createObject } = useApi();
+      const objResponse = await createObject(Obj);
       this.Objects.set(Id, Obj);
-      if (Obj instanceof L.Polygon || Obj instanceof L.Polyline) {
-        const newObject: ObjectCreate = {
-          latlng: Obj.getLatLngs().flat().flat(),
-          options: Obj.options,
-        };
-        try {
-          const response = await (
-            globalThis as any
-          ).pywebview.api.objects.create_object(newObject);
-
-          if (response.status === "success") {
-            console.log("Сохранено в SQLite с UUID:", newObject.options.Id);
-          } else {
-            console.error("Ошибка Pydantic:", response.message);
-          }
-        } catch (err) {
-          console.error("Ошибка моста:", err);
-        }
-      }
+      return objResponse;
     },
     clearObject() {
       this.MapObject = null;
