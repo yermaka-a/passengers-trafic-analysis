@@ -1,12 +1,15 @@
 import { ref, readonly } from "vue";
-import { api, setToken } from "@/api";
+import { api } from "@/api";
+import type { Objects } from "@/store";
 
-export function useApi() {
+const useApi = () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
 
-  // Метод-обёртка с обработкой состояния
-  async function callApi<A>(apiMethod: Function, ...args: A[]) {
+  async function callApi<A, T>(
+    apiMethod: (...args: A[]) => Promise<T>,
+    ...args: A[]
+  ) {
     loading.value = true;
     error.value = null;
 
@@ -23,25 +26,16 @@ export function useApi() {
   }
 
   // Конкретные методы с состоянием
-  const initializeApp = async () => callApi(api.initialize);
-  const chooseFolder = async () => callApi(api.choosePath);
-  const toggleFs = async () => callApi(api.toggleFullscreen);
-  // const openExternal = async (url: string) => callApi(api.openUrl, url);
-  const performAction = async (data: object) => callApi(api.doStuff, data);
+  const createObject = async (Obj: Objects) =>
+    await callApi(api.objects.createObject, Obj);
 
   return {
     // Состояние
     loading: readonly(loading),
     error: readonly(error),
-
     // Методы
-    initializeApp,
-    chooseFolder,
-    toggleFs,
-    // openExternal,
-    performAction,
-
-    // Утилиты
-    setToken,
+    createObject,
   };
-}
+};
+
+export default useApi;
