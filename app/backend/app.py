@@ -1,7 +1,8 @@
 import socket
 import os
+from sqlalchemy import create_engine
 import webview
-
+from .storage import Storage
 from .api import Api
 
 
@@ -53,7 +54,12 @@ class App:
 
     def start(self):
         url = app.__get_entrypoint()
-        api = Api()
+        DB_PATH = os.path.join(Storage.get_base_dir(), "passengers.db")
+        DATABASE_URL = f"sqlite:///{DB_PATH}"
+
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+        storage = Storage.create(engine)
+        api = Api(storage)
         window = webview.create_window(
             "passengers trafic analysis",
             url,

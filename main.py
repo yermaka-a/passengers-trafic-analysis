@@ -1,8 +1,8 @@
-from app import App
+from app.backend import app
 
 
 def main():
-    App.run()
+    app.start()
 
 
 if __name__ == "__main__":
