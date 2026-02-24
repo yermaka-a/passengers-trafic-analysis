@@ -11,10 +11,9 @@ import BrushTable from "@/components/BrushTable/BrushTable.vue";
 </script>
 
 <template>
-  <MainHeader class="p-4 bg-secondary grad rounded-b-3xl" />
   <ResizablePanelGroup
     direction="horizontal"
-    class="max-w-dvwx min-h-11/12 rounded-lg border"
+    class="max-w-dvwx min-h-11/12 rounded-lg border mt-1"
   >
     <ResizablePanel :default-size="50">
       <ResizablePanelGroup direction="vertical">
