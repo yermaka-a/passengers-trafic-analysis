@@ -9,7 +9,6 @@ class MapObject(Base):
     __tablename__ = "map_objects"
 
     Id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    order: Mapped[int] = mapped_column(Integer, default=0)
     name: Mapped[str] = mapped_column(String(255), nullable=False, default=None)
     description: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     custom_name: Mapped[str | None] = mapped_column(
@@ -23,3 +22,4 @@ class MapObject(Base):
     latlng: Mapped[List[dict[str, float]]] = mapped_column(
         MutableList.as_mutable(JSON), nullable=False, default=list
     )
+    obj_type: Mapped[str] = mapped_column(String(30), nullable=False, default=None)
