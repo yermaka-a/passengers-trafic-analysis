@@ -5,7 +5,7 @@ from ..schemas import (
 )
 from pydantic import TypeAdapter, ValidationError, UUID6
 from ..storage import Storage
-from ..logger import logger
+from ..logger import log
 
 
 class ObjectController:
@@ -26,7 +26,7 @@ class ObjectController:
             return ObjectResponse(status="failed", obj=None)
         except Exception as e:
             op = "get_object"
-            logger.error(op, extra={"err": e})
+            log.error(op, {"err": e})
 
     def create_object(self, data):
         try:
@@ -49,7 +49,7 @@ class ObjectController:
                 ).model_dump(by_alias=True)
         except Exception as e:
             op = "get_all_objects"
-            logger.error(op, extra={"err": e})
+            log.error(op, {"err": e})
 
     def delete_object(self, Id: UUID6):
         try:
@@ -58,7 +58,7 @@ class ObjectController:
             return self.objects.delete(Id)
         except Exception as e:
             op = "delete_object"
-            logger.error(op, extra={"err": e})
+            log.error(op, {"err": e})
 
     def update_object(self, data):
         try:
@@ -69,8 +69,8 @@ class ObjectController:
             return {"satus": "failed", "message": "data is not written"}
         except ValidationError as e:
             op = "update_object"
-            logger.error(op, extra={"err": e})
-            return {"status": "failed", "message": e.json()}
+            log.error(op, {"err": e})
+            return {"status": "failed", "message": e.errors()}
 
     def delete_all_objects(self):
         pass

@@ -3,7 +3,7 @@ from sqlalchemy import delete
 
 from ..schemas import ObjectCreate
 from sqlalchemy.orm import sessionmaker, Session
-from ..logger import logger
+from ..logger import log
 from ..models import MapObject
 
 OP_CLASS_MSG = f"{__name__} class Objects "
@@ -18,11 +18,10 @@ class Objects:
         try:
             with self.localSession() as ls:
                 objects = ls.query(MapObject).all()
-                print(objects)
                 return objects
         except Exception as e:
             op_method = "get_all_objects"
-            logger.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return None
 
     def get(self, Id: UUID6):
@@ -32,7 +31,7 @@ class Objects:
                 return obj
         except Exception as e:
             op_method = "get"
-            logger.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return None
 
     def create(self, obj: ObjectCreate):
@@ -60,7 +59,7 @@ class Objects:
             return True
         except Exception as e:
             op_method = "create"
-            logger.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return False
 
     def delete(self, Id: UUID6):
@@ -71,7 +70,7 @@ class Objects:
             return True
         except Exception as e:
             op_method = "delete"
-            logger.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return False
 
     def update(self, obj: ObjectCreate):
@@ -100,5 +99,5 @@ class Objects:
             return True
         except Exception as e:
             op_method = "update"
-            logger.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return False
