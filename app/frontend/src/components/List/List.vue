@@ -26,57 +26,69 @@ import { Toggle } from "@/components/ui/toggle/";
 import { Button } from "@/components/ui/button";
 import { useMapStore } from "@/store";
 import L from "leaflet";
+import { useApi } from "@/composables";
+import { Spinner } from "@/components/ui/spinner";
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
 const mapStore = useMapStore();
 const { mapInstance } = storeToRefs(mapStore);
-const changeColor = (e: MouseEvent, Id: string) => {
-  const target = e.target as HTMLInputElement;
 
+const { deleteObject, loading, error, updateObject } = useApi();
+
+const changeColor = async (e: MouseEvent, Id: string) => {
+  const target = e.target as HTMLInputElement;
   const obj = Objects.value?.get(Id);
   if (obj) {
     obj.setStyle({ color: target.value });
+    await updateObject(obj);
   }
 };
-const toggleStroke = (Id: string) => {
+const toggleStroke = async (Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj) {
     const isStroke = obj.options.stroke;
     obj.setStyle({ stroke: !isStroke });
+    await updateObject(obj);
   }
 };
-const changeDash = (value: number[] | undefined, Id: string) => {
+const changeDash = async (value: number[] | undefined, Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj && value) {
     obj.setStyle({ dashArray: value });
+    await updateObject(obj);
   }
 };
 
-const changeFillOpacity = (value: number[] | undefined, Id: string) => {
+const changeFillOpacity = async (value: number[] | undefined, Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj && value) {
     console.log(value);
     obj.setStyle({ fillOpacity: value[0] });
+    await updateObject(obj);
   }
 };
-const changeWeight = (value: number[] | undefined, Id: string) => {
+const changeWeight = async (value: number[] | undefined, Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj && value) {
     obj.setStyle({ weight: value[0] });
+    await updateObject(obj);
   }
 };
-const toggleFill = (Id: string) => {
+const toggleFill = async (Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj) {
     const isFill = obj.options.fill;
     obj.setStyle({ fill: !isFill });
+    await updateObject(obj);
   }
 };
-const deleteObject = (Id: string) => {
+const delObject = async (Id: string) => {
   const obj = Objects.value?.get(Id);
   if (obj) {
-    obj.remove();
-    Objects.value?.delete(Id);
+    if (await deleteObject(obj.options.Id)) {
+      obj.remove();
+      Objects.value?.delete(Id);
+    }
   }
 };
 const findOnMap = (Id: string) => {
@@ -111,7 +123,7 @@ const findOnMap = (Id: string) => {
               variant="link"
               size="sm"
               class="cursor-pointer relative bottom-2"
-              @click="deleteObject(obj[0])"
+              @click="delObject(obj[0])"
               >Удалить</Button
             >
           </CardAction>
@@ -177,10 +189,10 @@ const findOnMap = (Id: string) => {
                 >Обводка</Toggle
               >
               <Toggle
-                :model-value="obj[1].options.stroke"
                 @click="findOnMap(obj[0])"
                 size="default"
                 variant="outline"
+                :model-value="false"
                 >На карте</Toggle
               >
               <Separator class="my-2 w-40" />
@@ -194,6 +206,7 @@ const findOnMap = (Id: string) => {
                   :max="100"
                   :step="1"
                   :min="0"
+                  :model-value="(obj[1].options.dashArray as number[]) || [0]"
                   class="mx-auto w-40 max-w-xs"
                 />
               </div>
@@ -218,7 +231,9 @@ const findOnMap = (Id: string) => {
                       (value) => changeFillOpacity(value, obj[0])
                     "
                     :disabled="!obj[1].options.fill"
-                    :defaultValue="[0.1]"
+                    :model-value="
+                      [obj[1].options.fillOpacity as unknown] as number[]
+                    "
                     :max="1"
                     :step="0.01"
                     :min="0"
@@ -231,7 +246,7 @@ const findOnMap = (Id: string) => {
                   >
                   <Slider
                     @update:model-value="(value) => changeWeight(value, obj[0])"
-                    :defaultValue="[0]"
+                    :model-value="[obj[1].options.weight as number]"
                     :max="30"
                     :step="1"
                     :min="0"
