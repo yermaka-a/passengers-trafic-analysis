@@ -64,4 +64,41 @@ export default class ObjectController {
       throw err;
     }
   };
+
+  deleteObject = async (Id: string) => {
+    try {
+      if (innerAPI.objects) {
+        return await innerAPI.objects.delete_object(Id);
+      }
+      throw new Error("pywebview is not registered");
+    } catch (err) {
+      console.error("bridge error:", err);
+      throw err;
+    }
+  };
+
+  updateObject = async (Obj: Objects) => {
+    try {
+      if (Obj instanceof Polygon || Obj instanceof Polyline) {
+        const newObject: ObjectCreate = {
+          latlng: Obj.getLatLngs().flat().flat(),
+          options: Obj.options,
+        };
+
+        if (innerAPI.objects) {
+          const response = await innerAPI.objects.update_object(newObject);
+          if (response.status === "success") {
+            return response;
+          } else {
+            console.error("error getting all objects", response);
+            return null;
+          }
+        }
+        throw new Error("pywebview is not registered");
+      }
+    } catch (err) {
+      console.error("bridge error:", err);
+      throw err;
+    }
+  };
 }

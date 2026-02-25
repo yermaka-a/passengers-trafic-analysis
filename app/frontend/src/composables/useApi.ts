@@ -34,6 +34,12 @@ const useApi = () => {
 
   const getAllObjects = async () => await callApi(api.objects.getAllObjects);
 
+  const updateObject = async (Obj: Objects) =>
+    await callApi(api.objects.updateObject, Obj);
+
+  const deleteObject = async (Id: string) =>
+    await callApi(api.objects.deleteObject, Id);
+
   return {
     // Состояние
     loading: readonly(loading),
@@ -42,6 +48,8 @@ const useApi = () => {
     createObject,
     getObject,
     getAllObjects,
+    updateObject,
+    deleteObject,
   };
 };
 

@@ -9,6 +9,8 @@ export interface CreateObjectResponse {
   message: string;
 }
 
+export interface UpdateObjectResponse extends CreateObjectResponse {}
+
 export interface GetObjectResponse {
   status: Status;
   obj: ObjectCreate;
@@ -23,6 +25,8 @@ interface APIObjects {
   create_object: (Obj: ObjectCreate) => Promise<CreateObjectResponse>;
   get_object: (Id: string) => Promise<GetObjectResponse>;
   get_all_objects: () => Promise<GetAllObjectsResponse>;
+  delete_object: (Id: string) => Promise<boolean>;
+  update_object: (Obj: ObjectCreate) => Promise<UpdateObjectResponse>;
 }
 
 class API {
