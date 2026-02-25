@@ -18,7 +18,7 @@ const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
 const { mapInstance } = storeToRefs(mapStore);
-const { MapObject, ObjectsCount } = storeToRefs(mapObjectStore);
+const { MapObject } = storeToRefs(mapObjectStore);
 const tilesStore = useTilesStore();
 // 0-удалить, 1-добавить
 let EventsHistory = reactive<L.LatLng[]>([]);
@@ -45,6 +45,7 @@ const prevAction = () => {
     EventNumber.value--;
   }
 };
+
 const nextAction = () => {
   if (EventsHistory.length > 0 && EventNumber.value !== EventsHistory.length) {
     EventNumber.value++;
@@ -80,7 +81,6 @@ const cancelChanges = () => {
   if (mapInstance && MapObject.value) MapObject.value?.removeFrom(Map);
   MapObject.value = null;
   EventsHistory.length = 0;
-  ObjectsCount.value--;
 };
 const submitChanges = async () => {
   if (mapInstance && MapObject.value) {
@@ -119,6 +119,7 @@ const AddPolygonClickHandler = async (e: L.LeafletMouseEvent) => {
   MapObject.value.addTo(Map);
   EventNumber.value++;
 };
+
 onMounted(() => {
   mapStore.initMap("map");
 
