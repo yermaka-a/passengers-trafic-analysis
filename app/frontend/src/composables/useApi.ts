@@ -29,12 +29,19 @@ const useApi = () => {
   const createObject = async (Obj: Objects) =>
     await callApi(api.objects.createObject, Obj);
 
+  const getObject = async (Id: string) =>
+    await callApi(api.objects.getObject, Id);
+
+  const getAllObjects = async () => await callApi(api.objects.getAllObjects);
+
   return {
     // Состояние
     loading: readonly(loading),
     error: readonly(error),
     // Методы
     createObject,
+    getObject,
+    getAllObjects,
   };
 };
 

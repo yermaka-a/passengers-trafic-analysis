@@ -1,13 +1,28 @@
-import type { ObjectCreate } from "@/api/object";
+import type { ObjectCreate } from "@/types";
 import ObjectController from "@/api/object";
+import type { Objects } from "@/store";
+
+type Status = "success" | "failed";
 
 export interface CreateObjectResponse {
-  status: "success" | "failed";
+  status: Status;
   message: string;
+}
+
+export interface GetObjectResponse {
+  status: Status;
+  obj: ObjectCreate;
+}
+
+export interface GetAllObjectsResponse {
+  status: Status;
+  objects: ObjectCreate[];
 }
 
 interface APIObjects {
   create_object: (Obj: ObjectCreate) => Promise<CreateObjectResponse>;
+  get_object: (Id: string) => Promise<GetObjectResponse>;
+  get_all_objects: () => Promise<GetAllObjectsResponse>;
 }
 
 class API {
