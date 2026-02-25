@@ -19,15 +19,14 @@ class ObjectController:
         try:
             id_validator = TypeAdapter(UUID6)
             Id = id_validator.validate_python(data.Id)
-            if isinstance(Id, str):
-                obj = self.objects.get(Id)
-                if obj is not None:
-                    validated_obj = ObjectCreate.from_db(obj)
-                    return ObjectResponse(status="success", obj=validated_obj)
-                return {"status": "failed", "obj": obj}
-            raise Exception(f"incorrect Id: {Id}")
+            obj = self.objects.get(Id)
+            if obj is not None:
+                validated_obj = ObjectCreate.from_db(obj)
+                return ObjectResponse(status="success", obj=validated_obj)
+            return ObjectResponse(status="failed", obj=None)
         except Exception as e:
-            logger.error(e)
+            op = "get_object"
+            logger.error(op, extra={"err": e})
 
     def create_object(self, data):
         try:
@@ -49,13 +48,29 @@ class ObjectController:
                     status="success", objects=validated_objects
                 ).model_dump(by_alias=True)
         except Exception as e:
-            logger.error(e)
+            op = "get_all_objects"
+            logger.error(op, extra={"err": e})
 
-    def delete_object(self):
-        pass
+    def delete_object(self, Id: UUID6):
+        try:
+            id_validator = TypeAdapter(UUID6)
+            Id = id_validator.validate_python(Id)
+            return self.objects.delete(Id)
+        except Exception as e:
+            op = "delete_object"
+            logger.error(op, extra={"err": e})
 
-    def update_object(self):
-        pass
+    def update_object(self, data):
+        try:
+            obj_data = ObjectCreate(**data)
+            res = self.objects.update(obj_data)
+            if res:
+                return {"status": "success", "message": obj_data.options.Id}
+            return {"satus": "failed", "message": "data is not written"}
+        except ValidationError as e:
+            op = "update_object"
+            logger.error(op, extra={"err": e})
+            return {"status": "failed", "message": e.json()}
 
     def delete_all_objects(self):
         pass
