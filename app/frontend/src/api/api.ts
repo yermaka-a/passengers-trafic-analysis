@@ -1,6 +1,5 @@
 import type { ObjectCreate } from "@/types";
 import ObjectController from "@/api/object";
-import type { Objects } from "@/store";
 
 type Status = "success" | "failed";
 
@@ -29,6 +28,16 @@ interface APIObjects {
   update_object: (Obj: ObjectCreate) => Promise<UpdateObjectResponse>;
 }
 
+type LEVEL = "ERROR" | "WARN" | "INFO" | "DEBUG";
+export interface Logs {
+  level: LEVEL;
+  msg: string;
+  extraInfo: object;
+}
+
+interface APILogs {
+  write_log: (logs: Logs) => void;
+}
 class API {
   private static api: API | null = null;
   private constructor() {}
@@ -60,6 +69,14 @@ class InnerAPI {
   get objects() {
     if ((globalThis as any)?.pywebview?.api?.objects) {
       return (globalThis as any).pywebview?.api?.objects as APIObjects;
+    }
+    console.log("pywebview not registered yet");
+    return null;
+  }
+
+  get logs() {
+    if ((globalThis as any)?.pywebview?.api?.logs) {
+      return (globalThis as any).pywebview?.api?.logs as APILogs;
     }
     console.log("pywebview not registered yet");
     return null;
