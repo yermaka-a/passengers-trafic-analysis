@@ -32,7 +32,12 @@ class Options(RootObjBaseModel):
     )
     color: Optional[str] | None = Field(None, max_length=10)
     stroke: Optional[bool] | None = None
-    dashArray: Optional[str] | None = Field(None, max_length=255)
+    dash_array: Optional[list] | None = Field(
+        None,
+        max_length=255,
+        alias="dashArray",
+        serialization_alias="dashArray",
+    )
     fill_opacity: Optional[float] = Field(
         None,
         alias="fillOpacity",
@@ -65,7 +70,7 @@ class Response(RootObjBaseModel):
 
 
 class ObjectResponse(Response):
-    obj: ObjectCreate
+    obj: ObjectCreate | None
 
 
 class AllObjectsResponse(Response):

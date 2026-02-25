@@ -23,3 +23,6 @@ class MapObject(Base):
         MutableList.as_mutable(JSON), nullable=False, default=list
     )
     obj_type: Mapped[str] = mapped_column(String(30), nullable=False, default=None)
+    dash_array: Mapped[List[float] | None] = mapped_column(
+        MutableList.as_mutable(JSON), nullable=False, default=None
+    )
