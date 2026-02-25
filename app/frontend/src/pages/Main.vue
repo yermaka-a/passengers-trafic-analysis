@@ -1,38 +1,29 @@
 <script setup lang="ts">
-import { MainHeader } from "@/components/MainHeader";
-import { Map } from "@/components/Map";
-import { List } from "@/components/List";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import BrushTable from "@/components/BrushTable/BrushTable.vue";
+import MapPanel from "@/components/MapPanel/MapPanel.vue";
+import { useMapObjectStore } from "@/store";
+import { onMounted, onUnmounted } from "vue";
+const objectStore = useMapObjectStore();
+
+const pyWebViewReadyHandler = async () => {
+  await objectStore.loadAllObjectsFromDB();
+  globalThis.removeEventListener("pywebviewready", pyWebViewReadyHandler);
+};
+
+onMounted(async () => {
+  if ((globalThis as any)?.pywebview?.api?.objects) {
+    await pyWebViewReadyHandler();
+  } else {
+    globalThis.addEventListener("pywebviewready", pyWebViewReadyHandler);
+  }
+});
+
+onUnmounted(() => {
+  globalThis.removeEventListener("pywebviewready", pyWebViewReadyHandler);
+});
 </script>
 
 <template>
-  <ResizablePanelGroup
-    direction="horizontal"
-    class="max-w-dvwx min-h-11/12 rounded-lg border mt-1"
-  >
-    <ResizablePanel :default-size="50">
-      <ResizablePanelGroup direction="vertical">
-        <ResizablePanel :default-size="25">
-          <BrushTable />
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel :default-size="75">
-          <List />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </ResizablePanel>
-
-    <ResizableHandle withHandle />
-
-    <ResizablePanel :default-size="100">
-      <Map />
-    </ResizablePanel>
-  </ResizablePanelGroup>
+  <MapPanel />
 </template>
 
 <style scoped></style>
