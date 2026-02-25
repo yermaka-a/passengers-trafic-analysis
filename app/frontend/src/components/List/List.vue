@@ -33,54 +33,54 @@ const { mapInstance } = storeToRefs(mapStore);
 const changeColor = (e: MouseEvent, Id: string) => {
   const target = e.target as HTMLInputElement;
 
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj) {
     obj.setStyle({ color: target.value });
   }
 };
 const toggleStroke = (Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj) {
     const isStroke = obj.options.stroke;
     obj.setStyle({ stroke: !isStroke });
   }
 };
 const changeDash = (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj && value) {
     obj.setStyle({ dashArray: value });
   }
 };
 
 const changeFillOpacity = (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj && value) {
     console.log(value);
     obj.setStyle({ fillOpacity: value[0] });
   }
 };
 const changeWeight = (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj && value) {
     obj.setStyle({ weight: value[0] });
   }
 };
 const toggleFill = (Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj) {
     const isFill = obj.options.fill;
     obj.setStyle({ fill: !isFill });
   }
 };
 const deleteObject = (Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj) {
     obj.remove();
-    Objects.value.delete(Id);
+    Objects.value?.delete(Id);
   }
 };
 const findOnMap = (Id: string) => {
-  const obj = Objects.value.get(Id);
+  const obj = Objects.value?.get(Id);
   if (obj) {
     if (obj instanceof L.Polygon || obj instanceof L.Polyline) {
       mapInstance.value?.flyToBounds(obj.getBounds());
@@ -99,7 +99,7 @@ const findOnMap = (Id: string) => {
     >
       Настройки
     </h2>
-    <div class="flex gap-3 flex-wrap">
+    <div v-if="Objects" class="flex gap-3 flex-wrap">
       <Card
         v-for="(obj, idx) in Objects.entries()"
         :key="obj[0]"
