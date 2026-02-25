@@ -1,3 +1,4 @@
-__all__ = ["ObjectController"]
+__all__ = ("ObjectController", "LogsController")
 
 from .object import ObjectController
+from .log import LogsController

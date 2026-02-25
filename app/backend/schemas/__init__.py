@@ -5,6 +5,7 @@ __all__ = (
     "ObjectResponse",
     "Response",
     "AllObjectsResponse",
+    "LogRequest",
 )
 
 from .object import (
@@ -15,3 +16,5 @@ from .object import (
     Response,
     AllObjectsResponse,
 )
+
+from .log import LogRequest
