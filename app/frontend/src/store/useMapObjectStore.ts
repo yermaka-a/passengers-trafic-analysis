@@ -84,7 +84,7 @@ const createObjByTypeName: Record<
     return polyline;
   },
   CircleMarker: (obj, store): L.CircleMarker => {
-    const circleMarker = new L.CircleMarker(obj.latlng as L.LatLngExpression, {
+    const circleMarker = new L.CircleMarker(obj.latlng[0], {
       ...obj.options,
     });
     circleMarker.on("click", (e) => setId(e, store));
