@@ -21,6 +21,8 @@ import {
   CardContent,
   CardTitle,
 } from "@/components/ui/card";
+import { AlertCircleIcon } from "lucide-vue-next";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 import { Toggle } from "@/components/ui/toggle/";
 import { Button } from "@/components/ui/button";
@@ -28,13 +30,19 @@ import { useMapStore } from "@/store";
 import L from "leaflet";
 import { useApi } from "@/composables";
 import { Spinner } from "@/components/ui/spinner";
+import { ref, Teleport } from "vue";
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
 const mapStore = useMapStore();
 const { mapInstance } = storeToRefs(mapStore);
-
-const { deleteObject, loading, error, updateObject } = useApi();
-
+const closeModalRef = ref(false);
+const onCloseModal = () => {
+  closeModalRef.value = false;
+  console.error(deletingError);
+  console.error(updateError);
+};
+const { deleteObject, loading, error: deletingError } = useApi();
+const { updateObject, error: updateError } = useApi();
 const changeColor = async (e: MouseEvent, Id: string) => {
   const target = e.target as HTMLInputElement;
   const obj = Objects.value?.get(Id);
@@ -120,12 +128,17 @@ const findOnMap = (Id: string) => {
         <CardHeader class="pt-2 min-w-min">
           <CardAction class="relative">
             <Button
+              v-if="!loading"
               variant="link"
               size="sm"
               class="cursor-pointer relative bottom-2"
               @click="delObject(obj[0])"
               >Удалить</Button
             >
+            <Badge v-else variant="secondary">
+              <Spinner />
+              Удаление
+            </Badge>
           </CardAction>
           <CardTitle class="min-w-min">{{ obj[1].options.name }}</CardTitle>
         </CardHeader>
@@ -263,6 +276,21 @@ const findOnMap = (Id: string) => {
       </Card>
     </div>
   </div>
+  <Teleport v-if="closeModalRef" to="body">
+    <div class="fixed bg-black/40 inset-0 z-400" @click="onCloseModal">
+      <Alert
+        variant="destructive"
+        class="max-w-fit p-5 z-500 fixed top-[50%] left-[45%]"
+      >
+        <AlertCircleIcon />
+        <AlertTitle>Произошла ошибка</AlertTitle>
+        <AlertDescription>
+          <p v-if="deletingError">Неудачное удаление</p>
+          <p v-if="updateError">Неудачное обновление</p>
+        </AlertDescription>
+      </Alert>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
