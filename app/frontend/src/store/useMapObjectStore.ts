@@ -1,156 +1,330 @@
 import { defineStore } from "pinia";
-import * as L from "leaflet";
 import { v6 as uuidv6 } from "uuid";
-import { useApi } from "@/composables";
-import { useMapStore } from "@/store/useMapStore";
-import type { ObjectCreate } from "@/types";
+import useApi from "@/composables/useApi";
+import type { BackendObjectCreate, DeckGLObject, LngLatTuple } from "@/types";
+import {
+  backendCoordsToDeckGL,
+  deckGLToBackendCoords,
+  hexToRGBA,
+  rgbaToHex,
+} from "@/utils";
+import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
-export class ObjectEditor {}
-export type Objects = L.Polygon | L.Polyline | L.CircleMarker;
-// Добавление только в конец элементов
+// ============================================================================
+// ТИПЫ
+// ============================================================================
+
 const ObjectsTypes = [
   ["Polygon", "Полигон"],
   ["Polyline", "Полилайн"],
   ["CircleMarker", "Маркер"],
   ["Edit", "Редактировать объект"],
 ] as const;
+
 export type ObjTypes = (typeof ObjectsTypes)[number][0];
 export type ObjNames = (typeof ObjectsTypes)[number][1];
-interface MapObjectStore {
-  Objects: Map<string, Objects> | null;
+
+/** Временный объект в процессе создания */
+export interface DraftObject {
+  type: ObjTypes;
+  coordinates: LngLatTuple[];
+  style: DeckGLObject["style"];
+}
+
+interface MapObjectStoreState {
+  Objects: Map<string, DeckGLObject>;
   ObjectsTypes: typeof ObjectsTypes;
   ChosenObjectType: (typeof ObjectsTypes)[number];
-  // Текущий создающийся объект карты
-  MapObject: Objects | ObjectEditor | null;
+  DraftObject: DraftObject | null;
+  EditingObjectId: string | null;
   ClickedObjId: string | null;
 }
 
-const setId = (e: L.LeafletMouseEvent, store: MapObjectStore) => {
-  if (e.sourceTarget.options.Id) {
-    store.ClickedObjId = e.sourceTarget.options.Id;
-    console.log(e.sourceTarget.options.Id);
-  }
+// ============================================================================
+// КОНВЕРТАЦИЯ: Backend ↔ DeckGL
+// ============================================================================
+
+/**
+ * Конвертирует объект из формата бэкенда в DeckGLObject
+ */
+const backendToDeckGL = (backendObj: BackendObjectCreate): DeckGLObject => {
+  const { latlng, options } = backendObj;
+
+  // Конвертируем координаты: [{lat, lng}] → [[lng, lat]]
+  const coordinates = backendCoordsToDeckGL(latlng);
+
+  // Конвертируем цвет из hex в RGBA
+  const color = hexToRGBA(options.color ?? "#0080FF", 255);
+
+  return {
+    id: options.Id,
+    type: options.objType,
+    name: options.name,
+    customName: options.customName ?? undefined,
+    description: options.description ?? undefined,
+    style: {
+      color,
+      strokeWidth: options.weight ?? 2,
+      strokeDasharray: options.dashArray as [number, number] | undefined,
+      filled: options.fill ?? false,
+      fillOpacity: options.fillOpacity ?? 0.5,
+    },
+    coordinates,
+  };
 };
 
-const getMapObjectByType = (
-  store: MapObjectStore,
-  ChosenObjectType: (typeof ObjectsTypes)[number],
-) => {
-  switch (ChosenObjectType[0]) {
-    case ObjectsTypes[0][0]: {
-      const polygon = new L.Polygon([], {
-        Id: uuidv6(),
-        objType: "Polygon",
-        name: "Полигон",
-      });
-      polygon.on("click", (e) => setId(e, store));
-      return polygon;
-    }
-    case ObjectsTypes[1][0]: {
-      const polyline = new L.Polyline([], {
-        Id: uuidv6(),
-        objType: "Polyline",
-        name: "Полилайн",
-      });
-      polyline.on("click", (e) => setId(e, store));
-      return polyline;
-    }
-    case ObjectsTypes[2][0]: {
-      const circleMarker = new L.CircleMarker([0, 0], {
-        Id: uuidv6(),
-        objType: "CircleMarker",
-        name: "Маркер",
-      });
-      circleMarker.on("click", (e) => setId(e, store));
-      return circleMarker;
-    }
-    case ObjectsTypes[3][0]:
-      return new ObjectEditor();
-  }
+/**
+ * Конвертирует DeckGLObject в формат для бэкенда
+ */
+const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
+  // Конвертируем координаты обратно: [[lng, lat]] → [{lat, lng}]
+  const latlng = deckGLToBackendCoords(obj.coordinates);
+
+  // Конвертируем цвет из RGBA в hex
+  const color = rgbaToHex(obj.style.color);
+
+  return {
+    latlng,
+    options: {
+      Id: obj.id,
+      name: obj.name,
+      objType: obj.type,
+      customName: obj.customName ?? null,
+      description: obj.description ?? null,
+      color,
+      stroke: obj.style.strokeWidth > 0,
+      weight: obj.style.strokeWidth,
+      fill: obj.style.filled,
+      fillOpacity: obj.style.fillOpacity,
+      dashArray: obj.style.strokeDasharray
+        ? Array.from(obj.style.strokeDasharray)
+        : null,
+    },
+  };
 };
 
-const createObjByTypeName: Record<
-  Exclude<ObjTypes, "Edit">,
-  (objType: ObjectCreate, store: MapObjectStore) => Objects
-> = {
-  Polygon: (obj, store) => {
-    const polygon = new L.Polygon(obj.latlng, { ...obj.options });
-    polygon.on("click", (e) => setId(e, store));
-    return polygon;
-  },
-  Polyline: (obj, store): L.Polyline => {
-    const polyline = new L.Polyline(obj.latlng, { ...obj.options });
-    polyline.on("click", (e) => setId(e, store));
-    return polyline;
-  },
-  CircleMarker: (obj, store): L.CircleMarker => {
-    const circleMarker = new L.CircleMarker(obj.latlng[0], {
-      ...obj.options,
-    });
-    circleMarker.on("click", (e) => setId(e, store));
-    return circleMarker;
-  },
+// ============================================================================
+// FACTORY ФУНКЦИИ
+// ============================================================================
+
+/**
+ * Создаёт новый DeckGLObject по типу
+ */
+const createNewDeckGLObject = (
+  type: Exclude<ObjTypes, "Edit">,
+  coordinates: LngLatTuple[],
+): DeckGLObject => {
+  const defaultStyle = DeckGLMapConfig.defaultStyles[type];
+
+  return {
+    id: uuidv6(),
+    type,
+    name: ObjectsTypes.find(([key]) => key === type)?.[1] ?? type,
+    style: { ...defaultStyle } as DeckGLObject["style"],
+    coordinates,
+  };
 };
+
+// ============================================================================
+// STORE
+// ============================================================================
 
 export const useMapObjectStore = defineStore("mapobjects", {
-  state: (): MapObjectStore => {
-    return {
-      Objects: null,
-      ObjectsTypes: ObjectsTypes,
-      ChosenObjectType: ObjectsTypes[0],
-      MapObject: null,
-      ClickedObjId: null,
-    };
-  },
+  state: (): MapObjectStoreState => ({
+    Objects: new Map(),
+    ObjectsTypes,
+    ChosenObjectType: ObjectsTypes[0],
+    DraftObject: null,
+    EditingObjectId: null,
+    ClickedObjId: null,
+  }),
+
   getters: {
+    /** Все объекты на карте */
     getObjects: (state) => state.Objects,
+
+    /** Список типов объектов */
     getObjectsTypes: (state) => state.ObjectsTypes,
+
+    /** Выбранный тип объекта для создания */
     getChosenObjectType: (state) => state.ChosenObjectType,
+
+    /** Текущий создаваемый объект (draft) */
+    getDraftObject: (state) => state.DraftObject,
+
+    /** Редактируемый объект */
+    getEditingObject: (state) =>
+      state.EditingObjectId ? state.Objects.get(state.EditingObjectId) : null,
+
+    /** ID кликнутого объекта */
+    getClickedObjId: (state) => state.ClickedObjId,
   },
+
   actions: {
-    async loadAllObjectsFromDB() {
-      if (!this.Objects) {
-        this.Objects = new Map();
-        const { getAllObjects } = useApi();
-        const objects = await getAllObjects();
-        if (objects) {
-          console.log("all objects from db:", objects);
-          const mapStore = useMapStore();
-          for (const obj of objects) {
-            if (mapStore.getMapRef) {
-              const newObj = createObjByTypeName[obj.options.objType](
-                obj,
-                this as unknown as MapObjectStore,
-              );
-              // TODO Переделать проверку на карту на хук
-              if (mapStore.mapInstance)
-                newObj.addTo(mapStore.mapInstance as L.Map);
-              this.Objects.set(newObj.options.Id, newObj);
-            }
-          }
-        }
-        return;
-      }
-      return this.Objects;
-    },
+    // ========================================================================
+    // УПРАВЛЕНИЕ ТИПОМ ОБЪЕКТА
+    // ========================================================================
+
+    /** Установить тип создаваемого объекта */
     setObjectType(option: (typeof ObjectsTypes)[number]) {
       this.$state.ChosenObjectType = option;
     },
-    getObjectByChosenType() {
-      return getMapObjectByType(
-        this as unknown as MapObjectStore,
-        this.ChosenObjectType,
+
+    // ========================================================================
+    // СОЗДАНИЕ ОБЪЕКТОВ (DRAFT)
+    // ========================================================================
+
+    /** Начать создание нового объекта */
+    startDraftObject() {
+      const type = this.ChosenObjectType[0] as ObjTypes;
+      if (type === "Edit") return;
+
+      this.DraftObject = {
+        type: type as Exclude<ObjTypes, "Edit">,
+        coordinates: [],
+        style: {
+          ...DeckGLMapConfig.defaultStyles[type as Exclude<ObjTypes, "Edit">],
+        } as DeckGLObject["style"],
+      };
+    },
+
+    /** Добавить координату к draft объекту */
+    addCoordinateToDraft(coord: LngLatTuple) {
+      if (!this.DraftObject) return;
+
+      // Для CircleMarker заменяем координату (только одна точка)
+      if (this.DraftObject.type === "CircleMarker") {
+        this.DraftObject.coordinates = [coord];
+      } else {
+        this.DraftObject.coordinates.push(coord);
+      }
+    },
+
+    /** Завершить создание draft объекта */
+    finalizeDraftObject(): DeckGLObject | null {
+      if (!this.DraftObject || this.DraftObject.coordinates.length === 0) {
+        return null;
+      }
+
+      const newObject = createNewDeckGLObject(
+        this.DraftObject.type as Exclude<ObjTypes, "Edit">,
+        this.DraftObject.coordinates,
       );
+
+      this.Objects.set(newObject.id, newObject);
+      const finalized = { ...newObject };
+      this.DraftObject = null;
+
+      return finalized;
     },
-    async setObject(Obj: Objects) {
-      const Id = Obj.options.Id;
+
+    /** Отменить создание объекта */
+    cancelDraftObject() {
+      this.DraftObject = null;
+    },
+
+    // ========================================================================
+    // РЕДАКТИРОВАНИЕ
+    // ========================================================================
+
+    /** Начать редактирование объекта */
+    startEditingObject(id: string) {
+      this.EditingObjectId = id;
+    },
+
+    /** Завершить редактирование объекта */
+    stopEditingObject() {
+      this.EditingObjectId = null;
+    },
+
+    /** Обновить стиль объекта */
+    updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
+      const obj = this.Objects.get(id);
+      if (obj) {
+        obj.style = { ...obj.style, ...style };
+        this.Objects.set(id, obj);
+      }
+    },
+
+    /** Обновить координаты объекта */
+    updateObjectCoordinates(id: string, coordinates: LngLatTuple[]) {
+      const obj = this.Objects.get(id);
+      if (obj) {
+        obj.coordinates = coordinates;
+        this.Objects.set(id, obj);
+      }
+    },
+
+    /** Удалить объект из store */
+    deleteObject(id: string) {
+      this.Objects.delete(id);
+      if (this.ClickedObjId === id) {
+        this.ClickedObjId = null;
+      }
+      if (this.EditingObjectId === id) {
+        this.EditingObjectId = null;
+      }
+    },
+
+    // ========================================================================
+    // API МЕТОДЫ (С КОНВЕРТАЦИЕЙ)
+    // ========================================================================
+
+    /** Загрузить все объекты из БД */
+    async loadAllObjectsFromDB() {
+      const { getAllObjects } = useApi();
+      const backendObjects = await getAllObjects();
+
+      if (backendObjects) {
+        this.Objects = new Map();
+        for (const backendObj of backendObjects) {
+          const deckglObj = backendToDeckGL(backendObj);
+          this.Objects.set(deckglObj.id, deckglObj);
+        }
+      }
+    },
+
+    /** Сохранить новый объект в БД */
+    async saveObjectToDB(obj: DeckGLObject) {
       const { createObject } = useApi();
-      const objResponse = await createObject(Obj);
-      if (this.Objects) this.Objects.set(Id, Obj);
-      return objResponse;
+      const backendObj = deckGLToBackend(obj);
+      return await createObject(backendObj);
     },
-    clearObject() {
-      this.MapObject = null;
+
+    /** Обновить объект в БД */
+    async updateObjectInDB(obj: DeckGLObject) {
+      const { updateObject } = useApi();
+      const backendObj = deckGLToBackend(obj);
+      return await updateObject(backendObj);
+    },
+
+    /** Удалить объект из БД */
+    async deleteObjectFromDB(id: string) {
+      const { deleteObject } = useApi();
+      const success = await deleteObject(id);
+      if (success) {
+        this.Objects.delete(id);
+      }
+      return success;
+    },
+
+    // ========================================================================
+    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    // ========================================================================
+
+    /** Получить объект по ID */
+    getObjectById(id: string): DeckGLObject | undefined {
+      return this.Objects.get(id);
+    },
+
+    /** Конвертировать BackendObjectCreate в DeckGLObject (публичный метод) */
+    convertBackendToDeckGL(backendObj: BackendObjectCreate): DeckGLObject {
+      return backendToDeckGL(backendObj);
+    },
+
+    /** Конвертировать DeckGLObject в BackendObjectCreate (публичный метод) */
+    convertDeckGLToBackend(obj: DeckGLObject): BackendObjectCreate {
+      return deckGLToBackend(obj);
     },
   },
 });
