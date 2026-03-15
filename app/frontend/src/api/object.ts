@@ -1,119 +1,94 @@
 import { innerAPI } from "@/api/api";
-import type { Objects } from "@/store/";
-import type { ObjectCreate } from "@/types";
-import { Polygon, Polyline } from "leaflet";
+import type { BackendObjectCreate, BackendResponse } from "@/types";
 
+/**
+ * ObjectController для работы с бэкендом через pywebview
+ *
+ * Принимает и возвращает BackendObjectCreate формат:
+ * - latlng: [{lat, lng}, ...]
+ * - options: { Id, name, objType, color, stroke, weight, fill, fillOpacity, dashArray }
+ */
 export default class ObjectController {
-  createObject = async (Obj: Objects) => {
+  /**
+   * Создать новый объект
+   */
+  createObject = async (obj: BackendObjectCreate) => {
     try {
-      let newObject: ObjectCreate | null = null;
-
-      if (Obj instanceof Polygon || Obj instanceof Polyline) {
-        newObject = {
-          latlng: Obj.getLatLngs().flat().flat(),
-          options: Obj.options,
-        };
-      } else {
-        const latlng = Obj.getLatLng();
-        newObject = {
-          latlng: [{ lat: latlng.lat, lng: latlng.lng }],
-          options: Obj.options,
-        };
-      }
       if (innerAPI.objects) {
-        const response = await innerAPI.objects.create_object(newObject);
-
-        if (response.status === "success") {
-          return response;
-        } else {
-          console.error("Pydantic error:", response.message);
-          return response;
-        }
+        const response = await innerAPI.objects.create_object(obj);
+        return response as BackendResponse;
       }
       throw new Error("pywebview is not registered");
     } catch (err) {
-      console.error("bridge error:", err);
+      console.error("API Error:", err);
       throw err;
     }
   };
 
-  getObject = async (Id: string) => {
+  /**
+   * Получить объект по ID
+   */
+  getObject = async (id: string) => {
     try {
       if (innerAPI.objects) {
-        const response = await innerAPI.objects.get_object(Id);
-        if (response.status === "success") {
-          return response;
-        } else {
-          console.error("error getting object", response);
-          return response;
-        }
+        const response = await innerAPI.objects.get_object(id);
+        return response as BackendResponse;
       }
       throw new Error("pywebview is not registered");
     } catch (err) {
-      console.error("bridge error:", err);
+      console.error("API Error:", err);
       throw err;
     }
   };
 
+  /**
+   * Получить все объекты
+   * @returns Массив объектов в формате BackendObjectCreate
+   */
   getAllObjects = async () => {
     try {
       if (innerAPI.objects) {
         const response = await innerAPI.objects.get_all_objects();
         if (response.status === "success") {
-          return response.objects;
-        } else {
-          console.error("error getting all objects", response);
-          return null;
+          return response.objects as BackendObjectCreate[];
         }
+        return null;
       }
       throw new Error("pywebview is not registered");
     } catch (err) {
-      console.error("bridge error:", err);
+      console.error("API Error:", err);
       throw err;
     }
   };
 
-  deleteObject = async (Id: string) => {
+  /**
+   * Удалить объект по ID
+   * @returns true если успешно
+   */
+  deleteObject = async (id: string): Promise<boolean> => {
     try {
       if (innerAPI.objects) {
-        return await innerAPI.objects.delete_object(Id);
+        return await innerAPI.objects.delete_object(id);
       }
       throw new Error("pywebview is not registered");
     } catch (err) {
-      console.error("bridge error:", err);
-      throw err;
+      console.error("API Error:", err);
+      return false;
     }
   };
 
-  updateObject = async (Obj: Objects) => {
+  /**
+   * Обновить объект
+   */
+  updateObject = async (obj: BackendObjectCreate) => {
     try {
-      let newObject: ObjectCreate | null = null;
-
-      if (Obj instanceof Polygon || Obj instanceof Polyline) {
-        newObject = {
-          latlng: Obj.getLatLngs().flat().flat(),
-          options: Obj.options,
-        };
-      } else {
-        const latlng = Obj.getLatLng();
-        newObject = {
-          latlng: [{ lat: latlng.lat, lng: latlng.lng }],
-          options: Obj.options,
-        };
-      }
-
       if (innerAPI.objects) {
-        const response = await innerAPI.objects.update_object(newObject);
-        if (response.status === "success") {
-          return response;
-        } else {
-          console.error("error getting all objects", response);
-          return null;
-        }
+        const response = await innerAPI.objects.update_object(obj);
+        return response as BackendResponse;
       }
       throw new Error("pywebview is not registered");
     } catch (err) {
-      console.error("bridge error:", err);
+      console.error("API Error:", err);
       throw err;
     }
   };
