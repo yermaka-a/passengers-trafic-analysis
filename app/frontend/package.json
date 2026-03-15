@@ -11,6 +11,8 @@
     "dev:all": "concurrently \"yarn dev\" \"wait-on http://localhost:5173 && yarn start:py\""
   },
   "dependencies": {
+    "@deck.gl-community/leaflet": "^9.2.8",
+    "@deck.gl/layers": "^9.2.11",
     "@tailwindcss/vite": "^4.1.18",
     "@turf/turf": "^7.3.3",
     "@vueuse/core": "^14.2.1",

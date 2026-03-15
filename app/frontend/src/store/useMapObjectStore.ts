@@ -59,7 +59,7 @@ const getMapObjectByType = (
       const circleMarker = new L.CircleMarker([0, 0], {
         Id: uuidv6(),
         objType: "CircleMarker",
-        name: "Круговой маркер",
+        name: "Маркер",
       });
       circleMarker.on("click", (e) => setId(e, store));
       return circleMarker;

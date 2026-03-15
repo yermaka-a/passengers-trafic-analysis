@@ -271,6 +271,13 @@
     jsep "^1.4.0"
     quadbin "^0.4.1-alpha.0"
 
+"@deck.gl-community/leaflet@^9.2.8":
+  version "9.2.8"
+  resolved "https://registry.yarnpkg.com/@deck.gl-community/leaflet/-/leaflet-9.2.8.tgz#21cade05546eb1a235701992f6b5f6e1bd44de6b"
+  integrity sha512-qz2vzt72xl01uaWIQJUexVlCl5nq1HRNfo9DFB5sPSSvf6a26PcZEVOyF28chOkJ8vZ+BGGJ903LJrX4lXbx5Q==
+  dependencies:
+    "@deck.gl/core" "~9.2.8"
+
 "@deck.gl/aggregation-layers@9.2.11":
   version "9.2.11"
   resolved "https://registry.yarnpkg.com/@deck.gl/aggregation-layers/-/aggregation-layers-9.2.11.tgz#41ea7fc2c9bc2693c5f0b13dcff99f12321b39fd"
@@ -319,7 +326,7 @@
     pbf "^3.2.1"
     quadbin "^0.4.0"
 
-"@deck.gl/core@9.2.11":
+"@deck.gl/core@9.2.11", "@deck.gl/core@~9.2.8":
   version "9.2.11"
   resolved "https://registry.yarnpkg.com/@deck.gl/core/-/core-9.2.11.tgz#94ec038473f22617e8aed5966f72510acba8b7c9"
   integrity sha512-lpdxXQuFSkd6ET7M6QxPI8QMhsLRY6vzLyk83sPGFb7JSb4OhrNHYt9sfIhcA/hxJW7bdBSMWWphf2GvQetVuA==
@@ -391,7 +398,7 @@
   dependencies:
     jsep "^0.3.0"
 
-"@deck.gl/layers@9.2.11":
+"@deck.gl/layers@9.2.11", "@deck.gl/layers@^9.2.11":
   version "9.2.11"
   resolved "https://registry.yarnpkg.com/@deck.gl/layers/-/layers-9.2.11.tgz#0613a5fafa631d6294987aaff61fe723ff7f519b"
   integrity sha512-2FSb0Qa6YR+Rg6GWhYOGTUug3vtZ4uKcFdnrdiJoVXGyibKJMScKZIsivY0r/yQQZsaBjYqty5QuVJvdtEHxSA==
