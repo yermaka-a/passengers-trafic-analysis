@@ -3822,11 +3822,6 @@ debug@^4.1.0, debug@^4.1.1, debug@^4.3.1, debug@^4.3.2, debug@^4.4.0, debug@^4.4
   dependencies:
     ms "^2.1.3"
 
-deck.gl-leaflet@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/deck.gl-leaflet/-/deck.gl-leaflet-1.3.1.tgz#cb1edb0046560c1e68de0bf03c0954cd3cfbfe37"
-  integrity sha512-DQD0yW/Lay2thrifl/Ol9sM5w26hVqMH/+aMwktrdLW+8nkee0RqOFpj+Xcn6YWJOrJBkeMhBBetFJdB790rIA==
-
 deck.gl@^9.2.11:
   version "9.2.11"
   resolved "https://registry.yarnpkg.com/deck.gl/-/deck.gl-9.2.11.tgz#37532bb7d9e4a9ef5bcf058d0d55d455ece3ead5"

@@ -13,7 +13,8 @@ import * as L from "leaflet";
 import type { LngLatTuple, DeckGLObject } from "@/types";
 
 // Импорт Deck.gl
-import { LeafletLayer } from "deck.gl-leaflet";
+import { DeckOverlay } from "@deck.gl-community/leaflet";
+import { MapView } from "@deck.gl/core";
 import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
 
 const mapObjectStore = useMapObjectStore();
@@ -42,7 +43,7 @@ const {
 } = useDeckGL();
 
 // Ссылка на Deck.gl overlay
-let deckLayer: LeafletLayer | null = null;
+let deckOverlay: DeckOverlay | null = null;
 
 // Слои Deck.gl
 const deckLayers = computed(() => {
@@ -197,14 +198,16 @@ onMounted(() => {
     }).addTo(mapInstance.value);
 
     // Добавляем Deck.gl overlay
-    deckLayer = new LeafletLayer({
+    deckOverlay = new DeckOverlay({
+      views: [new MapView({ repeat: true })],
       layers: deckLayers.value,
-    }).addTo(mapInstance.value);
+    });
+    mapInstance.value.addLayer(deckOverlay);
 
     // Следим за изменениями слоёв
     watch(deckLayers, (newLayers) => {
-      if (deckLayer) {
-        deckLayer.setProps({ layers: newLayers });
+      if (deckOverlay) {
+        deckOverlay.setProps({ layers: newLayers });
       }
     });
 
@@ -226,9 +229,9 @@ onUnmounted(() => {
   }
 
   // Удаляем Deck.gl overlay
-  if (deckLayer) {
-    deckLayer.remove();
-    deckLayer = null;
+  if (deckOverlay) {
+    deckOverlay.remove();
+    deckOverlay = null;
   }
 });
 </script>
