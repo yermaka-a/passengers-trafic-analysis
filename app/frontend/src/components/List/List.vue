@@ -62,8 +62,10 @@ const changeColor = async (e: MouseEvent, id: string) => {
 const toggleStroke = async (id: string) => {
   const obj = Objects.value?.get(id);
   if (obj) {
-    const newWidth = obj.style.strokeWidth > 0 ? 0 : 2;
-    mapObjectStore.updateObjectStyle(id, { strokeWidth: newWidth });
+    // Переключаем только видимость обводки
+    // strokeState хранит фактические значения и будет восстановлен при включении
+    const hide = obj.style.strokeWidth > 0;
+    mapObjectStore.toggleStrokeVisibility(id, hide);
     const updatedObj = mapObjectStore.getObjectById(id);
     if (updatedObj) await updateObjectInBackend(updatedObj);
   }

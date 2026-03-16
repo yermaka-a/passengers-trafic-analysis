@@ -38,7 +38,7 @@ interface MapObjectStoreState {
   DraftObject: DraftObject | null;
   EditingObjectId: string | null;
   ClickedObjId: string | null;
-  // Хранение состояния обводки для каждого объекта
+  // Хранение последнего состояния обводки (всегда хранит фактические значения из БД)
   strokeState: Map<
     string,
     { strokeWidth: number; strokeDasharray?: [number, number] }
@@ -51,8 +51,12 @@ interface MapObjectStoreState {
 
 /**
  * Конвертирует объект из формата бэкенда в DeckGLObject
+ * Инициализирует strokeState фактическими значениями из БД
  */
-const backendToDeckGL = (backendObj: BackendObjectCreate): DeckGLObject => {
+const backendToDeckGL = (
+  backendObj: BackendObjectCreate,
+  id?: string,
+): DeckGLObject => {
   const { latlng, options } = backendObj;
 
   // Конвертируем координаты: [{lat, lng}] → [[lng, lat]]
@@ -60,6 +64,16 @@ const backendToDeckGL = (backendObj: BackendObjectCreate): DeckGLObject => {
 
   // Конвертируем цвет из hex в RGBA
   const color = hexToRGBA(options.color ?? "#0080FF", 255);
+
+  // Инициализируем strokeState фактическими значениями из БД
+  // Даже если stroke=false (обводка выключена), сохраняем реальные значения
+  if (id) {
+    const mapObjectStore = useMapObjectStore();
+    mapObjectStore.strokeState.set(id, {
+      strokeWidth: options.weight ?? 2,
+      strokeDasharray: options.dashArray as [number, number] | undefined,
+    });
+  }
 
   return {
     id: options.Id,
@@ -69,7 +83,7 @@ const backendToDeckGL = (backendObj: BackendObjectCreate): DeckGLObject => {
     description: options.description ?? undefined,
     style: {
       color,
-      strokeWidth: options.weight ?? 2,
+      strokeWidth: options.stroke ? (options.weight ?? 2) : 0,
       strokeDasharray: options.dashArray as [number, number] | undefined,
       filled: options.fill ?? false,
       fillOpacity: options.fillOpacity ?? 0.5,
@@ -80,13 +94,21 @@ const backendToDeckGL = (backendObj: BackendObjectCreate): DeckGLObject => {
 
 /**
  * Конвертирует DeckGLObject в формат для бэкенда
+ * Использует strokeState для получения фактических значений (даже если обводка выключена)
  */
 const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
+  const mapObjectStore = useMapObjectStore();
+  const state = mapObjectStore.strokeState.get(obj.id);
+
   // Конвертируем координаты обратно: [[lng, lat]] → [{lat, lng}]
   const latlng = deckGLToBackendCoords(obj.coordinates);
 
   // Конвертируем цвет из RGBA в hex
   const color = rgbaToHex(obj.style.color);
+
+  // Используем значения из strokeState (фактические значения из БД)
+  const weight = state?.strokeWidth ?? obj.style.strokeWidth;
+  const dashArray = state?.strokeDasharray ?? obj.style.strokeDasharray;
 
   return {
     latlng,
@@ -97,13 +119,11 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       customName: obj.customName ?? null,
       description: obj.description ?? null,
       color,
-      stroke: obj.style.strokeWidth > 0,
-      weight: obj.style.strokeWidth,
+      stroke: obj.style.strokeWidth > 0, // Флаг включённости обводки
+      weight: weight, // Фактическая жирность из strokeState
       fill: obj.style.filled,
       fillOpacity: obj.style.fillOpacity,
-      dashArray: obj.style.strokeDasharray
-        ? Array.from(obj.style.strokeDasharray)
-        : null,
+      dashArray: dashArray ? Array.from(dashArray) : null, // Фактический пунктир из strokeState
     },
   };
 };
@@ -255,32 +275,50 @@ export const useMapObjectStore = defineStore("mapobjects", {
     updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
       const obj = this.Objects.get(id);
       if (obj) {
-        // Сохраняем состояние обводки перед изменением
-        if (style.strokeWidth !== undefined) {
+        // Обновляем strokeState при изменении strokeWidth или strokeDasharray
+        if (
+          style.strokeWidth !== undefined ||
+          style.strokeDasharray !== undefined
+        ) {
           const currentState = this.strokeState.get(id);
+
           if (style.strokeWidth === 0) {
-            // Выключаем обводку - сохраняем текущее состояние (жирность и пунктир)
+            // Выключаем обводку - strokeState НЕ меняем, там хранятся фактические значения
+            // Просто применяем strokeWidth=0 для отображения
+          } else if (style.strokeWidth !== undefined) {
+            // Изменяем жирность - обновляем strokeState новым значением
             this.strokeState.set(id, {
-              strokeWidth: obj.style.strokeWidth,
-              strokeDasharray: obj.style.strokeDasharray,
+              strokeWidth: style.strokeWidth,
+              strokeDasharray:
+                style.strokeDasharray ?? currentState?.strokeDasharray,
             });
-          } else {
-            // Изменяем жирность (не 0) - обновляем strokeState
-            if (!currentState || currentState.strokeWidth !== 0) {
-              this.strokeState.set(id, {
-                strokeWidth: style.strokeWidth,
-                strokeDasharray:
-                  style.strokeDasharray ?? obj.style.strokeDasharray,
-              });
-            } else if (currentState && currentState.strokeWidth === 0) {
-              // Включаем обводку - восстанавливаем жирность и пунктир
-              style.strokeWidth = currentState.strokeWidth;
-              style.strokeDasharray = currentState.strokeDasharray;
-            }
+          } else if (style.strokeDasharray !== undefined) {
+            // Изменяем пунктир - обновляем strokeState
+            this.strokeState.set(id, {
+              strokeWidth: currentState?.strokeWidth ?? obj.style.strokeWidth,
+              strokeDasharray: style.strokeDasharray,
+            });
           }
         }
 
         obj.style = { ...obj.style, ...style };
+        this.Objects.set(id, obj);
+      }
+    },
+
+    /** Переключить видимость обводки (не меняя strokeState) */
+    toggleStrokeVisibility(id: string, hide: boolean) {
+      const obj = this.Objects.get(id);
+      const state = this.strokeState.get(id);
+      if (obj && state) {
+        if (hide) {
+          // Выключаем обводку - просто ставим 0, strokeState не трогаем
+          obj.style.strokeWidth = 0;
+        } else {
+          // Включаем обводку - восстанавливаем из strokeState
+          obj.style.strokeWidth = state.strokeWidth;
+          obj.style.strokeDasharray = state.strokeDasharray;
+        }
         this.Objects.set(id, obj);
       }
     },
@@ -322,14 +360,9 @@ export const useMapObjectStore = defineStore("mapobjects", {
 
       if (backendObjects) {
         this.Objects = new Map();
+        this.strokeState = new Map();
         for (const backendObj of backendObjects) {
-          const deckglObj = backendToDeckGL(backendObj);
-          console.log(
-            "[MapObjectStore] Конвертация:",
-            backendObj.options.Id,
-            "→",
-            deckglObj,
-          );
+          const deckglObj = backendToDeckGL(backendObj, backendObj.options.Id);
           this.Objects.set(deckglObj.id, deckglObj);
         }
         console.log(
