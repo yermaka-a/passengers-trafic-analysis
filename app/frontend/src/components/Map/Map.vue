@@ -2,23 +2,20 @@
 import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { storeToRefs } from "pinia";
-import { useMapStore, useTilesStore } from "@/store";
+import { useMapStore } from "@/store";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { useL7 } from "@/composables/useL7";
 import { TilesSwitcher } from "@/components/TilesSwitcher";
 import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
-import type { Map, MapMouseEvent } from "maplibre-gl";
 import type { LngLatTuple } from "@/types";
-import { L7MapConfig } from "@/config/L7MapConfig";
 
-// AntV L7 imports
+// AntV L7 imports - используем правильный импорт для L7 2.x
 import { Scene, PolygonLayer, LineLayer, PointLayer } from "@antv/l7";
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
-const tilesStore = useTilesStore();
 
 const { Objects, DraftObject } = storeToRefs(mapObjectStore);
 const { mapInstance } = storeToRefs(mapStore);
@@ -44,13 +41,8 @@ const {
   canRedo,
 } = useL7();
 
-// Выделение объекта при клике
-const selectObject = (id: string) => {
-  mapObjectStore.ClickedObjId = id;
-};
-
 // Обработка клика по карте
-const onMapClick = (e: MapMouseEvent) => {
+const onMapClick = (e: any) => {
   const lngLat: LngLatTuple = [e.lngLat.lng, e.lngLat.lat];
   console.log("[Map] Клик:", lngLat);
   handleMapClick(lngLat);
@@ -70,28 +62,28 @@ const createLayers = () => {
   if (!l7Scene.value) return;
 
   // Очищаем старые слои
-  l7Scene.value.layers.forEach((layer) => {
+  const layers = l7Scene.value.getLayers();
+  layers.forEach((layer: any) => {
     l7Scene.value?.removeLayer(layer);
   });
 
   const objectsArray = Array.from(Objects.value?.values() ?? []);
   console.log("[Map] Создаём слои, объектов:", objectsArray.length);
 
-  // Polygon слой
+  // Polygon слой (заливка)
   const polygonData = objectsArray
-    .filter((obj) => obj.type === "Polygon")
+    .filter((obj) => obj.type === "Polygon" && obj.style.filled)
     .map((obj) => ({
       id: obj.id,
       coordinates: obj.coordinates,
       fillColor: obj.style.fillColor ?? [0, 128, 255, 180],
-      strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
-      strokeWidth: obj.style.strokeWidth ?? 3,
-      filled: obj.style.filled ?? true,
       fillOpacity: obj.style.fillOpacity ?? 0.5,
     }));
 
   if (polygonData.length > 0) {
-    const polygonLayer = new PolygonLayer({})
+    const polygonLayer = new PolygonLayer({
+      autoFit: false,
+    })
       .source({
         type: "json",
         data: {
@@ -101,9 +93,6 @@ const createLayers = () => {
             properties: {
               id: obj.id,
               fillColor: obj.fillColor,
-              strokeColor: obj.strokeColor,
-              strokeWidth: obj.strokeWidth,
-              filled: obj.filled,
               fillOpacity: obj.fillOpacity,
             },
             geometry: {
@@ -114,15 +103,13 @@ const createLayers = () => {
         },
       })
       .shape("fill")
-      .color("fillColor", (c: number[]) => c as [number, number, number, number])
-      .active("id", (id: string) => {
-        selectObject(id);
-      })
+      .color("fillColor")
       .style({
         opacity: 1,
       });
 
     l7Scene.value.addLayer(polygonLayer);
+    console.log("[Map] Polygon fill слой добавлен");
   }
 
   // Line слой (для контуров полигонов и полилиний)
@@ -131,13 +118,14 @@ const createLayers = () => {
     .map((obj) => ({
       id: obj.id,
       coordinates: obj.coordinates,
-      strokeColor: obj.style.strokeColor ?? [255, 0, 0, 255],
+      strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
       strokeWidth: obj.style.strokeWidth ?? 3,
-      strokeDasharray: obj.style.strokeDasharray ?? [0, 0],
     }));
 
   if (lineData.length > 0) {
-    const lineLayer = new LineLayer({})
+    const lineLayer = new LineLayer({
+      autoFit: false,
+    })
       .source({
         type: "json",
         data: {
@@ -148,7 +136,6 @@ const createLayers = () => {
               id: obj.id,
               strokeColor: obj.strokeColor,
               strokeWidth: obj.strokeWidth,
-              strokeDasharray: obj.strokeDasharray,
             },
             geometry: {
               type: "LineString",
@@ -158,16 +145,14 @@ const createLayers = () => {
         },
       })
       .shape("line")
-      .size("strokeWidth", (w: number) => w)
-      .color("strokeColor", (c: number[]) => c as [number, number, number, number])
-      .active("id", (id: string) => {
-        selectObject(id);
-      })
+      .size("strokeWidth")
+      .color("strokeColor")
       .style({
         lineType: "dash",
       });
 
     l7Scene.value.addLayer(lineLayer);
+    console.log("[Map] Line слой добавлен");
   }
 
   // Point слой (для CircleMarker)
@@ -177,11 +162,13 @@ const createLayers = () => {
       id: obj.id,
       coordinates: obj.coordinates[0], // Первая точка
       fillColor: obj.style.fillColor ?? [0, 255, 0, 255],
-      radius: obj.style.radius ?? 10,
+      radius: 10,
     }));
 
   if (pointData.length > 0) {
-    const pointLayer = new PointLayer({})
+    const pointLayer = new PointLayer({
+      autoFit: false,
+    })
       .source({
         type: "json",
         data: {
@@ -201,16 +188,14 @@ const createLayers = () => {
         },
       })
       .shape("circle")
-      .size("radius", (r: number) => r)
-      .color("fillColor", (c: number[]) => c as [number, number, number, number])
-      .active("id", (id: string) => {
-        selectObject(id);
-      })
+      .size("radius")
+      .color("fillColor")
       .style({
         opacity: 1,
       });
 
     l7Scene.value.addLayer(pointLayer);
+    console.log("[Map] Point слой добавлен");
   }
 };
 
@@ -220,21 +205,25 @@ onMounted(async () => {
 
   if (mapInstance.value) {
     // Ждём загрузки карты
-    mapInstance.value.on("load", () => {
+    mapInstance.value.on("load", async () => {
       console.log("[Map] MapLibre загружена");
 
-      // Создаём L7 Scene
-      l7Scene.value = new Scene({
-        id: "map",
-        map: mapInstance.value,
-        ...L7MapConfig.scene,
-      });
+      // Создаём L7 Scene с правильной конфигурацией для L7 2.x
+      // Используем async/await для инициализации
+      try {
+        l7Scene.value = new Scene({
+          id: "map",
+          map: mapInstance.value as any,
+        });
 
-      // Ждём инициализации сцены
-      l7Scene.value.on("loaded", () => {
-        console.log("[Map] L7 Scene загружена");
-        createLayers();
-      });
+        // Ждём инициализации сцены
+        l7Scene.value.on("loaded", () => {
+          console.log("[Map] L7 Scene загружена");
+          createLayers();
+        });
+      } catch (error) {
+        console.error("[Map] Ошибка инициализации L7 Scene:", error);
+      }
     });
 
     // Обработчики событий

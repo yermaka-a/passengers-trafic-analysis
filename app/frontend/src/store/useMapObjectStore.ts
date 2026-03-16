@@ -121,7 +121,7 @@ const l7ToBackend = (obj: L7Object): BackendObjectCreate => {
       customName: obj.customName ?? null,
       description: obj.description ?? null,
       color,
-      stroke: obj.style.strokeWidth > 0, // Флаг включённости обводки
+      stroke: (obj.style.strokeWidth ?? 0) > 0, // Флаг включённости обводки
       weight: weight, // Фактическая жирность из strokeState
       fill: obj.style.filled,
       fillOpacity: obj.style.fillOpacity,
@@ -290,14 +290,15 @@ export const useMapObjectStore = defineStore("mapobjects", {
           } else if (style.strokeWidth !== undefined) {
             // Изменяем жирность - обновляем strokeState новым значением
             this.strokeState.set(id, {
-              strokeWidth: style.strokeWidth,
+              strokeWidth: style.strokeWidth ?? currentState?.strokeWidth ?? 2,
               strokeDasharray:
                 style.strokeDasharray ?? currentState?.strokeDasharray,
             });
           } else if (style.strokeDasharray !== undefined) {
             // Изменяем пунктир - обновляем strokeState
             this.strokeState.set(id, {
-              strokeWidth: currentState?.strokeWidth ?? obj.style.strokeWidth,
+              strokeWidth:
+                currentState?.strokeWidth ?? obj.style.strokeWidth ?? 2,
               strokeDasharray: style.strokeDasharray,
             });
           }

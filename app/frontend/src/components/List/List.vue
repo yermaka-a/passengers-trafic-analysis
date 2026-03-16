@@ -29,7 +29,7 @@ import { useMapStore } from "@/store";
 import { useApi } from "@/composables";
 import { Spinner } from "@/components/ui/spinner";
 import { ref, Teleport } from "vue";
-import type { DeckGLObject } from "@/types";
+import type { L7Object } from "@/types";
 import { rgbaToHex, hexToRGBA } from "@/utils";
 
 const mapObjectStore = useMapObjectStore();
@@ -50,7 +50,10 @@ const changeColor = async (e: MouseEvent, id: string) => {
   const target = e.target as HTMLInputElement;
   if (!target.value) return; // Защита от пустого цвета
   const newColor = hexToRGBA(target.value);
-  mapObjectStore.updateObjectStyle(id, { color: newColor });
+  mapObjectStore.updateObjectStyle(id, {
+    fillColor: newColor,
+    strokeColor: newColor,
+  });
 
   // Берём обновлённый объект из store
   const updatedObj = mapObjectStore.getObjectById(id);
@@ -64,7 +67,7 @@ const toggleStroke = async (id: string) => {
   if (obj) {
     // Переключаем только видимость обводки
     // strokeState хранит фактические значения и будет восстановлен при включении
-    const hide = obj.style.strokeWidth > 0;
+    const hide = (obj.style.strokeWidth ?? 0) > 0;
     mapObjectStore.toggleStrokeVisibility(id, hide);
     const updatedObj = mapObjectStore.getObjectById(id);
     if (updatedObj) await updateObjectInBackend(updatedObj);
@@ -113,8 +116,8 @@ const toggleFill = async (id: string) => {
 };
 
 // Обновление объекта в бэкенде
-const updateObjectInBackend = async (obj: DeckGLObject) => {
-  const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+const updateObjectInBackend = async (obj: L7Object) => {
+  const backendObj = mapObjectStore.convertL7ToBackend(obj);
   const result = await updateObject(backendObj);
 
   // Проверяем успешность обновления
@@ -146,12 +149,12 @@ const findOnMap = (id: string) => {
 // ============================================================================
 
 // Получение координат для отображения
-const getCoordinates = (obj: DeckGLObject) => {
+const getCoordinates = (obj: L7Object) => {
   return obj.coordinates.map(([lng, lat]) => ({ lat, lng }));
 };
 
 // Конвертация dashArray для слайдера
-const getDashValue = (obj: DeckGLObject): number[] => {
+const getDashValue = (obj: L7Object): number[] => {
   if (!obj.style.strokeDasharray) return [0];
   return [obj.style.strokeDasharray[0] ?? 0];
 };
@@ -232,11 +235,16 @@ const getDashValue = (obj: DeckGLObject): number[] => {
                 @input="changeColor($event, obj[0])"
                 class="w-1/4 min-w-16"
                 type="color"
-                :model-value="rgbaToHex(obj[1].style.color)"
+                :value="
+                  rgbaToHex(
+                    obj[1].style.fillColor ??
+                      obj[1].style.strokeColor ?? [0, 128, 255, 255],
+                  )
+                "
               />
 
               <Toggle
-                :model-value="obj[1].style.strokeWidth > 0"
+                :model-value="(obj[1].style.strokeWidth ?? 0) > 0"
                 @click="toggleStroke(obj[0])"
                 size="default"
                 variant="outline"

@@ -15,10 +15,10 @@ const switchLayer = (layer: TileLayer) => {
     // Получаем текущий стиль и обновляем источник тайлов
     const style = mapStore.mapInstance.getStyle();
 
-    if (style.sources?.["osm"]) {
+    if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
       // Обновляем тайлы и атрибуцию
-      style.sources["osm"].tiles = currentLayer.tiles;
-      style.sources["osm"].attribution = currentLayer.attribution;
+      (style.sources["osm"] as any).tiles = currentLayer.tiles;
+      (style.sources["osm"] as any).attribution = currentLayer.attribution;
 
       // Применяем обновлённый стиль
       mapStore.mapInstance.setStyle(style);
@@ -37,7 +37,7 @@ const switchLayer = (layer: TileLayer) => {
         'px-3 py-1.5 rounded text-sm font-medium transition-colors',
         tilesStore.currentLayer === key
           ? 'bg-blue-500 text-white'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200',
       ]"
     >
       {{ layer.name }}

@@ -52,6 +52,7 @@ export interface L7Style {
   fillColor?: [number, number, number, number]; // RGBA
   strokeColor?: [number, number, number, number];
   strokeWidth?: number;
+  strokeDasharray?: [number, number];
   filled?: boolean;
   fillOpacity?: number;
   radius?: number; // для CircleMarker
