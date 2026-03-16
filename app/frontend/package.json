@@ -11,17 +11,15 @@
     "dev:all": "concurrently \"yarn dev\" \"wait-on http://localhost:5173 && yarn start:py\""
   },
   "dependencies": {
-    "@deck.gl-community/leaflet": "^9.2.8",
-    "@deck.gl/extensions": "^9.2.11",
-    "@deck.gl/layers": "^9.2.11",
+    "@antv/l7": "^2.25.1",
+    "@antv/l7-maps": "^2.25.1",
     "@tailwindcss/vite": "^4.1.18",
     "@turf/turf": "^7.3.3",
     "@vueuse/core": "^14.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "deck.gl": "^9.2.11",
-    "leaflet": "^1.9.4",
     "lucide-vue-next": "^0.563.0",
+    "maplibre-gl": "^5.1.0",
     "pinia": "^3.0.4",
     "reka-ui": "^2.8.0",
     "shadcn-vue": "^2.4.3",
@@ -33,8 +31,8 @@
     "vue-router": "^5.0.1"
   },
   "devDependencies": {
-    "@types/leaflet": "^1.9.21",
     "@types/node": "^25.2.2",
+    "@types/maplibre-gl": "^1.14.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "concurrently": "^9.2.1",

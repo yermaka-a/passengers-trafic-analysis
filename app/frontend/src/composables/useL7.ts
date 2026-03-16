@@ -3,14 +3,14 @@ import { useMapObjectStore } from "@/store/useMapObjectStore";
 import type { LngLatTuple } from "@/types";
 
 /**
- * Composable для управления Deck.gl объектами на карте
+ * Composable для управления AntV L7 объектами на карте
  *
  * Обрабатывает:
  * - Создание объектов (Polygon, Polyline, CircleMarker)
  * - Историю undo/redo
  * - Редактирование координат
  */
-export const useDeckGL = () => {
+export const useL7 = () => {
   const mapObjectStore = useMapObjectStore();
 
   // История для undo/redo
@@ -159,4 +159,4 @@ export const useDeckGL = () => {
   };
 };
 
-export default useDeckGL;
+export default useL7;

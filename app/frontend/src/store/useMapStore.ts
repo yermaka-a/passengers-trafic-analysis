@@ -1,14 +1,17 @@
 import { markRaw } from "vue";
 import { defineStore } from "pinia";
-import * as L from "leaflet";
-import { LeafletMapConfig } from "@/config";
+import { Map, NavigationControl, AttributionControl } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { MaplibreMapConfig } from "@/config/MaplibreMapConfig";
 
 interface MapStore {
-  mapInstance: L.Map | null;
+  mapInstance: Map | null;
   viewState: {
     latitude: number;
     longitude: number;
     zoom: number;
+    pitch: number;
+    bearing: number;
   };
 }
 
@@ -17,9 +20,11 @@ export const useMapStore = defineStore("mapstore", {
     return {
       mapInstance: null,
       viewState: {
-        latitude: LeafletMapConfig.startedCoords[0],
-        longitude: LeafletMapConfig.startedCoords[1],
-        zoom: LeafletMapConfig.startedZoom,
+        latitude: MaplibreMapConfig.initialViewState.center[1]!,
+        longitude: MaplibreMapConfig.initialViewState.center[0]!,
+        zoom: MaplibreMapConfig.initialViewState.zoom,
+        pitch: MaplibreMapConfig.initialViewState.pitch,
+        bearing: MaplibreMapConfig.initialViewState.bearing,
       },
     };
   },
@@ -32,25 +37,41 @@ export const useMapStore = defineStore("mapstore", {
     },
   },
   actions: {
-    initMap(id: string) {
-      if (this.mapInstance) return; // Не создаем дубликат
+    initMap(containerId: string) {
+      if (this.mapInstance) return;
 
-      const instance = L.map(id, { zoomControl: false }).setView(
-        LeafletMapConfig.startedCoords,
-        LeafletMapConfig.startedZoom,
-      );
+      const instance = new Map({
+        container: containerId,
+        style: MaplibreMapConfig.style,
+        center: MaplibreMapConfig.initialViewState.center,
+        zoom: MaplibreMapConfig.initialViewState.zoom,
+        pitch: MaplibreMapConfig.initialViewState.pitch,
+        bearing: MaplibreMapConfig.initialViewState.bearing,
+        ...MaplibreMapConfig.interaction,
+      });
+
+      // Добавляем контролы
+      if (MaplibreMapConfig.controls.navigation) {
+        instance.addControl(new NavigationControl());
+      }
+      if (MaplibreMapConfig.controls.attribution) {
+        instance.addControl(new AttributionControl());
+      }
 
       this.mapInstance = markRaw(instance);
     },
     updateViewState(updates: Partial<typeof this.viewState>) {
       this.viewState = { ...this.viewState, ...updates };
 
-      // Если карта существует, обновляем и её
       if (this.mapInstance) {
-        this.mapInstance.setView(
-          [this.viewState.latitude, this.viewState.longitude],
-          this.viewState.zoom,
-        );
+        const { latitude, longitude, zoom, pitch, bearing } = this.viewState;
+        this.mapInstance.easeTo({
+          center: [longitude, latitude],
+          zoom,
+          pitch,
+          bearing,
+          duration: 500,
+        });
       }
     },
   },

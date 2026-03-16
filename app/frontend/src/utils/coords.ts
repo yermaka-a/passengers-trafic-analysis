@@ -1,45 +1,49 @@
 /**
  * Утилиты для конвертации координат между форматами
- * 
- * Leaflet использует [lat, lng] (широта, долгота)
- * Deck.gl / GeoJSON используют [lng, lat] (долгота, широта)
+ *
+ * MapLibre / L7 / GeoJSON используют [lng, lat] (долгота, широта)
  * Бэкенд хранит { lat: number, lng: number }
  */
 
-import type { LatLngTuple, LngLatTuple, BackendLatLng } from '@/types';
+import type { LngLatTuple, BackendLatLng } from "@/types";
 
 /**
- * Конвертирует Leaflet [lat, lng] → Deck.gl [lng, lat]
+ * Конвертирует массив координат из бэкенда в L7 формат
+ * Backend: [{lat, lng}, ...] → L7: [[lng, lat], ...]
  */
-export const leafletToDeckGL = ([lat, lng]: LatLngTuple): LngLatTuple => [lng, lat];
-
-/**
- * Конвертирует Deck.gl [lng, lat] → Leaflet [lat, lng]
- */
-export const deckGLToLeaflet = ([lng, lat]: LngLatTuple): LatLngTuple => [lat, lng];
-
-/**
- * Конвертирует массив координат из бэкенда в Deck.gl формат
- * Backend: [{lat, lng}, ...] → Deck.gl: [[lng, lat], ...]
- */
-export const backendCoordsToDeckGL = (coords: BackendLatLng[]): LngLatTuple[] => {
+export const backendCoordsToL7 = (coords: BackendLatLng[]): LngLatTuple[] => {
   return coords.map(({ lat, lng }) => [lng, lat]);
 };
 
 /**
- * Конвертирует Deck.gl координаты в формат для бэкенда
- * Deck.gl: [[lng, lat], ...] → Backend: [{lat, lng}, ...]
+ * Конвертирует L7 координаты в формат для бэкенда
+ * L7: [[lng, lat], ...] → Backend: [{lat, lng}, ...]
  */
-export const deckGLToBackendCoords = (coords: LngLatTuple[]): BackendLatLng[] => {
+export const l7ToBackendCoords = (coords: LngLatTuple[]): BackendLatLng[] => {
   return coords.map(([lng, lat]) => ({ lat, lng }));
 };
 
 /**
- * Конвертирует одиночную координату из Backend в Deck.gl
+ * Конвертирует одиночную координату из Backend в L7
  */
-export const backendCoordToDeckGL = ({ lat, lng }: BackendLatLng): LngLatTuple => [lng, lat];
+export const backendCoordToL7 = ({ lat, lng }: BackendLatLng): LngLatTuple => [
+  lng,
+  lat,
+];
 
 /**
- * Конвертирует одиночную координату из Deck.gl в Backend
+ * Конвертирует одиночную координату из L7 в Backend
  */
-export const deckGLToBackendCoord = ([lng, lat]: LngLatTuple): BackendLatLng => ({ lat, lng });
+export const l7ToBackendCoord = ([lng, lat]: LngLatTuple): BackendLatLng => ({
+  lat,
+  lng,
+});
+
+// ============================================================================
+// АЛИАСЫ ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ (можно удалить после рефакторинга)
+// ============================================================================
+
+export const backendCoordsToDeckGL = backendCoordsToL7;
+export const deckGLToBackendCoords = l7ToBackendCoords;
+export const backendCoordToDeckGL = backendCoordToL7;
+export const deckGLToBackendCoord = l7ToBackendCoord;

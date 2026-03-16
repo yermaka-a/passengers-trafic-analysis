@@ -76,9 +76,9 @@ const changeDash = async (value: number[], id: string) => {
   if (obj && value) {
     // [длина_штриха, длина_пробела] - пробел равен половине штриха
     const dashValue =
-      value[0] === 0 ? [0, 0] : ([value[0], value[0] / 2] as [number, number]);
+      value[0] === 0 ? [0, 0] : ([value[0], value[0]! / 2] as [number, number]);
     mapObjectStore.updateObjectStyle(id, {
-      strokeDasharray: dashValue,
+      strokeDasharray: dashValue as [number, number],
     });
     const updatedObj = mapObjectStore.getObjectById(id);
     if (updatedObj) await updateObjectInBackend(updatedObj);

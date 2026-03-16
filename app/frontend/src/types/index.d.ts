@@ -1,40 +1,17 @@
-import "leaflet";
 import type { ObjTypes, ObjNames } from "@/store/useMapObjectStore";
-
-// ============================================================================
-// РАСШИРЕНИЕ ТИПОВ LEAFLET (для обратной совместимости)
-// ============================================================================
-
-declare module "leaflet" {
-  interface PolylineOptions {
-    Id: string;
-    name: ObjNames;
-    objType: Exclude<ObjTypes, "Edit">;
-    CustomName?: string;
-    description?: string;
-  }
-  interface CircleMarkerOptions {
-    Id: string;
-    name: ObjNames;
-    objType: Exclude<ObjTypes, "Edit">;
-    CustomName?: string;
-    description?: string;
-  }
-}
-
-import * as L from "leaflet";
+import type { Map } from "maplibre-gl";
 
 // ============================================================================
 // ТИПЫ ДЛЯ БЭКЕНДА (точно соответствуют Pydantic схемам)
 // ============================================================================
 
-/** Координата в формате бэкенда (Leaflet) */
+/** Координата в формате бэкенда */
 export interface BackendLatLng {
   lat: number;
   lng: number;
 }
 
-/** Опции объекта (точно как Options в Pydantic) */
+/** Опции объекта */
 export interface BackendObjectOptions {
   Id: string;
   name: string;
@@ -55,7 +32,7 @@ export interface BackendObjectCreate {
   options: BackendObjectOptions;
 }
 
-/** Ответ от бэкенда (упрощённый) */
+/** Ответ от бэкенда */
 export interface BackendResponse {
   status: "success" | "failed";
   message?: string;
@@ -64,37 +41,33 @@ export interface BackendResponse {
 }
 
 // ============================================================================
-// ТИПЫ ДЛЯ DECK.GL
+// ТИПЫ ДЛЯ ANTВ L7
 // ============================================================================
 
-export type LatLngTuple = [number, number]; // [lat, lng] - Leaflet формат
-export type LngLatTuple = [number, number]; // [lng, lat] - Deck.gl / GeoJSON формат
+/** Координата в формате L7: [lng, lat] (GeoJSON standard) */
+export type LngLatTuple = [number, number];
 
-export interface DeckGLStyle {
-  color: [number, number, number, number]; // RGBA [0-255]
-  strokeWidth: number;
-  strokeDasharray?: [number, number];
-  filled: boolean;
-  fillOpacity: number;
+/** Стиль L7 объекта */
+export interface L7Style {
+  fillColor?: [number, number, number, number]; // RGBA
+  strokeColor?: [number, number, number, number];
+  strokeWidth?: number;
+  filled?: boolean;
+  fillOpacity?: number;
+  radius?: number; // для CircleMarker
 }
 
-/** Объект Deck.gl для отображения на карте */
-export interface DeckGLObject {
+/** Объект L7 для отображения на карте */
+export interface L7Object {
   id: string;
   type: Exclude<ObjTypes, "Edit">;
   name: string;
   customName?: string;
   description?: string;
-  style: DeckGLStyle;
-  // Координаты в формате Deck.gl [lng, lat]
-  coordinates: LngLatTuple[];
+  style: L7Style;
+  coordinates: LngLatTuple[]; // [lng, lat]
 }
 
 // ============================================================================
-// СУЩЕСТВУЮЩИЙ ТИП (для обратной совместимости)
+// УДАЛЕНО: Leaflet и Deck.gl типы больше не нужны
 // ============================================================================
-
-export interface ObjectCreate {
-  latlng: L.LatLng[];
-  options: L.PolylineOptions | L.CircleMarkerOptions;
-}

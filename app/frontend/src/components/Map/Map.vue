@@ -1,23 +1,20 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import "leaflet/dist/leaflet.css";
+import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from "vue";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { storeToRefs } from "pinia";
-import { LeafletMapConfig } from "@/config";
-import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 import { useMapStore, useTilesStore } from "@/store";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
-import { useDeckGL } from "@/composables/useDeckGL";
+import { useL7 } from "@/composables/useL7";
+import { TilesSwitcher } from "@/components/TilesSwitcher";
 import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
-import * as L from "leaflet";
+import type { Map, MapMouseEvent } from "maplibre-gl";
 import type { LngLatTuple } from "@/types";
+import { L7MapConfig } from "@/config/L7MapConfig";
 
-// Импорт Deck.gl
-import { DeckOverlay } from "@deck.gl-community/leaflet";
-import { MapView } from "@deck.gl/core";
-import { PathLayer, ScatterplotLayer, PolygonLayer } from "@deck.gl/layers";
-import { PathStyleExtension } from "@deck.gl/extensions";
+// AntV L7 imports
+import { Scene, PolygonLayer, LineLayer, PointLayer } from "@antv/l7";
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
@@ -26,6 +23,9 @@ const tilesStore = useTilesStore();
 const { Objects, DraftObject } = storeToRefs(mapObjectStore);
 const { mapInstance } = storeToRefs(mapStore);
 
+// L7 Scene
+const l7Scene = shallowRef<Scene | null>(null);
+
 // Курсоры
 const plusCursor = computed(() => `url("${PlusCursor}") 16 16, auto`);
 const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
@@ -33,7 +33,7 @@ const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
 // Состояние для курсора
 const isDragging = ref(false);
 
-// Deck.gl composable
+// L7 composable
 const {
   handleMapClick,
   finalizeObject,
@@ -42,219 +42,18 @@ const {
   redo,
   canUndo,
   canRedo,
-} = useDeckGL();
-
-// Ссылка на Deck.gl overlay
-let deckOverlay: (DeckOverlay & { _deck?: any }) | null = null;
-
-// Слои Deck.gl
-const deckLayers = computed(() => {
-  const result: (PathLayer | ScatterplotLayer | PolygonLayer)[] = [];
-
-  // Force reactivity - явно читаем Objects.value
-  const objectsCount = Objects.value?.size ?? 0;
-  console.log("[Map] deckLayers вычисляется, объектов:", objectsCount);
-
-  // Слои для существующих объектов
-  Objects.value?.forEach((obj) => {
-    // Явно читаем все свойства для реактивности
-    const color = obj.style.color;
-    const strokeWidth = obj.style.strokeWidth;
-    const strokeDasharray = obj.style.strokeDasharray;
-    const filled = obj.style.filled;
-    const fillOpacity = obj.style.fillOpacity;
-
-    // Создаём чистый объект без Proxy для Deck.gl
-    const layerData = {
-      id: obj.id,
-      type: obj.type,
-      coordinates: obj.coordinates.map(
-        (coord: LngLatTuple) => [coord[0]!, coord[1]!] as [number, number],
-      ),
-      style: {
-        color,
-        strokeWidth,
-        strokeDasharray,
-        filled,
-        fillOpacity,
-      },
-    };
-
-    if (obj.type === "Polygon") {
-      // Заливка полигона (если включена) - используем PolygonLayer
-      if (obj.style.filled) {
-        result.push(
-          new PolygonLayer({
-            id: `polygon-fill-${obj.id}`,
-            data: [layerData],
-            getPolygon: (d: typeof layerData) => d.coordinates,
-            getFillColor: (d: typeof layerData) =>
-              [
-                ...d.style.color.slice(0, 3),
-                Math.round(d.style.fillOpacity * 255),
-              ] as [number, number, number, number],
-            getLineColor: [0, 0, 0, 0],
-            pickable: false,
-            stroked: false,
-            filled: true,
-          }),
-        );
-      }
-
-      // Контур полигона
-      result.push(
-        new PathLayer({
-          id: `polygon-stroke-${obj.id}`,
-          data: [layerData],
-          getPath: (d: typeof layerData) => d.coordinates,
-          getLineColor: () => color,
-          getWidth: () => strokeWidth,
-          getDashArray: () =>
-            strokeDasharray && strokeDasharray[0] > 0
-              ? strokeDasharray
-              : [0, 0],
-          extensions: [new PathStyleExtension({ dash: true })],
-          pickable: true,
-          autoHighlight: true,
-          onClick: () => selectObject(obj.id),
-          updateTriggers: {
-            getLineColor: [color],
-            getWidth: [strokeWidth],
-            getDashArray: [strokeDasharray],
-          },
-        }),
-      );
-    } else if (obj.type === "Polyline") {
-      result.push(
-        new PathLayer({
-          id: `polyline-${obj.id}`,
-          data: [layerData],
-          getPath: (d: typeof layerData) => d.coordinates,
-          getLineColor: () => color,
-          getWidth: () => strokeWidth,
-          getDashArray: () =>
-            strokeDasharray && strokeDasharray[0] > 0
-              ? strokeDasharray
-              : [0, 0],
-          extensions: [new PathStyleExtension({ dash: true })],
-          pickable: true,
-          autoHighlight: true,
-          onClick: () => selectObject(obj.id),
-          updateTriggers: {
-            getLineColor: [color],
-            getWidth: [strokeWidth],
-            getDashArray: [strokeDasharray],
-          },
-        }),
-      );
-    } else if (obj.type === "CircleMarker") {
-      result.push(
-        new ScatterplotLayer({
-          id: `circle-${obj.id}`,
-          data: [layerData],
-          getPosition: (d: typeof layerData): [number, number] =>
-            d.coordinates[0]!,
-          getFillColor: () => color,
-          getLineColor: [0, 0, 0, 0],
-          getRadius: 10,
-          radiusMinPixels: 8,
-          radiusMaxPixels: 20,
-          pickable: true,
-          autoHighlight: true,
-          onClick: () => selectObject(obj.id),
-          updateTriggers: {
-            getFillColor: [color],
-          },
-        }),
-      );
-    }
-  });
-
-  // Слой для draft объекта (в процессе создания)
-  if (DraftObject.value && DraftObject.value.coordinates.length > 0) {
-    console.log(
-      "[Map] Draft объект:",
-      DraftObject.value.type,
-      DraftObject.value.coordinates.length,
-      "точек",
-    );
-
-    // Для CircleMarker показываем даже с 1 точкой
-    if (DraftObject.value.type === "CircleMarker") {
-      const draftLayer = createDraftLayer(DraftObject.value);
-      if (draftLayer) {
-        console.log("[Map] Draft слой создан");
-        result.push(draftLayer);
-      }
-    } else if (DraftObject.value.coordinates.length >= 2) {
-      // Для Polygon/Polyline нужно минимум 2 точки
-      const draftLayer = createDraftLayer(DraftObject.value);
-      if (draftLayer) {
-        console.log("[Map] Draft слой создан");
-        result.push(draftLayer);
-      }
-    }
-  }
-
-  console.log("[Map] Всего слоёв:", result.length);
-  return result;
-});
+} = useL7();
 
 // Выделение объекта при клике
 const selectObject = (id: string) => {
   mapObjectStore.ClickedObjId = id;
 };
 
-// Создание слоя для draft объекта
-const createDraftLayer = (
-  draft: typeof DraftObject.value,
-): PathLayer | ScatterplotLayer | null => {
-  if (!draft) return null;
-
-  // Используем цвет из конфига для соответствия финальному объекту
-  const color = DeckGLMapConfig.defaultStyles[draft.type]?.color ?? [
-    255, 255, 0, 255,
-  ];
-
-  // Конвертируем координаты из Proxy
-  const coordinates = draft.coordinates.map(
-    (coord: LngLatTuple) => [coord[0], coord[1]] as [number, number],
-  );
-
-  if (draft.type === "CircleMarker" && coordinates.length > 0) {
-    return new ScatterplotLayer({
-      id: "draft-circle",
-      data: [{ ...draft, coordinates }],
-      getPosition: (
-        d: typeof draft & { coordinates: [number, number][] },
-      ): [number, number] => d.coordinates[0]!,
-      getFillColor: color,
-      getLineColor: [0, 0, 0, 0],
-      getRadius: 10,
-      radiusMinPixels: 8,
-      pickable: false,
-    });
-  } else if (coordinates.length > 1) {
-    return new PathLayer({
-      id: "draft-path",
-      data: [{ ...draft, coordinates }],
-      getPath: (
-        d: typeof draft & { coordinates: [number, number][] },
-      ): [number, number][] => d.coordinates,
-      getLineColor: color,
-      getWidth: 3,
-      pickable: false,
-    });
-  }
-
-  return null;
-};
-
 // Обработка клика по карте
-const onMapClick = (e: L.LeafletMouseEvent) => {
-  const latlng: LngLatTuple = [e.latlng.lng, e.latlng.lat];
-  console.log("[Map] Клик:", latlng, "Leaflet:", e.latlng);
-  handleMapClick(latlng);
+const onMapClick = (e: MapMouseEvent) => {
+  const lngLat: LngLatTuple = [e.lngLat.lng, e.lngLat.lat];
+  console.log("[Map] Клик:", lngLat);
+  handleMapClick(lngLat);
 };
 
 // Обработка перетаскивания
@@ -266,98 +65,214 @@ const onMapDragEnd = () => {
   isDragging.value = false;
 };
 
+// Создание слоёв L7
+const createLayers = () => {
+  if (!l7Scene.value) return;
+
+  // Очищаем старые слои
+  l7Scene.value.layers.forEach((layer) => {
+    l7Scene.value?.removeLayer(layer);
+  });
+
+  const objectsArray = Array.from(Objects.value?.values() ?? []);
+  console.log("[Map] Создаём слои, объектов:", objectsArray.length);
+
+  // Polygon слой
+  const polygonData = objectsArray
+    .filter((obj) => obj.type === "Polygon")
+    .map((obj) => ({
+      id: obj.id,
+      coordinates: obj.coordinates,
+      fillColor: obj.style.fillColor ?? [0, 128, 255, 180],
+      strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
+      strokeWidth: obj.style.strokeWidth ?? 3,
+      filled: obj.style.filled ?? true,
+      fillOpacity: obj.style.fillOpacity ?? 0.5,
+    }));
+
+  if (polygonData.length > 0) {
+    const polygonLayer = new PolygonLayer({})
+      .source({
+        type: "json",
+        data: {
+          type: "FeatureCollection",
+          features: polygonData.map((obj) => ({
+            type: "Feature",
+            properties: {
+              id: obj.id,
+              fillColor: obj.fillColor,
+              strokeColor: obj.strokeColor,
+              strokeWidth: obj.strokeWidth,
+              filled: obj.filled,
+              fillOpacity: obj.fillOpacity,
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [obj.coordinates],
+            },
+          })),
+        },
+      })
+      .shape("fill")
+      .color("fillColor", (c: number[]) => c as [number, number, number, number])
+      .active("id", (id: string) => {
+        selectObject(id);
+      })
+      .style({
+        opacity: 1,
+      });
+
+    l7Scene.value.addLayer(polygonLayer);
+  }
+
+  // Line слой (для контуров полигонов и полилиний)
+  const lineData = objectsArray
+    .filter((obj) => obj.type === "Polygon" || obj.type === "Polyline")
+    .map((obj) => ({
+      id: obj.id,
+      coordinates: obj.coordinates,
+      strokeColor: obj.style.strokeColor ?? [255, 0, 0, 255],
+      strokeWidth: obj.style.strokeWidth ?? 3,
+      strokeDasharray: obj.style.strokeDasharray ?? [0, 0],
+    }));
+
+  if (lineData.length > 0) {
+    const lineLayer = new LineLayer({})
+      .source({
+        type: "json",
+        data: {
+          type: "FeatureCollection",
+          features: lineData.map((obj) => ({
+            type: "Feature",
+            properties: {
+              id: obj.id,
+              strokeColor: obj.strokeColor,
+              strokeWidth: obj.strokeWidth,
+              strokeDasharray: obj.strokeDasharray,
+            },
+            geometry: {
+              type: "LineString",
+              coordinates: obj.coordinates,
+            },
+          })),
+        },
+      })
+      .shape("line")
+      .size("strokeWidth", (w: number) => w)
+      .color("strokeColor", (c: number[]) => c as [number, number, number, number])
+      .active("id", (id: string) => {
+        selectObject(id);
+      })
+      .style({
+        lineType: "dash",
+      });
+
+    l7Scene.value.addLayer(lineLayer);
+  }
+
+  // Point слой (для CircleMarker)
+  const pointData = objectsArray
+    .filter((obj) => obj.type === "CircleMarker")
+    .map((obj) => ({
+      id: obj.id,
+      coordinates: obj.coordinates[0], // Первая точка
+      fillColor: obj.style.fillColor ?? [0, 255, 0, 255],
+      radius: obj.style.radius ?? 10,
+    }));
+
+  if (pointData.length > 0) {
+    const pointLayer = new PointLayer({})
+      .source({
+        type: "json",
+        data: {
+          type: "FeatureCollection",
+          features: pointData.map((obj) => ({
+            type: "Feature",
+            properties: {
+              id: obj.id,
+              fillColor: obj.fillColor,
+              radius: obj.radius,
+            },
+            geometry: {
+              type: "Point",
+              coordinates: obj.coordinates,
+            },
+          })),
+        },
+      })
+      .shape("circle")
+      .size("radius", (r: number) => r)
+      .color("fillColor", (c: number[]) => c as [number, number, number, number])
+      .active("id", (id: string) => {
+        selectObject(id);
+      })
+      .style({
+        opacity: 1,
+      });
+
+    l7Scene.value.addLayer(pointLayer);
+  }
+};
+
 // Инициализация карты
-onMounted(() => {
+onMounted(async () => {
   mapStore.initMap("map");
 
   if (mapInstance.value) {
-    // Добавляем контроль атрибуции
-    L.control
-      .attribution({
-        position: "topleft",
-        prefix: "leaflet",
-      })
-      .addTo(mapInstance.value);
+    // Ждём загрузки карты
+    mapInstance.value.on("load", () => {
+      console.log("[Map] MapLibre загружена");
 
-    // Добавляем тайловый слой
-    L.tileLayer(tilesStore.$state.OSM.TilesURL, {
-      attribution: LeafletMapConfig.OSMAttr,
-    }).addTo(mapInstance.value);
+      // Создаём L7 Scene
+      l7Scene.value = new Scene({
+        id: "map",
+        map: mapInstance.value,
+        ...L7MapConfig.scene,
+      });
 
-    // Добавляем Deck.gl overlay
-    deckOverlay = new DeckOverlay({
-      views: [new MapView({ repeat: true })],
-      layers: deckLayers.value,
+      // Ждём инициализации сцены
+      l7Scene.value.on("loaded", () => {
+        console.log("[Map] L7 Scene загружена");
+        createLayers();
+      });
     });
-    mapInstance.value.addLayer(deckOverlay);
-    console.log("[Map] Deck.gl overlay добавлен");
-    console.log("[Map] deckOverlay:", deckOverlay);
-
-    // Следим за изменениями в Objects - принудительная реактивность
-    watch(
-      () => Objects.value,
-      (newObjects) => {
-        console.log("[Map] Objects изменился:", newObjects?.size ?? 0);
-        // Принудительно обновляем layers
-        if (deckOverlay && deckOverlay._deck) {
-          console.log(
-            "[Map] Принудительное обновление layers:",
-            deckLayers.value.length,
-          );
-          // Полностью заменяем слои
-          deckOverlay._deck.setProps({
-            layers: deckLayers.value,
-            // Принудительная перерисовка
-            _animate: true,
-          });
-          // Вызываем redraw для гарантии
-          setTimeout(() => {
-            if (deckOverlay?._deck) {
-              deckOverlay._deck.redraw();
-            }
-          }, 50);
-        }
-      },
-      { deep: true },
-    );
-
-    // Следим за DraftObject - перерисовка при создании
-    watch(
-      () => DraftObject.value,
-      (newDraft) => {
-        console.log(
-          "[Map] Draft объект изменился:",
-          newDraft?.coordinates.length ?? 0,
-          "точек",
-        );
-        // Принудительно обновляем layers
-        if (deckOverlay && deckOverlay._deck) {
-          console.log(
-            "[Map] Принудительное обновление layers для draft:",
-            deckLayers.value.length,
-          );
-          deckOverlay._deck.setProps({
-            layers: deckLayers.value,
-            _animate: true,
-          });
-          setTimeout(() => {
-            if (deckOverlay?._deck) {
-              deckOverlay._deck.redraw();
-            }
-          }, 50);
-        }
-      },
-      { deep: true },
-    );
 
     // Обработчики событий
     mapInstance.value.on("click", onMapClick);
     mapInstance.value.on("dragstart", onMapDragStart);
     mapInstance.value.on("dragend", onMapDragEnd);
   } else {
-    console.error("Map component unregistered ref");
+    console.error("[Map] Map instance не создана");
   }
 });
+
+// Watch для реактивности - перерисовка при изменении объектов
+watch(
+  () => Objects.value,
+  () => {
+    console.log("[Map] Objects изменился, перерисовка:", Objects.value.size);
+    if (l7Scene.value) {
+      createLayers();
+    }
+  },
+  { deep: true },
+);
+
+// Watch для draft объекта
+watch(
+  () => DraftObject.value,
+  () => {
+    console.log(
+      "[Map] Draft объект изменился:",
+      DraftObject.value?.coordinates.length ?? 0,
+      "точек",
+    );
+    if (l7Scene.value) {
+      createLayers();
+    }
+  },
+  { deep: true },
+);
 
 // Очистка при размонтировании
 onUnmounted(() => {
@@ -367,10 +282,9 @@ onUnmounted(() => {
     mapInstance.value.off("dragend", onMapDragEnd);
   }
 
-  // Удаляем Deck.gl overlay
-  if (deckOverlay) {
-    deckOverlay.remove();
-    deckOverlay = null;
+  if (l7Scene.value) {
+    l7Scene.value.destroy();
+    l7Scene.value = null;
   }
 });
 </script>
@@ -384,9 +298,11 @@ onUnmounted(() => {
     :can-undo="canUndo"
     :can-redo="canRedo"
   />
+  <TilesSwitcher />
   <div class="flex-1 h-screen overflow-scroll">
     <div
       id="map"
+      class="relative"
       :style="{
         cursor: isDragging ? grabCursor : plusCursor,
       }"
@@ -401,25 +317,13 @@ onUnmounted(() => {
   outline: none;
   user-select: none;
   position: relative;
-  z-index: 1;
 }
 
-:deep(.leaflet-container) {
+:deep(.maplibregl-canvas) {
   cursor: v-bind(plusCursor) !important;
 }
 
-:deep(.leaflet-drag-target) {
+:deep(.maplibregl-canvas.dragging) {
   cursor: v-bind(grabCursor) !important;
-}
-
-/* Deck.gl canvas должен быть поверх Leaflet */
-:deep(.deckgl-overlay) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  pointer-events: none;
 }
 </style>
