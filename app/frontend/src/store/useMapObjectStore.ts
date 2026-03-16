@@ -259,13 +259,14 @@ export const useMapObjectStore = defineStore("mapobjects", {
         if (style.strokeWidth !== undefined) {
           const currentState = this.strokeState.get(id);
           if (style.strokeWidth === 0) {
-            // Выключаем обводку - сохраняем текущее состояние
+            // Выключаем обводку - сохраняем текущее состояние (жирность и пунктир)
             this.strokeState.set(id, {
               strokeWidth: obj.style.strokeWidth,
               strokeDasharray: obj.style.strokeDasharray,
             });
           } else if (currentState && currentState.strokeWidth === 0) {
-            // Включаем обводку - восстанавливаем состояние
+            // Включаем обводку - восстанавливаем жирность и пунктир
+            style.strokeWidth = currentState.strokeWidth;
             style.strokeDasharray = currentState.strokeDasharray;
           }
         }
