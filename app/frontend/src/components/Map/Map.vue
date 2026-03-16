@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, shallowRef } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { storeToRefs } from "pinia";
 import { useMapStore } from "@/store";
@@ -11,8 +11,9 @@ import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple } from "@/types";
 
-// AntV L7 imports - используем правильный импорт для L7 2.x
+// AntV L7 imports - используем адаптер для MapLibre
 import { Scene, PolygonLayer, LineLayer, PointLayer } from "@antv/l7";
+import { MapLibre } from "@antv/l7-maps";
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
@@ -21,7 +22,7 @@ const { Objects, DraftObject } = storeToRefs(mapObjectStore);
 const { mapInstance } = storeToRefs(mapStore);
 
 // L7 Scene
-const l7Scene = shallowRef<Scene | null>(null);
+const l7Scene = ref<Scene | null>(null);
 
 // Курсоры
 const plusCursor = computed(() => `url("${PlusCursor}") 16 16, auto`);
@@ -59,16 +60,26 @@ const onMapDragEnd = () => {
 
 // Создание слоёв L7
 const createLayers = () => {
-  if (!l7Scene.value) return;
+  console.log("[Map] createLayers вызван");
+  console.log("[Map] l7Scene.value:", l7Scene.value);
+  console.log("[Map] Objects.value:", Objects.value);
+  console.log("[Map] Objects.value.size:", Objects.value?.size);
+
+  if (!l7Scene.value) {
+    console.error("[Map] l7Scene.value отсутствует");
+    return;
+  }
 
   // Очищаем старые слои
   const layers = l7Scene.value.getLayers();
+  console.log("[Map] Текущие слои перед очисткой:", layers);
   layers.forEach((layer: any) => {
     l7Scene.value?.removeLayer(layer);
   });
 
   const objectsArray = Array.from(Objects.value?.values() ?? []);
   console.log("[Map] Создаём слои, объектов:", objectsArray.length);
+  console.log("[Map] Объекты:", objectsArray);
 
   // Polygon слой (заливка)
   const polygonData = objectsArray
@@ -79,6 +90,8 @@ const createLayers = () => {
       fillColor: obj.style.fillColor ?? [0, 128, 255, 180],
       fillOpacity: obj.style.fillOpacity ?? 0.5,
     }));
+
+  console.log("[Map] Polygon данные:", polygonData.length, "объектов");
 
   if (polygonData.length > 0) {
     const polygonLayer = new PolygonLayer({
@@ -121,6 +134,8 @@ const createLayers = () => {
       strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
       strokeWidth: obj.style.strokeWidth ?? 3,
     }));
+
+  console.log("[Map] Line данные:", lineData.length, "объектов");
 
   if (lineData.length > 0) {
     const lineLayer = new LineLayer({
@@ -165,6 +180,8 @@ const createLayers = () => {
       radius: 10,
     }));
 
+  console.log("[Map] Point данные:", pointData.length, "объектов");
+
   if (pointData.length > 0) {
     const pointLayer = new PointLayer({
       autoFit: false,
@@ -197,6 +214,8 @@ const createLayers = () => {
     l7Scene.value.addLayer(pointLayer);
     console.log("[Map] Point слой добавлен");
   }
+
+  console.log("[Map] createLayers завершён");
 };
 
 // Инициализация карты
@@ -208,12 +227,16 @@ onMounted(async () => {
     mapInstance.value.on("load", async () => {
       console.log("[Map] MapLibre загружена");
 
-      // Создаём L7 Scene с правильной конфигурацией для L7 2.x
-      // Используем async/await для инициализации
+      // Создаём L7 Scene с адаптером для MapLibre
       try {
+        // Создаём адаптер Maplibre для L7
+        const l7Map = new MapLibre({
+          instance: mapInstance.value,
+        });
+
         l7Scene.value = new Scene({
           id: "map",
-          map: mapInstance.value as any,
+          map: l7Map,
         });
 
         // Ждём инициализации сцены

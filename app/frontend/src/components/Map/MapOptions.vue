@@ -15,6 +15,16 @@ const props = withDefaults(defineProps<Props>(), {
   canUndo: false,
   canRedo: false,
 });
+
+const handleSubmit = () => {
+  console.log("[MapOptions] submitChanges вызван");
+  props.submitChanges();
+};
+
+const handleCancel = () => {
+  console.log("[MapOptions] cancelChanges вызван");
+  props.cancelChanges();
+};
 </script>
 
 <template>
@@ -22,7 +32,7 @@ const props = withDefaults(defineProps<Props>(), {
     class="cursor-pointer"
     variant="outline"
     size="sm"
-    @click="submitChanges()"
+    @click="handleSubmit()"
   >
     <Plus />Добавить</Button
   >
@@ -30,7 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
     class="cursor-pointer"
     variant="outline"
     size="sm"
-    @click="cancelChanges()"
+    @click="handleCancel()"
   >
     <X /> Отменить
   </Button>
