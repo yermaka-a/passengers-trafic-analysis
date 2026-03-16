@@ -272,15 +272,30 @@ export const useMapObjectStore = defineStore("mapobjects", {
 
     /** Загрузить все объекты из БД */
     async loadAllObjectsFromDB() {
+      console.log("[MapObjectStore] Загрузка объектов из БД...");
       const { getAllObjects } = useApi();
       const backendObjects = await getAllObjects();
+      console.log(
+        "[MapObjectStore] Получено объектов:",
+        backendObjects?.length ?? 0,
+      );
 
       if (backendObjects) {
         this.Objects = new Map();
         for (const backendObj of backendObjects) {
           const deckglObj = backendToDeckGL(backendObj);
+          console.log(
+            "[MapObjectStore] Конвертация:",
+            backendObj.options.Id,
+            "→",
+            deckglObj,
+          );
           this.Objects.set(deckglObj.id, deckglObj);
         }
+        console.log(
+          "[MapObjectStore] Загружено объектов в store:",
+          this.Objects.size,
+        );
       }
     },
 

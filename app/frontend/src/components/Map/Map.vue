@@ -59,9 +59,9 @@ const deckLayers = computed(() => {
           id: `polygon-stroke-${obj.id}`,
           data: [obj],
           getPath: (d: DeckGLObject) => d.coordinates,
-          getColor: obj.style.color,
-          getWidth: obj.style.strokeWidth,
-          getDashArray: obj.style.strokeDasharray ?? [0, 0],
+          getColor: (d: DeckGLObject) => d.style.color,
+          getWidth: (d: DeckGLObject) => d.style.strokeWidth,
+          getDashArray: (d: DeckGLObject) => d.style.strokeDasharray ?? [0, 0],
           pickable: true,
           autoHighlight: true,
           onClick: () => selectObject(obj.id),
@@ -75,10 +75,11 @@ const deckLayers = computed(() => {
             id: `polygon-fill-${obj.id}`,
             data: [obj],
             getPath: (d: DeckGLObject) => d.coordinates,
-            getColor: [
-              ...obj.style.color.slice(0, 3),
-              Math.round(obj.style.fillOpacity * 2.55),
-            ] as [number, number, number, number],
+            getColor: (d: DeckGLObject) =>
+              [
+                ...d.style.color.slice(0, 3),
+                Math.round(d.style.fillOpacity * 2.55),
+              ] as [number, number, number, number],
             getWidth: 0,
             filled: true,
             pickable: false,
@@ -91,9 +92,9 @@ const deckLayers = computed(() => {
           id: `polyline-${obj.id}`,
           data: [obj],
           getPath: (d: DeckGLObject) => d.coordinates,
-          getColor: obj.style.color,
-          getWidth: obj.style.strokeWidth,
-          getDashArray: obj.style.strokeDasharray ?? [0, 0],
+          getColor: (d: DeckGLObject) => d.style.color,
+          getWidth: (d: DeckGLObject) => d.style.strokeWidth,
+          getDashArray: (d: DeckGLObject) => d.style.strokeDasharray ?? [0, 0],
           pickable: true,
           autoHighlight: true,
           onClick: () => selectObject(obj.id),
@@ -105,7 +106,7 @@ const deckLayers = computed(() => {
           id: `circle-${obj.id}`,
           data: [obj],
           getPosition: (d: DeckGLObject): [number, number] => d.coordinates[0]!,
-          getColor: obj.style.color,
+          getColor: (d) => d.style.color,
           getRadius: 10,
           radiusMinPixels: 8,
           radiusMaxPixels: 20,
@@ -202,14 +203,20 @@ onMounted(() => {
     }).addTo(mapInstance.value);
 
     // Добавляем Deck.gl overlay
+    console.log(
+      "[Map] Инициализация Deck.gl overlay, слоёв:",
+      deckLayers.value.length,
+    );
     deckOverlay = new DeckOverlay({
       views: [new MapView({ repeat: true })],
       layers: deckLayers.value,
     });
     mapInstance.value.addLayer(deckOverlay);
+    console.log("[Map] Deck.gl overlay добавлен на карту");
 
     // Следим за изменениями слоёв
     watch(deckLayers, (newLayers) => {
+      console.log("[Map] Обновление слоёв Deck.gl:", newLayers.length);
       if (deckOverlay) {
         deckOverlay.setProps({ layers: newLayers });
       }
