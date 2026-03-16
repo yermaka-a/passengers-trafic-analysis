@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
-import { ObjectEditor, useMapObjectStore } from "@/store/useMapObjectStore";
+import { useMapObjectStore } from "@/store/useMapObjectStore";
 
 const mapObjectStore = useMapObjectStore();
 
-const isActive = (option: typeof mapObjectStore.getChosenObjectType) => {
+const isActive = (option: (typeof mapObjectStore.getObjectsTypes)[number]) => {
   return option[1] === mapObjectStore.getChosenObjectType[1];
 };
 </script>
@@ -21,14 +21,11 @@ const isActive = (option: typeof mapObjectStore.getChosenObjectType) => {
       :class="{
         'bg-emerald-100 hover:bg-emerald-200': isActive(option),
       }"
-      :disabled="
-        mapObjectStore.MapObject &&
-        !(mapObjectStore.MapObject instanceof ObjectEditor)
-      "
+      :disabled="mapObjectStore.getDraftObject !== null"
       @click="
         () => {
           mapObjectStore.setObjectType(option);
-          mapObjectStore.clearObject();
+          mapObjectStore.cancelDraftObject();
         }
       "
     >

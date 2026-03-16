@@ -23,92 +23,137 @@ import {
 } from "@/components/ui/card";
 import { AlertCircleIcon } from "lucide-vue-next";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
 import { Toggle } from "@/components/ui/toggle/";
 import { Button } from "@/components/ui/button";
 import { useMapStore } from "@/store";
-import L from "leaflet";
 import { useApi } from "@/composables";
 import { Spinner } from "@/components/ui/spinner";
 import { ref, Teleport } from "vue";
+import type { DeckGLObject } from "@/types";
+import { rgbaToHex, hexToRGBA } from "@/utils";
+
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
 const mapStore = useMapStore();
-const { mapInstance } = storeToRefs(mapStore);
+
 const closeModalRef = ref(false);
 const onCloseModal = () => {
   closeModalRef.value = false;
   console.error(deletingError);
   console.error(updateError);
 };
+
 const { deleteObject, loading, error: deletingError } = useApi();
 const { updateObject, error: updateError } = useApi();
-const changeColor = async (e: MouseEvent, Id: string) => {
+
+const changeColor = async (e: MouseEvent, id: string) => {
   const target = e.target as HTMLInputElement;
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    obj.setStyle({ color: target.value });
-    await updateObject(obj);
-  }
-};
-const toggleStroke = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    const isStroke = obj.options.stroke;
-    obj.setStyle({ stroke: !isStroke });
-    await updateObject(obj);
-  }
-};
-const changeDash = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj && value) {
-    obj.setStyle({ dashArray: value });
-    await updateObject(obj);
+  if (!target.value) return; // Защита от пустого цвета
+  const newColor = hexToRGBA(target.value);
+  mapObjectStore.updateObjectStyle(id, { color: newColor });
+
+  // Берём обновлённый объект из store
+  const updatedObj = mapObjectStore.getObjectById(id);
+  if (updatedObj) {
+    await updateObjectInBackend(updatedObj);
   }
 };
 
-const changeFillOpacity = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
+const toggleStroke = async (id: string) => {
+  const obj = Objects.value?.get(id);
+  if (obj) {
+    // Переключаем только видимость обводки
+    // strokeState хранит фактические значения и будет восстановлен при включении
+    const hide = obj.style.strokeWidth > 0;
+    mapObjectStore.toggleStrokeVisibility(id, hide);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
+  }
+};
+
+const changeDash = async (value: number[], id: string) => {
+  const obj = Objects.value?.get(id);
   if (obj && value) {
-    console.log(value);
-    obj.setStyle({ fillOpacity: value[0] });
-    await updateObject(obj);
+    // [длина_штриха, длина_пробела] - пробел равен половине штриха
+    const dashValue =
+      value[0] === 0 ? [0, 0] : ([value[0], value[0] / 2] as [number, number]);
+    mapObjectStore.updateObjectStyle(id, {
+      strokeDasharray: dashValue,
+    });
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
-const changeWeight = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
+
+const changeFillOpacity = async (value: number[], id: string) => {
+  const obj = Objects.value?.get(id);
   if (obj && value) {
-    obj.setStyle({ weight: value[0] });
-    await updateObject(obj);
+    mapObjectStore.updateObjectStyle(id, { fillOpacity: value[0] });
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
-const toggleFill = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    const isFill = obj.options.fill;
-    obj.setStyle({ fill: !isFill });
-    await updateObject(obj);
+
+const changeWeight = async (value: number[], id: string) => {
+  const obj = Objects.value?.get(id);
+  if (obj && value) {
+    mapObjectStore.updateObjectStyle(id, { strokeWidth: value[0] });
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
-const delObject = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
+
+const toggleFill = async (id: string) => {
+  const obj = Objects.value?.get(id);
   if (obj) {
-    if (await deleteObject(obj.options.Id)) {
-      obj.remove();
-      Objects.value?.delete(Id);
+    mapObjectStore.updateObjectStyle(id, { filled: !obj.style.filled });
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
+  }
+};
+
+// Обновление объекта в бэкенде
+const updateObjectInBackend = async (obj: DeckGLObject) => {
+  const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+  const result = await updateObject(backendObj);
+
+  // Проверяем успешность обновления
+  if (result?.status !== "success") {
+    console.error("[List] Ошибка обновления:", result);
+  }
+};
+
+const delObject = async (id: string) => {
+  const success = await deleteObject(id);
+  if (success) {
+    mapObjectStore.deleteObject(id);
+  }
+};
+
+const findOnMap = (id: string) => {
+  const obj = Objects.value?.get(id);
+  if (obj && obj.coordinates.length > 0) {
+    const coord = obj.coordinates[0];
+    if (coord) {
+      const [lng, lat] = coord;
+      mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 });
     }
   }
 };
-const findOnMap = (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    if (obj instanceof L.Polygon || obj instanceof L.Polyline) {
-      mapInstance.value?.flyToBounds(obj.getBounds());
-    }
-    if (obj instanceof L.CircleMarker) {
-      mapInstance.value?.flyTo(obj.getLatLng());
-    }
-  }
+
+// ============================================================================
+// ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+// ============================================================================
+
+// Получение координат для отображения
+const getCoordinates = (obj: DeckGLObject) => {
+  return obj.coordinates.map(([lng, lat]) => ({ lat, lng }));
+};
+
+// Конвертация dashArray для слайдера
+const getDashValue = (obj: DeckGLObject): number[] => {
+  if (!obj.style.strokeDasharray) return [0];
+  return [obj.style.strokeDasharray[0] ?? 0];
 };
 </script>
 
@@ -119,7 +164,7 @@ const findOnMap = (Id: string) => {
     >
       Настройки
     </h2>
-    <div v-if="Objects" class="flex gap-3 flex-wrap">
+    <div v-if="Objects && Objects.size > 0" class="flex gap-3 flex-wrap">
       <Card
         v-for="(obj, idx) in Objects.entries()"
         :key="obj[0]"
@@ -140,12 +185,12 @@ const findOnMap = (Id: string) => {
               Удаление
             </Badge>
           </CardAction>
-          <CardTitle class="min-w-min">{{ obj[1].options.name }}</CardTitle>
+          <CardTitle class="min-w-min">{{ obj[1].name }}</CardTitle>
         </CardHeader>
         <CardContent>
           <CardDescription>
             <Accordion
-              v-if="obj[1] instanceof L.Polygon || obj[1] instanceof L.Polyline"
+              v-if="obj[1].type === 'Polygon' || obj[1].type === 'Polyline'"
               type="single"
               collapsible
             >
@@ -155,22 +200,16 @@ const findOnMap = (Id: string) => {
                 </AccordionTrigger>
                 <AccordionContent>
                   <template
-                    v-for="latlng in obj[1]
-                      .getLatLngs()
-                      .flat()
-                      .map((el) => {
-                        el = el as L.LatLng;
-                        return el;
-                      })"
-                    :key="latlng.lat.toString() + latlng.lng.toString()"
+                    v-for="coord in getCoordinates(obj[1])"
+                    :key="`${coord.lat}-${coord.lng}`"
                   >
-                    {{ latlng.lat }} : {{ latlng.lng }}
+                    {{ coord.lat }} : {{ coord.lng }}
                     <Separator class="my-2" />
                   </template>
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-            <template v-else-if="obj[1] instanceof L.CircleMarker">
+            <template v-else-if="obj[1].type === 'CircleMarker'">
               <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
                   <AccordionTrigger
@@ -179,23 +218,25 @@ const findOnMap = (Id: string) => {
                     широта:долгота
                   </AccordionTrigger>
                   <AccordionContent>
-                    {{
-                      `${obj[1].getLatLng().lat} : ${obj[1].getLatLng().lng}`
-                    }}
+                    <template v-if="obj[1].coordinates.length > 0">
+                      {{
+                        `${obj[1].coordinates[0]?.[1] ?? 0} : ${obj[1].coordinates[0]?.[0] ?? 0}`
+                      }}
+                    </template>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
             </template>
             <div class="flex flex-wrap items-center gap-1">
               <Input
-                @change="changeColor($event, obj[0])"
+                @input="changeColor($event, obj[0])"
                 class="w-1/4 min-w-16"
                 type="color"
-                :default-value="obj[1].options.color"
+                :model-value="rgbaToHex(obj[1].style.color)"
               />
 
               <Toggle
-                :model-value="obj[1].options.stroke"
+                :model-value="obj[1].style.strokeWidth > 0"
                 @click="toggleStroke(obj[0])"
                 size="default"
                 variant="outline"
@@ -214,12 +255,15 @@ const findOnMap = (Id: string) => {
                   >Пунктир</small
                 >
                 <Slider
-                  @update:model-value="(value) => changeDash(value, obj[0])"
-                  :defaultValue="[0]"
+                  @update:model-value="
+                    (value) => {
+                      if (value) changeDash(value, obj[0]);
+                    }
+                  "
+                  :model-value="getDashValue(obj[1])"
                   :max="100"
                   :step="1"
                   :min="0"
-                  :model-value="(obj[1].options.dashArray as number[]) || [0]"
                   class="mx-auto w-40 max-w-xs"
                 />
               </div>
@@ -231,7 +275,7 @@ const findOnMap = (Id: string) => {
                   >
                   <Checkbox
                     class="size-5"
-                    :model-value="obj[1].options.fill"
+                    :model-value="obj[1].style.filled"
                     @click="toggleFill(obj[0])"
                   />
                 </div>
@@ -241,12 +285,12 @@ const findOnMap = (Id: string) => {
                   >
                   <Slider
                     @update:model-value="
-                      (value) => changeFillOpacity(value, obj[0])
+                      (value) => {
+                        if (value) changeFillOpacity(value, obj[0]);
+                      }
                     "
-                    :disabled="!obj[1].options.fill"
-                    :model-value="
-                      [obj[1].options.fillOpacity as unknown] as number[]
-                    "
+                    :disabled="!obj[1].style.filled"
+                    :model-value="[obj[1].style.fillOpacity ?? 0.5]"
                     :max="1"
                     :step="0.01"
                     :min="0"
@@ -258,9 +302,13 @@ const findOnMap = (Id: string) => {
                     >Жирность обводки</small
                   >
                   <Slider
-                    @update:model-value="(value) => changeWeight(value, obj[0])"
-                    :model-value="[obj[1].options.weight as number]"
-                    :max="30"
+                    @update:model-value="
+                      (value) => {
+                        if (value) changeWeight(value, obj[0]);
+                      }
+                    "
+                    :model-value="[obj[1].style.strokeWidth ?? 2]"
+                    :max="200"
                     :step="1"
                     :min="0"
                     class="mx-auto w-full max-w-xs"
@@ -274,6 +322,9 @@ const findOnMap = (Id: string) => {
           <Badge variant="secondary">№ {{ idx + 1 }}</Badge>
         </CardFooter>
       </Card>
+    </div>
+    <div v-else class="text-center text-gray-500 mt-10">
+      Нет созданных объектов
     </div>
   </div>
   <Teleport v-if="closeModalRef" to="body">

@@ -1,6 +1,6 @@
 import { ref, readonly } from "vue";
 import { api } from "@/api";
-import type { Objects } from "@/store";
+import type { BackendObjectCreate } from "@/types";
 
 const useApi = () => {
   const loading = ref(false);
@@ -26,19 +26,19 @@ const useApi = () => {
   }
 
   // Конкретные методы с состоянием
-  const createObject = async (Obj: Objects) =>
-    await callApi(api.objects.createObject, Obj);
+  const createObject = async (obj: BackendObjectCreate) =>
+    await callApi(api.objects.createObject, obj);
 
-  const getObject = async (Id: string) =>
-    await callApi(api.objects.getObject, Id);
+  const getObject = async (id: string) =>
+    await callApi(api.objects.getObject, id);
 
   const getAllObjects = async () => await callApi(api.objects.getAllObjects);
 
-  const updateObject = async (Obj: Objects) =>
-    await callApi(api.objects.updateObject, Obj);
+  const updateObject = async (obj: BackendObjectCreate) =>
+    await callApi(api.objects.updateObject, obj);
 
-  const deleteObject = async (Id: string) =>
-    await callApi(api.objects.deleteObject, Id);
+  const deleteObject = async (id: string) =>
+    await callApi(api.objects.deleteObject, id);
 
   return {
     // Состояние
