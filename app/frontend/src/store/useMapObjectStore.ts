@@ -264,10 +264,19 @@ export const useMapObjectStore = defineStore("mapobjects", {
               strokeWidth: obj.style.strokeWidth,
               strokeDasharray: obj.style.strokeDasharray,
             });
-          } else if (currentState && currentState.strokeWidth === 0) {
-            // Включаем обводку - восстанавливаем жирность и пунктир
-            style.strokeWidth = currentState.strokeWidth;
-            style.strokeDasharray = currentState.strokeDasharray;
+          } else {
+            // Изменяем жирность (не 0) - обновляем strokeState
+            if (!currentState || currentState.strokeWidth !== 0) {
+              this.strokeState.set(id, {
+                strokeWidth: style.strokeWidth,
+                strokeDasharray:
+                  style.strokeDasharray ?? obj.style.strokeDasharray,
+              });
+            } else if (currentState && currentState.strokeWidth === 0) {
+              // Включаем обводку - восстанавливаем жирность и пунктир
+              style.strokeWidth = currentState.strokeWidth;
+              style.strokeDasharray = currentState.strokeDasharray;
+            }
           }
         }
 
