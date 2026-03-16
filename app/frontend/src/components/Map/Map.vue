@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import "leaflet/dist/leaflet.css";
 import { storeToRefs } from "pinia";
 import { LeafletMapConfig } from "@/config";
+import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 import { useMapStore, useTilesStore } from "@/store";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { useDeckGL } from "@/composables/useDeckGL";
@@ -138,7 +139,10 @@ const createDraftLayer = (
 ): PathLayer | ScatterplotLayer | null => {
   if (!draft) return null;
 
-  const color: [number, number, number, number] = [255, 255, 0, 255];
+  // Используем цвет из конфига для соответствия финальному объекту
+  const color = DeckGLMapConfig.defaultStyles[draft.type]?.color ?? [
+    255, 255, 0, 255,
+  ];
 
   if (draft.type === "CircleMarker" && draft.coordinates.length > 0) {
     return new ScatterplotLayer({
@@ -264,7 +268,7 @@ onUnmounted(() => {
 }
 
 :deep(.leaflet-container) {
-  cursor: v-bind(plusCursor);
+  cursor: v-bind(plusCursor) !important;
 }
 
 :deep(.leaflet-drag-target) {

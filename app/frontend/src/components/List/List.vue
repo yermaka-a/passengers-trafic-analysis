@@ -106,7 +106,13 @@ const toggleFill = async (id: string) => {
 // Обновление объекта в бэкенде
 const updateObjectInBackend = async (obj: DeckGLObject) => {
   const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
-  await updateObject(backendObj);
+  const result = await updateObject(backendObj);
+
+  // Проверяем успешность обновления
+  if (result?.status === "success") {
+    // Store уже обновлён через updateObjectStyle
+    console.log(`Объект ${obj.id} успешно обновлён`);
+  }
 };
 
 const delObject = async (id: string) => {
@@ -294,7 +300,7 @@ const getDashValue = (obj: DeckGLObject): number[] => {
                       }
                     "
                     :model-value="[obj[1].style.strokeWidth ?? 2]"
-                    :max="30"
+                    :max="50"
                     :step="1"
                     :min="0"
                     class="mx-auto w-full max-w-xs"
