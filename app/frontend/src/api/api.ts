@@ -1,4 +1,4 @@
-import type { ObjectCreate } from "@/types";
+import type { BackendObjectCreate } from "@/types";
 import ObjectController from "@/api/object";
 
 type Status = "success" | "failed";
@@ -12,20 +12,20 @@ export interface UpdateObjectResponse extends CreateObjectResponse {}
 
 export interface GetObjectResponse {
   status: Status;
-  obj: ObjectCreate;
+  obj: BackendObjectCreate;
 }
 
 export interface GetAllObjectsResponse {
   status: Status;
-  objects: ObjectCreate[];
+  objects: BackendObjectCreate[];
 }
 
 interface APIObjects {
-  create_object: (Obj: ObjectCreate) => Promise<CreateObjectResponse>;
+  create_object: (obj: BackendObjectCreate) => Promise<CreateObjectResponse>;
   get_object: (Id: string) => Promise<GetObjectResponse>;
   get_all_objects: () => Promise<GetAllObjectsResponse>;
   delete_object: (Id: string) => Promise<boolean>;
-  update_object: (Obj: ObjectCreate) => Promise<UpdateObjectResponse>;
+  update_object: (obj: BackendObjectCreate) => Promise<UpdateObjectResponse>;
 }
 
 type LEVEL = "ERROR" | "WARN" | "INFO" | "DEBUG";
