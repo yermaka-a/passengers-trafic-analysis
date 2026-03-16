@@ -75,14 +75,6 @@ const changeDash = async (value: number[], id: string) => {
     // [длина_штриха, длина_пробела] - пробел равен половине штриха
     const dashValue =
       value[0] === 0 ? [0, 0] : ([value[0], value[0] / 2] as [number, number]);
-    console.log(
-      "[List] changeDash:",
-      id,
-      "старое:",
-      obj.style.strokeDasharray,
-      "новое:",
-      dashValue,
-    );
     mapObjectStore.updateObjectStyle(id, {
       strokeDasharray: dashValue,
     });
@@ -102,18 +94,9 @@ const changeFillOpacity = async (value: number[], id: string) => {
 
 const changeWeight = async (value: number[], id: string) => {
   const obj = Objects.value?.get(id);
-  console.log(
-    "[List] changeWeight:",
-    id,
-    "старая толщина:",
-    obj?.style.strokeWidth,
-    "новая:",
-    value[0],
-  );
   if (obj && value) {
     mapObjectStore.updateObjectStyle(id, { strokeWidth: value[0] });
     const updatedObj = mapObjectStore.getObjectById(id);
-    console.log("[List] После обновления:", updatedObj?.style.strokeWidth);
     if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
@@ -130,21 +113,10 @@ const toggleFill = async (id: string) => {
 // Обновление объекта в бэкенде
 const updateObjectInBackend = async (obj: DeckGLObject) => {
   const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
-  console.log("[List] Отправка на бэкенд:", {
-    id: backendObj.options.Id,
-    color: backendObj.options.color,
-    strokeWidth: backendObj.options.weight,
-    filled: backendObj.options.fill,
-    fillOpacity: backendObj.options.fillOpacity,
-  });
   const result = await updateObject(backendObj);
-  console.log("[List] Ответ бэкенда:", result);
 
   // Проверяем успешность обновления
-  if (result?.status === "success") {
-    // Store уже обновлён через updateObjectStyle
-    console.log(`Объект ${obj.id} успешно обновлён`);
-  } else {
+  if (result?.status !== "success") {
     console.error("[List] Ошибка обновления:", result);
   }
 };

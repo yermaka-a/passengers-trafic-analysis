@@ -30,10 +30,6 @@ export const hexToRGBA = (hex: string, alpha: number = 255): RGBAColor => {
  * @param rgba - массив [r, g, b, a]
  */
 export const rgbaToHex = ([r, g, b]: RGBAColor): HexColor => {
-  console.log(
-    "rgbatohex: ",
-    `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`,
-  );
   return `#${[r, g, b].map((c) => Math.round(c).toString(16).padStart(2, "0")).join("")}`;
 };
 

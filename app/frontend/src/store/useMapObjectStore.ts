@@ -248,12 +248,9 @@ export const useMapObjectStore = defineStore("mapobjects", {
     /** Обновить стиль объекта */
     updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
       const obj = this.Objects.get(id);
-      console.log("obj, id: ", obj, id);
       if (obj) {
-        console.log("updateobjectstyle in: ", obj.style, style);
         obj.style = { ...obj.style, ...style };
         this.Objects.set(id, obj);
-        console.log("updateobjectstyle out: ", obj.style, style);
       }
     },
 

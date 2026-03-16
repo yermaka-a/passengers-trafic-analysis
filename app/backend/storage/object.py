@@ -52,6 +52,7 @@ class Objects:
                     weight=options.weight,
                     latlng=latlng,
                     obj_type=options.obj_type,
+                    dash_array=options.dash_array,
                 )
 
                 ls.add(new_obj)
