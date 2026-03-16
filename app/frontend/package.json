@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@deck.gl-community/leaflet": "^9.2.8",
+    "@deck.gl/extensions": "^9.2.11",
     "@deck.gl/layers": "^9.2.11",
     "@tailwindcss/vite": "^4.1.18",
     "@turf/turf": "^7.3.3",

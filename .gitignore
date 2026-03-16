@@ -19,3 +19,5 @@ passengers.db
 .kilocode
 .project-info
 .prompts
+
+.lsp.json

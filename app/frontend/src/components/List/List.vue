@@ -46,17 +46,16 @@ const onCloseModal = () => {
 const { deleteObject, loading, error: deletingError } = useApi();
 const { updateObject, error: updateError } = useApi();
 
-// ============================================================================
-// FUNKTIONEN FÜR STILÄNDERUNGEN
-// ============================================================================
-
 const changeColor = async (e: MouseEvent, id: string) => {
   const target = e.target as HTMLInputElement;
-  const obj = Objects.value?.get(id);
-  if (obj) {
-    const newColor = hexToRGBA(target.value);
-    mapObjectStore.updateObjectStyle(id, { color: newColor });
-    await updateObjectInBackend(obj);
+  if (!target.value) return; // Защита от пустого цвета
+  const newColor = hexToRGBA(target.value);
+  mapObjectStore.updateObjectStyle(id, { color: newColor });
+
+  // Берём обновлённый объект из store
+  const updatedObj = mapObjectStore.getObjectById(id);
+  if (updatedObj) {
+    await updateObjectInBackend(updatedObj);
   }
 };
 
@@ -65,17 +64,30 @@ const toggleStroke = async (id: string) => {
   if (obj) {
     const newWidth = obj.style.strokeWidth > 0 ? 0 : 2;
     mapObjectStore.updateObjectStyle(id, { strokeWidth: newWidth });
-    await updateObjectInBackend(obj);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
 
 const changeDash = async (value: number[], id: string) => {
   const obj = Objects.value?.get(id);
   if (obj && value) {
+    // [длина_штриха, длина_пробела] - пробел равен половине штриха
+    const dashValue =
+      value[0] === 0 ? [0, 0] : ([value[0], value[0] / 2] as [number, number]);
+    console.log(
+      "[List] changeDash:",
+      id,
+      "старое:",
+      obj.style.strokeDasharray,
+      "новое:",
+      dashValue,
+    );
     mapObjectStore.updateObjectStyle(id, {
-      strokeDasharray: [value[0], value[0]] as [number, number],
+      strokeDasharray: dashValue,
     });
-    await updateObjectInBackend(obj);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
 
@@ -83,15 +95,26 @@ const changeFillOpacity = async (value: number[], id: string) => {
   const obj = Objects.value?.get(id);
   if (obj && value) {
     mapObjectStore.updateObjectStyle(id, { fillOpacity: value[0] });
-    await updateObjectInBackend(obj);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
 
 const changeWeight = async (value: number[], id: string) => {
   const obj = Objects.value?.get(id);
+  console.log(
+    "[List] changeWeight:",
+    id,
+    "старая толщина:",
+    obj?.style.strokeWidth,
+    "новая:",
+    value[0],
+  );
   if (obj && value) {
     mapObjectStore.updateObjectStyle(id, { strokeWidth: value[0] });
-    await updateObjectInBackend(obj);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    console.log("[List] После обновления:", updatedObj?.style.strokeWidth);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
 
@@ -99,19 +122,30 @@ const toggleFill = async (id: string) => {
   const obj = Objects.value?.get(id);
   if (obj) {
     mapObjectStore.updateObjectStyle(id, { filled: !obj.style.filled });
-    await updateObjectInBackend(obj);
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };
 
 // Обновление объекта в бэкенде
 const updateObjectInBackend = async (obj: DeckGLObject) => {
   const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+  console.log("[List] Отправка на бэкенд:", {
+    id: backendObj.options.Id,
+    color: backendObj.options.color,
+    strokeWidth: backendObj.options.weight,
+    filled: backendObj.options.fill,
+    fillOpacity: backendObj.options.fillOpacity,
+  });
   const result = await updateObject(backendObj);
+  console.log("[List] Ответ бэкенда:", result);
 
   // Проверяем успешность обновления
   if (result?.status === "success") {
     // Store уже обновлён через updateObjectStyle
     console.log(`Объект ${obj.id} успешно обновлён`);
+  } else {
+    console.error("[List] Ошибка обновления:", result);
   }
 };
 
@@ -221,10 +255,10 @@ const getDashValue = (obj: DeckGLObject): number[] => {
             </template>
             <div class="flex flex-wrap items-center gap-1">
               <Input
-                @change="changeColor($event, obj[0])"
+                @input="changeColor($event, obj[0])"
                 class="w-1/4 min-w-16"
                 type="color"
-                :value="rgbaToHex(obj[1].style.color)"
+                :model-value="rgbaToHex(obj[1].style.color)"
               />
 
               <Toggle
@@ -300,7 +334,7 @@ const getDashValue = (obj: DeckGLObject): number[] => {
                       }
                     "
                     :model-value="[obj[1].style.strokeWidth ?? 2]"
-                    :max="50"
+                    :max="200"
                     :step="1"
                     :min="0"
                     class="mx-auto w-full max-w-xs"

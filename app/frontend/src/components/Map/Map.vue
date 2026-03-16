@@ -11,12 +11,13 @@ import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import * as L from "leaflet";
-import type { LngLatTuple, DeckGLObject } from "@/types";
+import type { LngLatTuple } from "@/types";
 
 // Импорт Deck.gl
 import { DeckOverlay } from "@deck.gl-community/leaflet";
 import { MapView } from "@deck.gl/core";
-import { PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { PathLayer, ScatterplotLayer, PolygonLayer } from "@deck.gl/layers";
+import { PathStyleExtension } from "@deck.gl/extensions";
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
@@ -44,75 +45,126 @@ const {
 } = useDeckGL();
 
 // Ссылка на Deck.gl overlay
-let deckOverlay: DeckOverlay | null = null;
+let deckOverlay: (DeckOverlay & { _deck?: any }) | null = null;
 
 // Слои Deck.gl
 const deckLayers = computed(() => {
-  const result: (PathLayer | ScatterplotLayer)[] = [];
+  const result: (PathLayer | ScatterplotLayer | PolygonLayer)[] = [];
+
+  // Force reactivity - явно читаем Objects.value
+  const objectsCount = Objects.value?.size ?? 0;
+  console.log("[Map] deckLayers вычисляется, объектов:", objectsCount);
 
   // Слои для существующих объектов
   Objects.value?.forEach((obj) => {
+    // Явно читаем все свойства для реактивности
+    const color = obj.style.color;
+    const strokeWidth = obj.style.strokeWidth;
+    const strokeDasharray = obj.style.strokeDasharray;
+    const filled = obj.style.filled;
+    const fillOpacity = obj.style.fillOpacity;
+
+    // Создаём чистый объект без Proxy для Deck.gl
+    const layerData = {
+      id: obj.id,
+      type: obj.type,
+      coordinates: obj.coordinates.map(
+        (coord: LngLatTuple) => [coord[0]!, coord[1]!] as [number, number],
+      ),
+      style: {
+        color,
+        strokeWidth,
+        strokeDasharray,
+        filled,
+        fillOpacity,
+      },
+    };
+
     if (obj.type === "Polygon") {
+      // Заливка полигона (если включена) - используем PolygonLayer
+      if (obj.style.filled) {
+        result.push(
+          new PolygonLayer({
+            id: `polygon-fill-${obj.id}`,
+            data: [layerData],
+            getPolygon: (d: typeof layerData) => d.coordinates,
+            getFillColor: (d: typeof layerData) =>
+              [
+                ...d.style.color.slice(0, 3),
+                Math.round(d.style.fillOpacity * 255),
+              ] as [number, number, number, number],
+            getLineColor: [0, 0, 0, 0],
+            pickable: false,
+            stroked: false,
+            filled: true,
+          }),
+        );
+      }
+
       // Контур полигона
       result.push(
         new PathLayer({
           id: `polygon-stroke-${obj.id}`,
-          data: [obj],
-          getPath: (d: DeckGLObject) => d.coordinates,
-          getColor: (d: DeckGLObject) => d.style.color,
-          getWidth: (d: DeckGLObject) => d.style.strokeWidth,
-          getDashArray: (d: DeckGLObject) => d.style.strokeDasharray ?? [0, 0],
+          data: [layerData],
+          getPath: (d: typeof layerData) => d.coordinates,
+          getLineColor: () => color,
+          getWidth: () => strokeWidth,
+          getDashArray: () =>
+            strokeDasharray && strokeDasharray[0] > 0
+              ? strokeDasharray
+              : [0, 0],
+          extensions: [new PathStyleExtension({ dash: true })],
           pickable: true,
           autoHighlight: true,
           onClick: () => selectObject(obj.id),
+          updateTriggers: {
+            getLineColor: [color],
+            getWidth: [strokeWidth],
+            getDashArray: [strokeDasharray],
+          },
         }),
       );
-
-      // Заливка полигона (если включена)
-      if (obj.style.filled) {
-        result.push(
-          new PathLayer({
-            id: `polygon-fill-${obj.id}`,
-            data: [obj],
-            getPath: (d: DeckGLObject) => d.coordinates,
-            getColor: (d: DeckGLObject) =>
-              [
-                ...d.style.color.slice(0, 3),
-                Math.round(d.style.fillOpacity * 2.55),
-              ] as [number, number, number, number],
-            getWidth: 0,
-            filled: true,
-            pickable: false,
-          }),
-        );
-      }
     } else if (obj.type === "Polyline") {
       result.push(
         new PathLayer({
           id: `polyline-${obj.id}`,
-          data: [obj],
-          getPath: (d: DeckGLObject) => d.coordinates,
-          getColor: (d: DeckGLObject) => d.style.color,
-          getWidth: (d: DeckGLObject) => d.style.strokeWidth,
-          getDashArray: (d: DeckGLObject) => d.style.strokeDasharray ?? [0, 0],
+          data: [layerData],
+          getPath: (d: typeof layerData) => d.coordinates,
+          getLineColor: () => color,
+          getWidth: () => strokeWidth,
+          getDashArray: () =>
+            strokeDasharray && strokeDasharray[0] > 0
+              ? strokeDasharray
+              : [0, 0],
+          extensions: [new PathStyleExtension({ dash: true })],
           pickable: true,
           autoHighlight: true,
           onClick: () => selectObject(obj.id),
+          updateTriggers: {
+            getLineColor: [color],
+            getWidth: [strokeWidth],
+            getDashArray: [strokeDasharray],
+          },
         }),
       );
     } else if (obj.type === "CircleMarker") {
       result.push(
         new ScatterplotLayer({
           id: `circle-${obj.id}`,
-          data: [obj],
-          getPosition: (d: DeckGLObject): [number, number] => d.coordinates[0]!,
-          getColor: (d) => d.style.color,
+          data: [layerData],
+          getPosition: (d: typeof layerData): [number, number] =>
+            d.coordinates[0]!,
+          getFillColor: () => color,
+          getLineColor: [0, 0, 0, 0],
           getRadius: 10,
           radiusMinPixels: 8,
           radiusMaxPixels: 20,
           pickable: true,
           autoHighlight: true,
           onClick: () => selectObject(obj.id),
+          updateTriggers: {
+            getFillColor: [color],
+          },
         }),
       );
     }
@@ -120,12 +172,31 @@ const deckLayers = computed(() => {
 
   // Слой для draft объекта (в процессе создания)
   if (DraftObject.value && DraftObject.value.coordinates.length > 0) {
-    const draftLayer = createDraftLayer(DraftObject.value);
-    if (draftLayer) {
-      result.push(draftLayer);
+    console.log(
+      "[Map] Draft объект:",
+      DraftObject.value.type,
+      DraftObject.value.coordinates.length,
+      "точек",
+    );
+
+    // Для CircleMarker показываем даже с 1 точкой
+    if (DraftObject.value.type === "CircleMarker") {
+      const draftLayer = createDraftLayer(DraftObject.value);
+      if (draftLayer) {
+        console.log("[Map] Draft слой создан");
+        result.push(draftLayer);
+      }
+    } else if (DraftObject.value.coordinates.length >= 2) {
+      // Для Polygon/Polyline нужно минимум 2 точки
+      const draftLayer = createDraftLayer(DraftObject.value);
+      if (draftLayer) {
+        console.log("[Map] Draft слой создан");
+        result.push(draftLayer);
+      }
     }
   }
 
+  console.log("[Map] Всего слоёв:", result.length);
   return result;
 });
 
@@ -145,22 +216,32 @@ const createDraftLayer = (
     255, 255, 0, 255,
   ];
 
-  if (draft.type === "CircleMarker" && draft.coordinates.length > 0) {
+  // Конвертируем координаты из Proxy
+  const coordinates = draft.coordinates.map(
+    (coord: LngLatTuple) => [coord[0], coord[1]] as [number, number],
+  );
+
+  if (draft.type === "CircleMarker" && coordinates.length > 0) {
     return new ScatterplotLayer({
       id: "draft-circle",
-      data: [draft],
-      getPosition: (d: typeof draft): [number, number] => d.coordinates[0]!,
-      getColor: color,
+      data: [{ ...draft, coordinates }],
+      getPosition: (
+        d: typeof draft & { coordinates: [number, number][] },
+      ): [number, number] => d.coordinates[0]!,
+      getFillColor: color,
+      getLineColor: [0, 0, 0, 0],
       getRadius: 10,
       radiusMinPixels: 8,
       pickable: false,
     });
-  } else if (draft.coordinates.length > 1) {
+  } else if (coordinates.length > 1) {
     return new PathLayer({
       id: "draft-path",
-      data: [draft],
-      getPath: (d: typeof draft): [number, number][] => d.coordinates,
-      getColor: color,
+      data: [{ ...draft, coordinates }],
+      getPath: (
+        d: typeof draft & { coordinates: [number, number][] },
+      ): [number, number][] => d.coordinates,
+      getLineColor: color,
       getWidth: 3,
       pickable: false,
     });
@@ -172,6 +253,7 @@ const createDraftLayer = (
 // Обработка клика по карте
 const onMapClick = (e: L.LeafletMouseEvent) => {
   const latlng: LngLatTuple = [e.latlng.lng, e.latlng.lat];
+  console.log("[Map] Клик:", latlng, "Leaflet:", e.latlng);
   handleMapClick(latlng);
 };
 
@@ -203,24 +285,70 @@ onMounted(() => {
     }).addTo(mapInstance.value);
 
     // Добавляем Deck.gl overlay
-    console.log(
-      "[Map] Инициализация Deck.gl overlay, слоёв:",
-      deckLayers.value.length,
-    );
     deckOverlay = new DeckOverlay({
       views: [new MapView({ repeat: true })],
       layers: deckLayers.value,
     });
     mapInstance.value.addLayer(deckOverlay);
-    console.log("[Map] Deck.gl overlay добавлен на карту");
+    console.log("[Map] Deck.gl overlay добавлен");
+    console.log("[Map] deckOverlay:", deckOverlay);
 
-    // Следим за изменениями слоёв
-    watch(deckLayers, (newLayers) => {
-      console.log("[Map] Обновление слоёв Deck.gl:", newLayers.length);
-      if (deckOverlay) {
-        deckOverlay.setProps({ layers: newLayers });
-      }
-    });
+    // Следим за изменениями в Objects - принудительная реактивность
+    watch(
+      () => Objects.value,
+      (newObjects) => {
+        console.log("[Map] Objects изменился:", newObjects?.size ?? 0);
+        // Принудительно обновляем layers
+        if (deckOverlay && deckOverlay._deck) {
+          console.log(
+            "[Map] Принудительное обновление layers:",
+            deckLayers.value.length,
+          );
+          // Полностью заменяем слои
+          deckOverlay._deck.setProps({
+            layers: deckLayers.value,
+            // Принудительная перерисовка
+            _animate: true,
+          });
+          // Вызываем redraw для гарантии
+          setTimeout(() => {
+            if (deckOverlay?._deck) {
+              deckOverlay._deck.redraw();
+            }
+          }, 50);
+        }
+      },
+      { deep: true },
+    );
+
+    // Следим за DraftObject - перерисовка при создании
+    watch(
+      () => DraftObject.value,
+      (newDraft) => {
+        console.log(
+          "[Map] Draft объект изменился:",
+          newDraft?.coordinates.length ?? 0,
+          "точек",
+        );
+        // Принудительно обновляем layers
+        if (deckOverlay && deckOverlay._deck) {
+          console.log(
+            "[Map] Принудительное обновление layers для draft:",
+            deckLayers.value.length,
+          );
+          deckOverlay._deck.setProps({
+            layers: deckLayers.value,
+            _animate: true,
+          });
+          setTimeout(() => {
+            if (deckOverlay?._deck) {
+              deckOverlay._deck.redraw();
+            }
+          }, 50);
+        }
+      },
+      { deep: true },
+    );
 
     // Обработчики событий
     mapInstance.value.on("click", onMapClick);
@@ -272,6 +400,8 @@ onUnmounted(() => {
   width: 100vw;
   outline: none;
   user-select: none;
+  position: relative;
+  z-index: 1;
 }
 
 :deep(.leaflet-container) {
@@ -280,5 +410,16 @@ onUnmounted(() => {
 
 :deep(.leaflet-drag-target) {
   cursor: v-bind(grabCursor) !important;
+}
+
+/* Deck.gl canvas должен быть поверх Leaflet */
+:deep(.deckgl-overlay) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
 }
 </style>

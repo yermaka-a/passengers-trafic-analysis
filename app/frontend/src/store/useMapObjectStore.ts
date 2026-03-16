@@ -206,9 +206,17 @@ export const useMapObjectStore = defineStore("mapobjects", {
         return null;
       }
 
+      let coordinates = [...this.DraftObject.coordinates];
+
+      // Для полигона замыкаем контур - добавляем первую точку в конец
+      if (this.DraftObject.type === "Polygon" && coordinates.length >= 3) {
+        const firstCoord = coordinates[0]!;
+        coordinates = [...coordinates, firstCoord];
+      }
+
       const newObject = createNewDeckGLObject(
         this.DraftObject.type as Exclude<ObjTypes, "Edit">,
-        this.DraftObject.coordinates,
+        coordinates,
       );
 
       this.Objects.set(newObject.id, newObject);
@@ -240,9 +248,12 @@ export const useMapObjectStore = defineStore("mapobjects", {
     /** Обновить стиль объекта */
     updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
       const obj = this.Objects.get(id);
+      console.log("obj, id: ", obj, id);
       if (obj) {
+        console.log("updateobjectstyle in: ", obj.style, style);
         obj.style = { ...obj.style, ...style };
         this.Objects.set(id, obj);
+        console.log("updateobjectstyle out: ", obj.style, style);
       }
     },
 

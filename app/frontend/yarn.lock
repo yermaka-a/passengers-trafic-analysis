@@ -349,7 +349,7 @@
     gl-matrix "^3.0.0"
     mjolnir.js "^3.0.0"
 
-"@deck.gl/extensions@9.2.11":
+"@deck.gl/extensions@9.2.11", "@deck.gl/extensions@^9.2.11":
   version "9.2.11"
   resolved "https://registry.yarnpkg.com/@deck.gl/extensions/-/extensions-9.2.11.tgz#6a73ea55e12d1a862ac7d9d7fb794bbdea4cf6b8"
   integrity sha512-zlpM4Bg1ifBziW1Juiii9NY5gyW2rEhyVTWnhagH/bpTCZ2E73OhnToYt1ouqmoxL6lMtIjhRXz6LPb7tJbHHQ==
