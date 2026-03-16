@@ -38,6 +38,11 @@ interface MapObjectStoreState {
   DraftObject: DraftObject | null;
   EditingObjectId: string | null;
   ClickedObjId: string | null;
+  // Хранение состояния обводки для каждого объекта
+  strokeState: Map<
+    string,
+    { strokeWidth: number; strokeDasharray?: [number, number] }
+  >;
 }
 
 // ============================================================================
@@ -137,6 +142,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     DraftObject: null,
     EditingObjectId: null,
     ClickedObjId: null,
+    strokeState: new Map(),
   }),
 
   getters: {
@@ -249,6 +255,21 @@ export const useMapObjectStore = defineStore("mapobjects", {
     updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
       const obj = this.Objects.get(id);
       if (obj) {
+        // Сохраняем состояние обводки перед изменением
+        if (style.strokeWidth !== undefined) {
+          const currentState = this.strokeState.get(id);
+          if (style.strokeWidth === 0) {
+            // Выключаем обводку - сохраняем текущее состояние
+            this.strokeState.set(id, {
+              strokeWidth: obj.style.strokeWidth,
+              strokeDasharray: obj.style.strokeDasharray,
+            });
+          } else if (currentState && currentState.strokeWidth === 0) {
+            // Включаем обводку - восстанавливаем состояние
+            style.strokeDasharray = currentState.strokeDasharray;
+          }
+        }
+
         obj.style = { ...obj.style, ...style };
         this.Objects.set(id, obj);
       }
@@ -266,6 +287,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     /** Удалить объект из store */
     deleteObject(id: string) {
       this.Objects.delete(id);
+      this.strokeState.delete(id);
       if (this.ClickedObjId === id) {
         this.ClickedObjId = null;
       }
