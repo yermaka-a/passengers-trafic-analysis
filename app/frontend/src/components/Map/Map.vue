@@ -47,6 +47,12 @@ const onMapClick = (e: any) => {
   handleMapClick(lngLat);
 };
 
+// Выделение объекта при клике
+const selectObject = (id: string) => {
+  console.log("[Map] Select object:", id);
+  mapObjectStore.ClickedObjId = id;
+};
+
 // Создание слоёв L7
 const createLayers = () => {
   console.log("[Map] createLayers вызван");
@@ -111,9 +117,18 @@ const createLayers = () => {
       })
       .shape("fill")
       .color("fillColor")
+      .active(true)
       .style({
         opacity: 1,
       });
+
+    // Добавляем обработчик клика на слой
+    polygonFillLayer.on("click", (e: any) => {
+      console.log("[Map] Polygon layer click:", e);
+      if (e.feature?.properties?.id) {
+        selectObject(e.feature.properties.id);
+      }
+    });
 
     l7Scene.value.addLayer(polygonFillLayer);
     console.log("[Map] Polygon fill слой добавлен");
@@ -159,9 +174,18 @@ const createLayers = () => {
       .shape("line")
       .size("strokeWidth")
       .color("strokeColor")
+      .active(true)
       .style({
         lineType: "solid",
       });
+
+    // Добавляем обработчик клика на слой
+    lineLayer.on("click", (e: any) => {
+      console.log("[Map] Line layer click:", e);
+      if (e.feature?.properties?.id) {
+        selectObject(e.feature.properties.id);
+      }
+    });
 
     l7Scene.value.addLayer(lineLayer);
     console.log("[Map] Line слой добавлен");
@@ -207,9 +231,18 @@ const createLayers = () => {
       .shape("circle")
       .size("radius")
       .color("fillColor")
+      .active(true)
       .style({
         opacity: 1,
       });
+
+    // Добавляем обработчик клика на слой
+    pointLayer.on("click", (e: any) => {
+      console.log("[Map] Point layer click:", e);
+      if (e.feature?.properties?.id) {
+        selectObject(e.feature.properties.id);
+      }
+    });
 
     l7Scene.value.addLayer(pointLayer);
     console.log("[Map] Point слой добавлен");
@@ -365,21 +398,35 @@ onUnmounted(() => {
   position: relative;
 }
 
-:deep(.maplibregl-canvas) {
-  cursor: inherit !important;
-}
-
-:deep(.l7-canvas) {
+/* L7 canvas container - пропускаем события к карте */
+:deep(.l7-canvas-container),
+:deep(.l7-scene) {
+  pointer-events: none !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
   z-index: 10 !important;
+}
+
+/* Но сами canvas элементы L7 должны получать события для интерактивности слоёв */
+:deep(.l7-canvas-container canvas),
+:deep(.l7-scene canvas) {
   pointer-events: auto !important;
 }
 
-:deep(#map:hover) {
+/* Курсоры для MapLibre canvas */
+:deep(.maplibregl-canvas) {
+  cursor: v-bind(plusCursor) !important;
+}
+
+:deep(.maplibregl-canvas:active) {
+  cursor: v-bind(grabCursor) !important;
+}
+
+/* Курсор для контейнера карты */
+:deep(#map) {
   cursor: v-bind(plusCursor);
 }
 
