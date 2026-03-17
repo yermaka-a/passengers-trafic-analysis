@@ -60,43 +60,47 @@ const createLayers = () => {
 
   // Очищаем старые слои
   const layers = l7Scene.value.getLayers();
+  console.log("[Map] Слоёв до очистки:", layers.length);
   layers.forEach((layer: any) => {
     l7Scene.value?.removeLayer(layer);
   });
 
   const objectsArray = Array.from(Objects.value?.values() ?? []);
   console.log("[Map] Создаём слои, объектов:", objectsArray.length);
+  console.log(
+    "[Map] Объекты:",
+    objectsArray.map((o) => ({ id: o.id, type: o.type, style: o.style })),
+  );
 
-  // Polygon слой (заливка + контур)
-  const polygonData = objectsArray
-    .filter((obj) => obj.type === "Polygon")
+  // Polygon слой (заливка)
+  const polygonFillData = objectsArray
+    .filter((obj) => obj.type === "Polygon" && obj.style.filled !== false)
     .map((obj) => ({
       id: obj.id,
       coordinates: obj.coordinates,
       fillColor: obj.style.fillColor ?? [0, 128, 255, 128],
       fillOpacity: obj.style.fillOpacity ?? 0.3,
-      strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
-      strokeWidth: obj.style.strokeWidth ?? 3,
     }));
 
-  console.log("[Map] Polygon данные:", polygonData.length, "объектов");
+  console.log("[Map] Polygon fill данные:", polygonFillData.length, "объектов");
+  if (polygonFillData.length > 0) {
+    console.log("[Map] Первый polygon:", polygonFillData[0]);
+  }
 
-  if (polygonData.length > 0) {
-    const polygonLayer = new PolygonLayer({
+  if (polygonFillData.length > 0) {
+    const polygonFillLayer = new PolygonLayer({
       autoFit: false,
     })
       .source({
         type: "json",
         data: {
           type: "FeatureCollection",
-          features: polygonData.map((obj) => ({
+          features: polygonFillData.map((obj) => ({
             type: "Feature",
             properties: {
               id: obj.id,
               fillColor: obj.fillColor,
               fillOpacity: obj.fillOpacity,
-              strokeColor: obj.strokeColor,
-              strokeWidth: obj.strokeWidth,
             },
             geometry: {
               type: "Polygon",
@@ -109,25 +113,26 @@ const createLayers = () => {
       .color("fillColor")
       .style({
         opacity: 1,
-        lineJoin: "round",
-        lineCap: "round",
       });
 
-    l7Scene.value.addLayer(polygonLayer);
+    l7Scene.value.addLayer(polygonFillLayer);
     console.log("[Map] Polygon fill слой добавлен");
   }
 
-  // Line слой (для контуров полигонов и полилиний)
+  // Polygon/Polyline слой (контур)
   const lineData = objectsArray
     .filter((obj) => obj.type === "Polygon" || obj.type === "Polyline")
     .map((obj) => ({
       id: obj.id,
       coordinates: obj.coordinates,
-      strokeColor: obj.style.strokeColor ?? [255, 0, 0, 255],
-      strokeWidth: obj.style.strokeWidth ?? 5,
+      strokeColor: obj.style.strokeColor ?? [0, 128, 255, 255],
+      strokeWidth: obj.style.strokeWidth ?? 3,
     }));
 
   console.log("[Map] Line данные:", lineData.length, "объектов");
+  if (lineData.length > 0) {
+    console.log("[Map] Первая линия:", lineData[0]);
+  }
 
   if (lineData.length > 0) {
     const lineLayer = new LineLayer({
@@ -156,8 +161,6 @@ const createLayers = () => {
       .color("strokeColor")
       .style({
         lineType: "solid",
-        lineJoin: "round",
-        lineCap: "round",
       });
 
     l7Scene.value.addLayer(lineLayer);
@@ -175,6 +178,9 @@ const createLayers = () => {
     }));
 
   console.log("[Map] Point данные:", pointData.length, "объектов");
+  if (pointData.length > 0) {
+    console.log("[Map] Первая точка:", pointData[0]);
+  }
 
   if (pointData.length > 0) {
     const pointLayer = new PointLayer({
@@ -260,6 +266,17 @@ onMounted(async () => {
 
       // Добавляем обработчик клика на MapLibre
       mapInstance.value.on("click", onMapClick);
+
+      // Применяем стили для курсоров
+      setTimeout(() => {
+        const mapContainer = document.getElementById("map");
+        if (mapContainer) {
+          const canvas = mapContainer.querySelector(".maplibregl-canvas");
+          if (canvas) {
+            (canvas as HTMLCanvasElement).style.cursor = plusCursor.value;
+          }
+        }
+      }, 100);
 
       createLayers();
     });
@@ -349,7 +366,7 @@ onUnmounted(() => {
 }
 
 :deep(.maplibregl-canvas) {
-  cursor: v-bind(plusCursor) !important;
+  cursor: inherit !important;
 }
 
 :deep(.l7-canvas) {
@@ -358,7 +375,15 @@ onUnmounted(() => {
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  z-index: 100 !important;
+  z-index: 10 !important;
   pointer-events: auto !important;
+}
+
+:deep(#map:hover) {
+  cursor: v-bind(plusCursor);
+}
+
+:deep(#map:active) {
+  cursor: v-bind(grabCursor);
 }
 </style>
