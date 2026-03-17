@@ -29,7 +29,7 @@ import { useMapStore } from "@/store";
 import { useApi } from "@/composables";
 import { Spinner } from "@/components/ui/spinner";
 import { ref, Teleport } from "vue";
-import type { L7Object } from "@/types";
+import type { DeckGLObject } from "@/types";
 import { rgbaToHex, hexToRGBA } from "@/utils";
 
 const mapObjectStore = useMapObjectStore();
@@ -51,8 +51,7 @@ const changeColor = async (e: MouseEvent, id: string) => {
   if (!target.value) return; // Защита от пустого цвета
   const newColor = hexToRGBA(target.value);
   mapObjectStore.updateObjectStyle(id, {
-    fillColor: newColor,
-    strokeColor: newColor,
+    color: newColor,
   });
 
   // Берём обновлённый объект из store
@@ -116,8 +115,8 @@ const toggleFill = async (id: string) => {
 };
 
 // Обновление объекта в бэкенде
-const updateObjectInBackend = async (obj: L7Object) => {
-  const backendObj = mapObjectStore.convertL7ToBackend(obj);
+const updateObjectInBackend = async (obj: DeckGLObject) => {
+  const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
   const result = await updateObject(backendObj);
 
   // Проверяем успешность обновления
@@ -149,12 +148,12 @@ const findOnMap = (id: string) => {
 // ============================================================================
 
 // Получение координат для отображения
-const getCoordinates = (obj: L7Object) => {
+const getCoordinates = (obj: DeckGLObject) => {
   return obj.coordinates.map(([lng, lat]) => ({ lat, lng }));
 };
 
 // Конвертация dashArray для слайдера
-const getDashValue = (obj: L7Object): number[] => {
+const getDashValue = (obj: DeckGLObject): number[] => {
   if (!obj.style.strokeDasharray) return [0];
   return [obj.style.strokeDasharray[0] ?? 0];
 };
@@ -237,8 +236,7 @@ const getDashValue = (obj: L7Object): number[] => {
                 type="color"
                 :value="
                   rgbaToHex(
-                    obj[1].style.fillColor ??
-                      obj[1].style.strokeColor ?? [0, 128, 255, 255],
+                    obj[1].style.color ?? [0, 128, 255, 255],
                   )
                 "
               />

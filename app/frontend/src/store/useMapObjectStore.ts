@@ -1,14 +1,14 @@
 import { defineStore } from "pinia";
 import { v6 as uuidv6 } from "uuid";
 import useApi from "@/composables/useApi";
-import type { BackendObjectCreate, L7Object, LngLatTuple } from "@/types";
+import type { BackendObjectCreate, DeckGLObject, LngLatTuple } from "@/types";
 import {
-  backendCoordsToL7,
-  l7ToBackendCoords,
+  backendCoordsToDeckGL,
+  deckGLToBackendCoords,
   hexToRGBA,
   rgbaToHex,
 } from "@/utils";
-import { L7MapConfig } from "@/config/L7MapConfig";
+import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
 // ============================================================================
 // ТИПЫ
@@ -28,11 +28,11 @@ export type ObjNames = (typeof ObjectsTypes)[number][1];
 export interface DraftObject {
   type: ObjTypes;
   coordinates: LngLatTuple[];
-  style: L7Object["style"];
+  style: DeckGLObject["style"];
 }
 
 interface MapObjectStoreState {
-  Objects: Map<string, L7Object>;
+  Objects: Map<string, DeckGLObject>;
   ObjectsTypes: typeof ObjectsTypes;
   ChosenObjectType: (typeof ObjectsTypes)[number];
   DraftObject: DraftObject | null;
@@ -46,21 +46,21 @@ interface MapObjectStoreState {
 }
 
 // ============================================================================
-// КОНВЕРТАЦИЯ: Backend ↔ L7
+// КОНВЕРТАЦИЯ: Backend ↔ Deck.gl
 // ============================================================================
 
 /**
- * Конвертирует объект из формата бэкенда в L7Object
+ * Конвертирует объект из формата бэкенда в DeckGLObject
  * Инициализирует strokeState фактическими значениями из БД
  */
-const backendToL7 = (
+const backendToDeckGL = (
   backendObj: BackendObjectCreate,
   id?: string,
-): L7Object => {
+): DeckGLObject => {
   const { latlng, options } = backendObj;
 
   // Конвертируем координаты: [{lat, lng}] → [[lng, lat]]
-  const coordinates = backendCoordsToL7(latlng);
+  const coordinates = backendCoordsToDeckGL(latlng);
 
   // Конвертируем цвет из hex в RGBA
   const color = hexToRGBA(options.color ?? "#0080FF", 255);
@@ -81,8 +81,7 @@ const backendToL7 = (
     customName: options.customName ?? undefined,
     description: options.description ?? undefined,
     style: {
-      fillColor: color,
-      strokeColor: color,
+      color,
       strokeWidth: options.stroke ? (options.weight ?? 2) : 0,
       strokeDasharray: options.dashArray as [number, number] | undefined,
       filled: options.fill ?? false,
@@ -93,20 +92,18 @@ const backendToL7 = (
 };
 
 /**
- * Конвертирует L7Object в формат для бэкенда
+ * Конвертирует DeckGLObject в формат для бэкенда
  * Использует strokeState для получения фактических значений
  */
-const l7ToBackend = (obj: L7Object): BackendObjectCreate => {
+const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
   const mapObjectStore = useMapObjectStore();
   const state = mapObjectStore.strokeState.get(obj.id);
 
   // Конвертируем координаты обратно: [[lng, lat]] → [{lat, lng}]
-  const latlng = l7ToBackendCoords(obj.coordinates);
+  const latlng = deckGLToBackendCoords(obj.coordinates);
 
-  // Конвертируем цвет из RGBA в hex (используем fillColor)
-  const color = rgbaToHex(
-    obj.style.fillColor ?? obj.style.strokeColor ?? [0, 128, 255, 255],
-  );
+  // Конвертируем цвет из RGBA в hex (используем color)
+  const color = rgbaToHex(obj.style.color ?? [0, 128, 255, 255]);
 
   // Используем значения из strokeState
   const weight = state?.strokeWidth ?? obj.style.strokeWidth;
@@ -135,19 +132,19 @@ const l7ToBackend = (obj: L7Object): BackendObjectCreate => {
 // ============================================================================
 
 /**
- * Создаёт новый L7Object по типу
+ * Создаёт новый DeckGLObject по типу
  */
-const createNewL7Object = (
+const createNewDeckGLObject = (
   type: Exclude<ObjTypes, "Edit">,
   coordinates: LngLatTuple[],
-): L7Object => {
-  const defaultStyle = L7MapConfig.defaultStyles[type];
+): DeckGLObject => {
+  const defaultStyle = DeckGLMapConfig.defaultStyles[type];
 
   return {
     id: uuidv6(),
     type,
     name: ObjectsTypes.find(([key]) => key === type)?.[1] ?? type,
-    style: { ...defaultStyle } as L7Object["style"],
+    style: { ...defaultStyle } as DeckGLObject["style"],
     coordinates,
   };
 };
@@ -211,8 +208,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
         type: type as Exclude<ObjTypes, "Edit">,
         coordinates: [],
         style: {
-          ...L7MapConfig.defaultStyles[type as Exclude<ObjTypes, "Edit">],
-        } as L7Object["style"],
+          ...DeckGLMapConfig.defaultStyles[type as Exclude<ObjTypes, "Edit">],
+        } as DeckGLObject["style"],
       };
     },
 
@@ -229,7 +226,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     },
 
     /** Завершить создание draft объекта */
-    finalizeDraftObject(): L7Object | null {
+    finalizeDraftObject(): DeckGLObject | null {
       if (!this.DraftObject || this.DraftObject.coordinates.length === 0) {
         return null;
       }
@@ -242,7 +239,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
         coordinates = [...coordinates, firstCoord];
       }
 
-      const newObject = createNewL7Object(
+      const newObject = createNewDeckGLObject(
         this.DraftObject.type as Exclude<ObjTypes, "Edit">,
         coordinates,
       );
@@ -274,7 +271,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     },
 
     /** Обновить стиль объекта */
-    updateObjectStyle(id: string, style: Partial<L7Object["style"]>) {
+    updateObjectStyle(id: string, style: Partial<DeckGLObject["style"]>) {
       const obj = this.Objects.get(id);
       if (obj) {
         // Обновляем strokeState при изменении strokeWidth или strokeDasharray
@@ -365,8 +362,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
         this.Objects = new Map();
         this.strokeState = new Map();
         for (const backendObj of backendObjects) {
-          const l7Obj = backendToL7(backendObj, backendObj.options.Id);
-          this.Objects.set(l7Obj.id, l7Obj);
+          const deckGLObj = backendToDeckGL(backendObj, backendObj.options.Id);
+          this.Objects.set(deckGLObj.id, deckGLObj);
         }
         console.log(
           "[MapObjectStore] Загружено объектов в store:",
@@ -376,16 +373,16 @@ export const useMapObjectStore = defineStore("mapobjects", {
     },
 
     /** Сохранить новый объект в БД */
-    async saveObjectToDB(obj: L7Object) {
+    async saveObjectToDB(obj: DeckGLObject) {
       const { createObject } = useApi();
-      const backendObj = l7ToBackend(obj);
+      const backendObj = deckGLToBackend(obj);
       return await createObject(backendObj);
     },
 
     /** Обновить объект в БД */
-    async updateObjectInDB(obj: L7Object) {
+    async updateObjectInDB(obj: DeckGLObject) {
       const { updateObject } = useApi();
-      const backendObj = l7ToBackend(obj);
+      const backendObj = deckGLToBackend(obj);
       return await updateObject(backendObj);
     },
 
@@ -404,18 +401,18 @@ export const useMapObjectStore = defineStore("mapobjects", {
     // ========================================================================
 
     /** Получить объект по ID */
-    getObjectById(id: string): L7Object | undefined {
+    getObjectById(id: string): DeckGLObject | undefined {
       return this.Objects.get(id);
     },
 
-    /** Конвертировать BackendObjectCreate в L7Object (публичный метод) */
-    convertBackendToL7(backendObj: BackendObjectCreate): L7Object {
-      return backendToL7(backendObj);
+    /** Конвертировать BackendObjectCreate в DeckGLObject (публичный метод) */
+    convertBackendToDeckGL(backendObj: BackendObjectCreate): DeckGLObject {
+      return backendToDeckGL(backendObj);
     },
 
-    /** Конвертировать L7Object в BackendObjectCreate (публичный метод) */
-    convertL7ToBackend(obj: L7Object): BackendObjectCreate {
-      return l7ToBackend(obj);
+    /** Конвертировать DeckGLObject в BackendObjectCreate (публичный метод) */
+    convertDeckGLToBackend(obj: DeckGLObject): BackendObjectCreate {
+      return deckGLToBackend(obj);
     },
   },
 });

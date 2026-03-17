@@ -41,16 +41,15 @@ export interface BackendResponse {
 }
 
 // ============================================================================
-// ТИПЫ ДЛЯ ANTВ L7
+// ТИПЫ ДЛЯ DECK.GL
 // ============================================================================
 
-/** Координата в формате L7: [lng, lat] (GeoJSON standard) */
+/** Координата в формате Deck.gl: [lng, lat] (GeoJSON standard) */
 export type LngLatTuple = [number, number];
 
-/** Стиль L7 объекта */
-export interface L7Style {
-  fillColor?: [number, number, number, number]; // RGBA
-  strokeColor?: [number, number, number, number];
+/** Стиль Deck.gl объекта */
+export interface DeckGLStyle {
+  color: [number, number, number, number]; // RGBA
   strokeWidth?: number;
   strokeDasharray?: [number, number];
   filled?: boolean;
@@ -58,17 +57,17 @@ export interface L7Style {
   radius?: number; // для CircleMarker
 }
 
-/** Объект L7 для отображения на карте */
-export interface L7Object {
+/** Объект Deck.gl для отображения на карте */
+export interface DeckGLObject {
   id: string;
   type: Exclude<ObjTypes, "Edit">;
   name: string;
-  customName?: string;
-  description?: string;
-  style: L7Style;
+  customName?: string | null;
+  description?: string | null;
+  style: DeckGLStyle;
   coordinates: LngLatTuple[]; // [lng, lat]
 }
 
 // ============================================================================
-// УДАЛЕНО: Leaflet и Deck.gl типы больше не нужны
+// УДАЛЕНО: L7 типы больше не нужны
 // ============================================================================
