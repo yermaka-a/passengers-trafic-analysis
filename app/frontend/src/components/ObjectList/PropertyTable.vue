@@ -98,6 +98,12 @@ const updateObjectInBackend = async (obj: DeckGLObject) => {
   }
 };
 
+const truncateText = (text: string | null | undefined, maxLength: number = 10) => {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+};
+
 // Форматирование координат для отображения
 const formatCoordinates = (obj: DeckGLObject): string => {
   const coords = getCoordinates(obj);
@@ -150,8 +156,8 @@ const getColorBadge = (obj: DeckGLObject) => {
             <TableCell>
               <div class="flex flex-col gap-1">
                 <div class="flex items-center gap-2">
-                  <span v-if="!editingObj" class="text-sm font-medium">
-                    {{ obj[1].customName || obj[1].name }}
+                  <span v-if="!editingObj" class="text-sm font-medium truncate max-w-[150px]" :title="obj[1].customName || obj[1].name">
+                    {{ truncateText(obj[1].customName || obj[1].name, 15) }}
                   </span>
                   <Button
                     variant="ghost"
@@ -162,7 +168,9 @@ const getColorBadge = (obj: DeckGLObject) => {
                     <Pencil class="w-3 h-3" />
                   </Button>
                 </div>
-                <span v-if="obj[1].description" class="text-xs text-gray-500">{{ obj[1].description }}</span>
+                <span v-if="obj[1].description" class="text-xs text-gray-500 truncate max-w-[150px]" :title="obj[1].description">
+                  {{ truncateText(obj[1].description, 10) }}
+                </span>
               </div>
             </TableCell>
             <TableCell class="text-sm text-gray-500">

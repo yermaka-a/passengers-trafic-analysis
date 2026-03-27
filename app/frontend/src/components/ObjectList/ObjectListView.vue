@@ -167,7 +167,7 @@ const onCloseModal = () => {
               <button
                 v-if="obj[1].description && obj[1].description.length > 10"
                 @click="toggleDescription(obj[0])"
-                class="text-xs text-blue-500 hover:text-blue-700 flex-shrink-0"
+                class="text-xs text-gray-700 hover:text-gray-900 flex-shrink-0"
               >
                 {{ isExpanded(obj[0]) ? '▲' : '▼' }}
               </button>
