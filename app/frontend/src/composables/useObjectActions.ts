@@ -119,7 +119,7 @@ export const useObjectActions = () => {
   };
 
   /**
-   * Найти объект на карте
+   * Найти объект на карте (с анимацией полёта)
    */
   const findOnMap = (id: string) => {
     const obj = mapObjectStore.Objects.get(id);
@@ -127,7 +127,7 @@ export const useObjectActions = () => {
       const coord = obj.coordinates[0];
       if (coord) {
         const [lng, lat] = coord;
-        mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 });
+        mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 }, true);
       }
     }
   };

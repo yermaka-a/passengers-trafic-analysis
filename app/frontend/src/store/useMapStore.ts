@@ -41,18 +41,32 @@ export const useMapStore = defineStore("mapstore", () => {
     mapInstance.value = instance;
   }
 
-  function updateViewState(updates: Partial<typeof viewState>) {
+  function updateViewState(updates: Partial<typeof viewState>, animate: boolean = true) {
     Object.assign(viewState, updates);
 
     if (mapInstance.value) {
       const { latitude, longitude, zoom, pitch, bearing } = viewState;
-      mapInstance.value.easeTo({
-        center: [longitude, latitude],
-        zoom,
-        pitch,
-        bearing,
-        duration: 500,
-      });
+      
+      if (animate) {
+        // Анимация полёта
+        mapInstance.value.flyTo({
+          center: [longitude, latitude],
+          zoom,
+          pitch,
+          bearing,
+          duration: 1500,  // 1.5 секунды
+          essential: true,
+        });
+      } else {
+        // Мгновенное перемещение
+        mapInstance.value.easeTo({
+          center: [longitude, latitude],
+          zoom,
+          pitch,
+          bearing,
+          duration: 500,
+        });
+      }
     }
   }
 

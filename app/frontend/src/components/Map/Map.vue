@@ -98,50 +98,78 @@ const selectObject = (id: string) => {
   showObjectPopup(id);
 };
 
-// Генерация HTML для popup
+// Генерация HTML для popup с shadcn стилями
 const generatePopupContent = (obj: DeckGLObject): string => {
-  const coords = obj.coordinates.map(([lng, lat]) => `${lat.toFixed(6)}:${lng.toFixed(6)}`).join(', ');
+  const coords = obj.coordinates.map(([lng, lat], idx) => ({
+    lat: lat.toFixed(8),
+    lng: lng.toFixed(8),
+    idx
+  }));
   const colorHex = rgbaToHex(obj.style.color);
   
   return `
-    <div class="min-w-[200px]">
-      <h3 class="font-bold text-sm mb-2">${obj.customName || obj.name}</h3>
+    <div class="min-w-[280px] font-sans">
+      <!-- Header -->
+      <div class="border-b pb-3 mb-3">
+        <h3 class="font-semibold text-base">${obj.customName || obj.name}</h3>
+        <p class="text-xs text-gray-500 mt-1">${obj.type === 'Polygon' ? 'Полигон' : obj.type === 'Polyline' ? 'Полилиния' : 'Маркер'}</p>
+      </div>
       
-      <details class="mb-2 group" open>
-        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
-          <span class="group-open:rotate-90 transition-transform">▶</span>
-          📍 Координаты
-        </summary>
-        <div class="text-xs ml-4 mt-1 text-gray-600 font-mono">${coords}</div>
-      </details>
+      <!-- Coordinates -->
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm font-medium">📍 Координаты</span>
+          <span class="text-xs text-gray-500">(${coords.length} точек)</span>
+        </div>
+        <div class="max-h-[150px] overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 rounded-md p-2 border">
+          ${coords.map(c => `
+            <div class="flex justify-between items-center">
+              <span class="text-gray-600">#${c.idx + 1}:</span>
+              <span>${c.lat}, ${c.lng}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
       
-      <details class="mb-2 group">
-        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
-          <span class="group-open:rotate-90 transition-transform">▶</span>
-          🎨 Стиль
-        </summary>
-        <div class="text-xs ml-4 mt-1 space-y-1">
+      <!-- Style -->
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm font-medium">🎨 Стиль</span>
+        </div>
+        <div class="space-y-2 text-xs">
           <div class="flex items-center gap-2">
             <span class="w-4 h-4 rounded border" style="background-color: ${colorHex}"></span>
-            <span class="text-gray-600">${colorHex}</span>
+            <span class="text-gray-600">Цвет:</span>
+            <span class="font-mono">${colorHex}</span>
           </div>
-          ${obj.type !== 'CircleMarker' ? `<div class="text-gray-600">Обводка: ${obj.style.strokeWidth ?? 0}px</div>` : ''}
-          ${obj.type === 'CircleMarker' ? `<div class="text-gray-600">Размер: ${obj.style.radius ?? 10}px</div>` : ''}
+          ${obj.type !== 'CircleMarker' ? `
+          <div class="flex items-center gap-2">
+            <span class="text-gray-600">Обводка:</span>
+            <span class="font-mono">${obj.style.strokeWidth ?? 0}px</span>
+          </div>
+          ` : ''}
+          ${obj.type === 'CircleMarker' ? `
+          <div class="flex items-center gap-2">
+            <span class="text-gray-600">Размер:</span>
+            <span class="font-mono">${obj.style.radius ?? 10}px</span>
+          </div>
+          ` : ''}
         </div>
-      </details>
+      </div>
       
+      <!-- Description -->
       ${obj.description ? `
-      <details class="mb-2 group">
-        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
-          <span class="group-open:rotate-90 transition-transform">▶</span>
-          📝 Описание
-        </summary>
-        <div class="text-xs ml-4 mt-1 text-gray-600">${obj.description}</div>
-      </details>
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-sm font-medium">📝 Описание</span>
+        </div>
+        <p class="text-xs text-gray-600 bg-gray-50 rounded-md p-2 border">${obj.description}</p>
+      </div>
       ` : ''}
       
-      <div class="flex gap-2 mt-3 pt-2 border-t">
-        <button class="find-on-map-btn text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+      <!-- Actions -->
+      <div class="flex gap-2 mt-4 pt-3 border-t">
+        <button class="find-on-map-btn flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 rounded-md transition-colors">
           Приблизить
         </button>
       </div>
@@ -176,7 +204,7 @@ const showObjectPopup = (id: string) => {
     const btn = document.querySelector('.find-on-map-btn');
     if (btn) {
       btn.addEventListener('click', () => {
-        mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 });
+        mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 }, true);
         if (popup) popup.remove();
       });
     }
