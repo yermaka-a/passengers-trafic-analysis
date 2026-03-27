@@ -94,6 +94,7 @@ const handleColorChange = (value: string) => {
       :model-value="draftColor"
       @update:model-value="handleColorChange"
       class="w-10 h-9 p-1 cursor-pointer"
+      title="Цвет создаваемого объекта"
     />
   </div>
 </template>
