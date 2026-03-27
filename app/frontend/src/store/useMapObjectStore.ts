@@ -365,7 +365,6 @@ export const useMapObjectStore = defineStore("mapobjects", {
         // Удаляем и добавляем заново для триггера реактивности
         this.Objects.delete(id);
         this.Objects.set(id, updatedObj);
-        console.log('[useMapObjectStore] updateObjectCoordinates:', id, updatedObj.coordinates.length, 'coords');
       }
     },
 

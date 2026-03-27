@@ -246,15 +246,6 @@ const showObjectPopup = (id: string) => {
           const latInput = row.querySelector('.edit-lat-input') as HTMLInputElement;
           const lngInput = row.querySelector('.edit-lng-input') as HTMLInputElement;
           
-          console.log('[Map] Save edit:', {
-            hasLatInput: !!latInput,
-            hasLngInput: !!lngInput,
-            lat: latInput?.value,
-            lng: lngInput?.value,
-            objId: id,
-            idx: idx
-          });
-          
           if (latInput && lngInput) {
             const newLat = latInput.value;
             const newLng = lngInput.value;
@@ -263,26 +254,19 @@ const showObjectPopup = (id: string) => {
             
             // Обновляем координаты в store
             const obj = mapObjectStore.Objects.get(id);
-            console.log('[Map] Found object:', !!obj, obj?.coordinates.length);
-            
             if (obj) {
               const newCoordinates = [...obj.coordinates];
               newCoordinates[Number(idx)] = [Number(newLng), Number(newLat)];
-              console.log('[Map] New coordinates:', newCoordinates);
-              
               mapObjectStore.updateObjectCoordinates(id, newCoordinates);
-              console.log('[Map] Координаты обновлены:', id, idx, newLat, newLng);
               
               // Принудительная перерисовка Deck.gl
               if (deckOverlay && deckOverlay._deck) {
-                console.log('[Map] Redrawing Deck.gl...');
                 deckOverlay._deck.setProps({
                   layers: createDeckLayers(),
                   _animate: false,
                 });
                 setTimeout(() => {
                   if (deckOverlay?._deck) {
-                    console.log('[Map] Deck.gl redrawn');
                     deckOverlay._deck.redraw();
                   }
                 }, 50);
@@ -653,11 +637,6 @@ onMounted(() => {
     watch(
       () => Array.from(Objects.value?.values() ?? []),
       (newObjects, oldObjects) => {
-        console.log("[Map] Objects изменился:", {
-          newCount: newObjects.length,
-          oldCount: oldObjects?.length ?? 0,
-          newObjects: newObjects.map(o => ({ id: o.id, coords: o.coordinates.length }))
-        });
         // Принудительно обновляем layers для Deck.gl
         if (deckOverlay && deckOverlay._deck) {
           deckOverlay._deck.setProps({
