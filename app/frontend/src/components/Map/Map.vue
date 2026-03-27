@@ -98,7 +98,7 @@ const selectObject = (id: string) => {
   showObjectPopup(id);
 };
 
-// Генерация HTML для popup с shadcn стилями и редактированием
+// Генерация HTML для popup
 const generatePopupContent = (obj: DeckGLObject): string => {
   const coords = obj.coordinates.map(([lng, lat], idx) => ({
     lat: lat.toFixed(8),
@@ -107,14 +107,8 @@ const generatePopupContent = (obj: DeckGLObject): string => {
   }));
   const colorHex = rgbaToHex(obj.style.color);
   
-  // Цвета из вашего проекта - тёмная тема
-  const primaryColor = '#1E293B';  // Slate 800 - тёмный
-  const primaryHover = '#0F172A';  // Slate 900
-  const dangerColor = '#991B1B';   // Red 800 - тёмный красный
-  const dangerHover = '#7F1D1D';   // Red 900
-  
   return `
-    <div class="min-w-[320px] max-w-[400px] font-sans" data-object-id="${obj.id}">
+    <div class="min-w-[280px] max-w-[320px] font-sans" data-object-id="${obj.id}">
       <!-- Header -->
       <div class="border-b pb-2 mb-2">
         <h3 class="font-semibold text-sm truncate" title="${obj.customName || obj.name}">${obj.customName || obj.name}</h3>
@@ -123,66 +117,27 @@ const generatePopupContent = (obj: DeckGLObject): string => {
       
       <!-- Coordinates -->
       <div class="mb-3">
-        <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center justify-between mb-1">
           <span class="text-xs font-medium">📍 Координаты</span>
           <span class="text-xs text-gray-500">(${coords.length} точек)</span>
         </div>
-        <div class="max-h-[120px] overflow-y-auto space-y-0.5 text-xs font-mono bg-gray-50 rounded p-1.5 border">
+        <div class="max-h-[100px] overflow-y-auto space-y-0.5 text-xs font-mono bg-gray-50 rounded p-1.5 border">
           ${coords.map(c => `
             <div class="flex justify-between items-center edit-coord-row" data-idx="${c.idx}" data-lat="${c.lat}" data-lng="${c.lng}">
-              <span class="text-gray-600">#${c.idx + 1}:</span>
-              <span class="coord-values truncate max-w-[140px]">${c.lat}, ${c.lng}</span>
+              <span class="text-gray-600 truncate">#${c.idx + 1}:</span>
+              <span class="coord-values truncate max-w-[120px]">${c.lat}, ${c.lng}</span>
               <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${c.idx}">✏️</button>
             </div>
           `).join('')}
         </div>
       </div>
       
-      <!-- Style -->
-      <div class="mb-3">
-        <div class="flex items-center gap-1.5 mb-1">
-          <span class="text-xs font-medium">🎨 Стиль</span>
-        </div>
-        <div class="space-y-1 text-xs">
-          <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded border flex-shrink-0" style="background-color: ${colorHex}"></span>
-            <span class="text-gray-600">Цвет:</span>
-            <span class="font-mono text-xs">${colorHex}</span>
-          </div>
-          ${obj.type !== 'CircleMarker' ? `
-          <div class="flex items-center gap-1.5">
-            <span class="text-gray-600">Обводка:</span>
-            <span class="font-mono text-xs">${obj.style.strokeWidth ?? 0}px</span>
-          </div>
-          ` : ''}
-          ${obj.type === 'CircleMarker' ? `
-          <div class="flex items-center gap-1.5">
-            <span class="text-gray-600">Размер:</span>
-            <span class="font-mono text-xs">${obj.style.radius ?? 10}px</span>
-          </div>
-          ` : ''}
-        </div>
-      </div>
-      
-      <!-- Description -->
-      ${obj.description ? `
-      <div class="mb-3">
-        <div class="flex items-center gap-1.5 mb-1">
-          <span class="text-xs font-medium">📝 Описание</span>
-        </div>
-        <p class="text-xs text-gray-600 bg-gray-50 rounded p-1.5 border truncate" title="${obj.description}">${obj.description}</p>
-      </div>
-      ` : ''}
-      
       <!-- Actions -->
-      <div class="flex gap-1.5 mt-3 pt-2 border-t">
-        <button class="find-on-map-btn flex-1 text-xs px-2 py-1.5 rounded-md transition-colors text-white truncate" style="background-color: ${primaryColor}">
+      <div class="flex gap-1.5 mt-2 pt-2 border-t">
+        <button class="find-on-map-btn flex-1 text-xs px-2 py-1.5 rounded-md transition-colors text-white">
           Приблизить
         </button>
-        <button class="save-coords-btn flex-1 text-xs px-2 py-1.5 rounded-md transition-colors text-white truncate" style="background-color: ${primaryColor}">
-          Сохранить
-        </button>
-        <button class="close-popup-btn text-white w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background-color: ${dangerColor}">
+        <button class="close-popup-btn text-white w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0" style="background-color: #EF4444;">
           ✕
         </button>
       </div>
@@ -215,23 +170,23 @@ const showObjectPopup = (id: string) => {
   // Добавляем обработчики для popup
   setTimeout(() => {
     // Hover эффекты для кнопок
-    const primaryBtns = document.querySelectorAll('.find-on-map-btn, .save-coords-btn');
-    primaryBtns.forEach(btn => {
-      btn.addEventListener('mouseenter', () => {
-        (btn as HTMLElement).style.backgroundColor = '#0F172A';
+    const primaryBtn = document.querySelector('.find-on-map-btn');
+    if (primaryBtn) {
+      primaryBtn.addEventListener('mouseenter', () => {
+        (primaryBtn as HTMLElement).style.backgroundColor = '#0066CC';
       });
-      btn.addEventListener('mouseleave', () => {
-        (btn as HTMLElement).style.backgroundColor = '#1E293B';
+      primaryBtn.addEventListener('mouseleave', () => {
+        (primaryBtn as HTMLElement).style.backgroundColor = '#0080FF';
       });
-    });
+    }
     
     const dangerBtn = document.querySelector('.close-popup-btn');
     if (dangerBtn) {
       dangerBtn.addEventListener('mouseenter', () => {
-        (dangerBtn as HTMLElement).style.backgroundColor = '#7F1D1D';
+        (dangerBtn as HTMLElement).style.backgroundColor = '#DC2626';
       });
       dangerBtn.addEventListener('mouseleave', () => {
-        (dangerBtn as HTMLElement).style.backgroundColor = '#991B1B';
+        (dangerBtn as HTMLElement).style.backgroundColor = '#EF4444';
       });
     }
     
@@ -252,16 +207,6 @@ const showObjectPopup = (id: string) => {
       });
     }
     
-    // Кнопка "Сохранить координаты"
-    const saveBtn = document.querySelector('.save-coords-btn');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => {
-        console.log('[Map] Сохранение координат для объекта:', id);
-        // TODO: Реализовать сохранение изменённых координат
-        if (popup) popup.remove();
-      });
-    }
-    
     // Кнопки редактирования координат
     const editBtns = document.querySelectorAll('.edit-coord-btn');
     editBtns.forEach(btn => {
@@ -269,17 +214,23 @@ const showObjectPopup = (id: string) => {
         const row = (e.target as HTMLElement).closest('.edit-coord-row') as HTMLElement;
         if (!row) return;
         
+        // Проверяем, уже редактируется ли
+        const existingInput = row.querySelector('.edit-lat-input');
+        if (existingInput) return; // Уже редактируется
+        
         const idx = row.dataset.idx;
         const currentLat = row.dataset.lat;
         const currentLng = row.dataset.lng;
         
+        if (!idx || !currentLat || !currentLng) return;
+        
         // Заменяем на input для редактирования
         row.innerHTML = `
-          <span class="text-gray-600">#${Number(idx) + 1}:</span>
-          <input type="text" class="edit-lat-input w-20 text-xs border rounded px-1" value="${currentLat}" />
-          <input type="text" class="edit-lng-input w-20 text-xs border rounded px-1" value="${currentLng}" />
-          <button class="save-edit-btn ml-1 text-green-600 hover:text-green-800">✓</button>
-          <button class="cancel-edit-btn ml-1 text-red-600 hover:text-red-800">✗</button>
+          <span class="text-gray-600 truncate">#${Number(idx) + 1}:</span>
+          <input type="text" class="edit-lat-input w-16 text-xs border rounded px-1 flex-shrink-0" value="${currentLat}" />
+          <input type="text" class="edit-lng-input w-16 text-xs border rounded px-1 flex-shrink-0" value="${currentLng}" />
+          <button class="save-edit-btn ml-1 text-green-600 hover:text-green-800 flex-shrink-0">✓</button>
+          <button class="cancel-edit-btn ml-1 text-red-600 hover:text-red-800 flex-shrink-0">✗</button>
         `;
         
         // Обработчик сохранения
@@ -299,10 +250,15 @@ const showObjectPopup = (id: string) => {
           
           // Восстанавливаем отображение
           row.innerHTML = `
-            <span class="text-gray-600">#${Number(idx) + 1}:</span>
-            <span class="coord-values">${row.dataset.lat}, ${row.dataset.lng}</span>
-            <button class="edit-coord-btn ml-2 text-blue-500 hover:text-blue-700" data-idx="${idx}">✏️</button>
+            <span class="text-gray-600 truncate">#${Number(idx) + 1}:</span>
+            <span class="coord-values truncate max-w-[120px]">${row.dataset.lat}, ${row.dataset.lng}</span>
+            <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
           `;
+          // Переназначаем обработчик на кнопку
+          const newEditBtn = row.querySelector('.edit-coord-btn');
+          if (newEditBtn) {
+            newEditBtn.addEventListener('click', arguments.callee);
+          }
           // TODO: Обновить координаты в store
         });
         
@@ -311,9 +267,9 @@ const showObjectPopup = (id: string) => {
         cancelEditBtn?.addEventListener('click', () => {
           // Восстанавливаем отображение
           row.innerHTML = `
-            <span class="text-gray-600">#${Number(idx) + 1}:</span>
-            <span class="coord-values">${currentLat}, ${currentLng}</span>
-            <button class="edit-coord-btn ml-2 text-blue-500 hover:text-blue-700" data-idx="${idx}">✏️</button>
+            <span class="text-gray-600 truncate">#${Number(idx) + 1}:</span>
+            <span class="coord-values truncate max-w-[120px]">${currentLat}, ${currentLng}</span>
+            <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
           `;
         });
       });
