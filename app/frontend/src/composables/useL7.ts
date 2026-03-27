@@ -131,14 +131,14 @@ export const useL7 = () => {
   };
 
   // Завершение создания объекта
-  const finalizeObject = async () => {
-    const finalized = mapObjectStore.finalizeDraftObject();
+  const finalizeObject = async (draftColor?: string) => {
+    const finalized = mapObjectStore.finalizeDraftObject(draftColor);
 
     if (finalized) {
       // Очищаем историю draft и добавляем finalized объект
       history.value = [];
       historyIndex.value = -1;
-      
+
       // Добавляем в историю
       pushToHistory({
         objectId: finalized.id,

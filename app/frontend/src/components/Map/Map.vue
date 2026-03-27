@@ -50,13 +50,18 @@ const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
 // L7 composable (переименовать потом в useDeckGL)
 const {
   handleMapClick,
-  finalizeObject,
+  finalizeObject: finalizeObjectFromComposable,
   cancelObject,
   undo,
   redo,
   canUndo,
   canRedo,
 } = useL7();
+
+// Wrapper для передачи цвета
+const finalizeObject = async () => {
+  await finalizeObjectFromComposable(draftColor.value);
+};
 
 // Обновляем цвет draft объекта при изменении
 watch(draftColor, (newColor) => {
