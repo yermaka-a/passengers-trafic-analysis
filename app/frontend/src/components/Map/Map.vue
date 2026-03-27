@@ -227,6 +227,10 @@ const showObjectPopup = (id: string) => {
         
         if (!idx || !currentLat || !currentLng) return;
         
+        // Сохраняем оригинальный HTML для отмены
+        const originalHTML = row.innerHTML;
+        row.dataset.originalHtml = originalHTML;
+        
         // Заменяем на input для редактирования
         row.innerHTML = `
           <span class="text-gray-600 truncate">#${Number(idx) + 1}:</span>
@@ -284,12 +288,8 @@ const showObjectPopup = (id: string) => {
         // Обработчик отмены
         const cancelEditBtn = row.querySelector('.cancel-edit-btn') as HTMLButtonElement;
         cancelEditBtn?.addEventListener('click', () => {
-          // Восстанавливаем отображение
-          row.innerHTML = `
-            <span class="text-gray-600 truncate">#${Number(idx) + 1}:</span>
-            <span class="coord-values truncate max-w-[120px]">${currentLat}, ${currentLng}</span>
-            <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
-          `;
+          // Восстанавливаем оригинальное отображение
+          row.innerHTML = row.dataset.originalHtml || originalHTML;
         });
       });
     }
