@@ -18,6 +18,7 @@ import { Search, X } from "lucide-vue-next";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
 import useObjectActions from "@/composables/useObjectActions";
+import { useApi } from "@/composables";
 
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
@@ -35,6 +36,33 @@ const {
   getCoordinates,
   getDashValue,
 } = useObjectActions();
+
+const updateCustomName = async (id: string, value: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (obj) {
+    const updatedObj = { ...obj, customName: value || null };
+    mapObjectStore.Objects.set(id, updatedObj);
+    await updateObjectInBackend(updatedObj);
+  }
+};
+
+const updateDescription = async (id: string, value: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (obj) {
+    const updatedObj = { ...obj, description: value || null };
+    mapObjectStore.Objects.set(id, updatedObj);
+    await updateObjectInBackend(updatedObj);
+  }
+};
+
+const updateObjectInBackend = async (obj: DeckGLObject) => {
+  const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+  const { updateObject } = useApi();
+  const result = await updateObject(backendObj);
+  if (result?.status !== "success") {
+    console.error("[PropertyTable] Ошибка обновления:", result);
+  }
+};
 
 // Форматирование координат для отображения
 const formatCoordinates = (obj: DeckGLObject): string => {
@@ -84,7 +112,26 @@ const getColorBadge = (obj: DeckGLObject) => {
                 {{ obj[1].type === "Polygon" ? "Полигон" : obj[1].type === "Polyline" ? "Полилайн" : "Маркер" }}
               </Badge>
             </TableCell>
-            <TableCell>{{ obj[1].name }}</TableCell>
+            <TableCell>
+              <div class="flex flex-col gap-1">
+                <input
+                  v-if="obj[1].customName"
+                  :value="obj[1].customName"
+                  @change="(e) => updateCustomName(obj[0], (e.target as HTMLInputElement).value)"
+                  class="text-sm font-medium border rounded px-2 py-1 w-full"
+                  placeholder="Название"
+                />
+                <span v-else class="text-sm text-gray-500">{{ obj[1].name }}</span>
+                <textarea
+                  v-if="obj[1].description"
+                  :value="obj[1].description"
+                  @change="(e) => updateDescription(obj[0], (e.target as HTMLTextAreaElement).value)"
+                  class="text-xs text-gray-400 border rounded px-2 py-1 w-full resize-none"
+                  placeholder="Описание"
+                  rows="2"
+                />
+              </div>
+            </TableCell>
             <TableCell class="text-sm text-gray-500">
               {{ formatCoordinates(obj[1]) }}
             </TableCell>

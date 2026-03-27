@@ -5,7 +5,6 @@ import maplibregl from "maplibre-gl";
 import { storeToRefs } from "pinia";
 import { useMapObjectStore, useMapStore } from "@/store";
 import { useL7 } from "@/composables/useL7";
-import { TilesSwitcher } from "@/components/TilesSwitcher";
 import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
@@ -348,6 +347,19 @@ onMounted(() => {
     mapStore.mapInstance = map;  // Сохраняем в store для доступа из List.vue
     console.log("[Map] MapLibre создана");
 
+    // Слушаем событие переключения тайлов из List.vue
+    window.addEventListener('map-tiles-change', (event: any) => {
+      if (!mapInstance.value) return;
+      const config = event.detail;
+      const style = mapInstance.value.getStyle();
+      
+      if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
+        (style.sources["osm"] as any).tiles = config.tiles;
+        (style.sources["osm"] as any).attribution = config.attribution;
+        mapInstance.value.setStyle(style);
+      }
+    });
+
     // Создаём Deck.gl overlay
     deckOverlay = new MapboxOverlay({
       layers: createDeckLayers(),
@@ -441,7 +453,6 @@ onUnmounted(() => {
     :draft-color="draftColor"
     @update:draft-color="draftColor = $event"
   />
-  <TilesSwitcher />
   <div class="flex-1 h-screen overflow-scroll">
     <div
       id="map"
