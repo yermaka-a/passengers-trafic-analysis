@@ -88,16 +88,17 @@ const getColorBadge = (obj: DeckGLObject) => {
         <TableHeader>
           <TableRow>
             <TableHead class="w-[50px]">№</TableHead>
-            <TableHead class="w-[100px]">Тип</TableHead>
+            <TableHead class="w-[80px]">Тип</TableHead>
             <TableHead>Имя</TableHead>
-            <TableHead class="w-[150px]">Координаты</TableHead>
-            <TableHead class="w-[80px]">Цвет</TableHead>
-            <TableHead class="w-[80px]">Обводка</TableHead>
-            <TableHead class="w-[100px]">Пунктир</TableHead>
-            <TableHead class="w-[80px]">Заливка</TableHead>
-            <TableHead class="w-[100px]">Прозрачность</TableHead>
-            <TableHead class="w-[100px]">Размер</TableHead>
-            <TableHead class="w-[150px]">Действия</TableHead>
+            <TableHead class="w-[120px]">Координаты</TableHead>
+            <TableHead class="w-[70px]">Цвет</TableHead>
+            <TableHead class="w-[70px]">Обводка</TableHead>
+            <TableHead class="w-[70px]">Жирность</TableHead>
+            <TableHead class="w-[80px]">Пунктир</TableHead>
+            <TableHead class="w-[70px]">Заливка</TableHead>
+            <TableHead class="w-[80px]">Прозрачность</TableHead>
+            <TableHead class="w-[70px]">Размер</TableHead>
+            <TableHead class="w-[120px]">Действия</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -148,6 +149,22 @@ const getColorBadge = (obj: DeckGLObject) => {
                 :model-value="(obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="toggleStroke(obj[0])"
               />
+            </TableCell>
+            <TableCell>
+              <Slider
+                v-if="(obj[1].style.strokeWidth ?? 0) > 0"
+                @update:model-value="
+                  (value) => {
+                    if (value) changeWeight(value, obj[0]);
+                  }
+                "
+                :model-value="[obj[1].style.strokeWidth ?? 2]"
+                :max="50"
+                :step="1"
+                :min="0"
+                class="w-20"
+              />
+              <span v-else class="text-gray-400">-</span>
             </TableCell>
             <TableCell>
               <Slider
