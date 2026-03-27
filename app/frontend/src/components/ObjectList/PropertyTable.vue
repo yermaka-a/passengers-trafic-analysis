@@ -33,6 +33,11 @@ const props = defineProps<{
   objects: [string, DeckGLObject][];
 }>();
 
+// Эмит для открытия popup в Map.vue
+const emit = defineEmits<{
+  openPopup: [id: string];
+}>();
+
 const mapObjectStore = useMapObjectStore();
 
 const editingObj = ref<[string, DeckGLObject] | null>(null);
@@ -267,7 +272,7 @@ const getColorBadge = (obj: DeckGLObject) => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  @click="findOnMap(obj[0])"
+                  @click="emit('openPopup', obj[0]); findOnMap(obj[0])"
                   title="Найти на карте"
                   class="h-8 w-8 p-0"
                 >

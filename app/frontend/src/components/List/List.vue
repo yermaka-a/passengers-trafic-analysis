@@ -84,6 +84,13 @@ const switchLayer = (layer: TileLayer) => {
     detail: tilesStore.getCurrentLayerConfig() 
   }));
 };
+
+// Открыть popup для объекта
+const openObjectPopup = (id: string) => {
+  if (mapStore.showObjectPopup.value) {
+    mapStore.showObjectPopup.value(id);
+  }
+};
 </script>
 
 <template>
@@ -173,8 +180,16 @@ const switchLayer = (layer: TileLayer) => {
 
     <!-- Контент -->
     <div class="flex-1 overflow-hidden">
-      <ObjectListView v-if="view === 'cards'" :objects="filteredObjects" />
-      <PropertyTable v-else :objects="filteredObjects" />
+      <ObjectListView 
+        v-if="view === 'cards'" 
+        :objects="filteredObjects"
+        @open-popup="openObjectPopup"
+      />
+      <PropertyTable 
+        v-else 
+        :objects="filteredObjects"
+        @open-popup="openObjectPopup"
+      />
     </div>
   </div>
 </template>

@@ -13,6 +13,9 @@ export const useMapStore = defineStore("mapstore", () => {
     pitch: MaplibreMapConfig.initialViewState.pitch,
     bearing: MaplibreMapConfig.initialViewState.bearing,
   });
+  
+  // Функция для открытия popup (будет установлена из Map.vue)
+  const showObjectPopup = ref<((id: string) => void) | null>(null);
 
   function initMap(containerId: string) {
     if (mapInstance.value) return;
@@ -56,6 +59,7 @@ export const useMapStore = defineStore("mapstore", () => {
   return {
     mapInstance,
     viewState,
+    showObjectPopup,
     initMap,
     updateViewState,
   };

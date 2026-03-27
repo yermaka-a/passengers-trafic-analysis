@@ -112,6 +112,11 @@ const {
   getDashValue,
 } = useObjectActions();
 
+// Эмит для открытия popup в Map.vue
+const emit = defineEmits<{
+  openPopup: [id: string];
+}>();
+
 const closeModalRef = ref(false);
 const deletingError = ref(false);
 const updateError = ref(false);
@@ -253,7 +258,7 @@ const onCloseModal = () => {
                 >Обводка</Toggle
               >
               <Toggle
-                @click="findOnMap(obj[0])"
+                @click="emit('openPopup', obj[0]); findOnMap(obj[0])"
                 size="default"
                 variant="outline"
                 :model-value="false"
