@@ -54,8 +54,7 @@ const setView = (newView: ViewType) => {
 
     <!-- Контент -->
     <div class="flex-1 overflow-hidden">
-      <ObjectListView v-if="view === 'cards'" />
-      <PropertyTable v-else />
+      <component :is="view === 'cards' ? ObjectListView : PropertyTable" :key="view" />
     </div>
   </div>
 </template>
