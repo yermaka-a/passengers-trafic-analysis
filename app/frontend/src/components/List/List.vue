@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { ObjectListView, PropertyTable } from "@/components/ObjectList";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
+import { useMapStore } from "@/store";
 import { storeToRefs } from "pinia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ type ViewType = "cards" | "table";
 
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
+const mapStore = useMapStore();
 const tilesStore = useTilesStore();
 
 const view = ref<ViewType>("cards");
