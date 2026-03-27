@@ -201,13 +201,39 @@ const createDeckLayers = () => {
         id: "circle-marker",
         data: pointObjects,
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getColor: (obj: DeckGLObject) => obj.style.color,
+        // Заливка маркера
+        getColor: (obj: DeckGLObject) => {
+          const color = obj.style.color;
+          // Применяем fillOpacity к альфа-каналу
+          return [
+            color[0]!,
+            color[1]!,
+            color[2]!,
+            Math.round(color[3]! * (obj.style.fillOpacity ?? 1.0))
+          ];
+        },
         getRadius: (obj: DeckGLObject) => obj.style.radius ?? 10,
         radiusMinPixels: 5,
         radiusMaxPixels: 20,
+        // Обводка маркера
+        getLineColor: (obj: DeckGLObject) => {
+          // Если обводка выключена (strokeWidth=0), возвращаем прозрачный
+          if ((obj.style.strokeWidth ?? 0) === 0) {
+            return [0, 0, 0, 0];
+          }
+          return obj.style.color;
+        },
+        getLineWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 0,
+        getLineDashArray: (obj: DeckGLObject) => {
+          const dash = obj.style.strokeDasharray;
+          return dash && dash[0] && dash[0] > 0 ? dash : [0, 0];
+        },
         updateTriggers: {
-          getColor: pointObjects.map(o => ({ id: o.id, color: o.style.color })),
+          getColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
           getRadius: pointObjects.map(o => ({ id: o.id, radius: o.style.radius })),
+          getLineColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, strokeWidth: o.style.strokeWidth })),
+          getLineWidth: pointObjects.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
+          getLineDashArray: pointObjects.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray })),
         },
         pickable: true,
         autoHighlight: true,

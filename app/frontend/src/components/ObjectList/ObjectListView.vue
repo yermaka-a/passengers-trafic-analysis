@@ -61,11 +61,6 @@ const onCloseModal = () => {
 
 <template>
   <div class="px-8 h-dvh overflow-scroll pb-60">
-    <h2
-      class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0 mb-4"
-    >
-      Настройки
-    </h2>
     <div v-if="Objects && Objects.size > 0" class="flex gap-3 flex-wrap">
       <Card
         v-for="(obj, idx) in Objects.entries()"
@@ -155,7 +150,7 @@ const onCloseModal = () => {
                 :model-value="false"
                 >На карте</Toggle
               >
-              <Separator class="my-2 w-40" />
+              <Separator class="my-2 w-full" />
               <div>
                 <small className="text-sm leading-none font-medium"
                   >Пунктир</small
@@ -173,7 +168,7 @@ const onCloseModal = () => {
                   class="mx-auto w-40 max-w-xs"
                 />
               </div>
-              <Separator class="my-2 w-40" />
+              <Separator class="my-2 w-full" />
               <div>
                 <div class="flex items-center gap-1">
                   <small class="text-sm leading-none font-medium"

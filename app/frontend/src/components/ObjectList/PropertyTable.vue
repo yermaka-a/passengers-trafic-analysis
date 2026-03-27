@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Search, X } from "lucide-vue-next";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
 import useObjectActions from "@/composables/useObjectActions";
@@ -54,12 +55,6 @@ const getColorBadge = (obj: DeckGLObject) => {
 
 <template>
   <div class="px-8 h-dvh overflow-scroll pb-60">
-    <h2
-      class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0 mb-4"
-    >
-      Настройки
-    </h2>
-
     <div v-if="Objects && Objects.size > 0" class="w-full">
       <Table>
         <TableHeader>
@@ -168,17 +163,18 @@ const getColorBadge = (obj: DeckGLObject) => {
                   size="sm"
                   @click="findOnMap(obj[0])"
                   title="Найти на карте"
+                  class="h-8 w-8 p-0"
                 >
-                  📍
+                  <Search class="w-4 h-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   @click="delObject(obj[0])"
-                  class="text-red-500 hover:text-red-700"
+                  class="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                   title="Удалить"
                 >
-                  🗑️
+                  <X class="w-4 h-4" />
                 </Button>
               </div>
             </TableCell>
