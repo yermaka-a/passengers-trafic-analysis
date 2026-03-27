@@ -1,0 +1,263 @@
+[     301ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=5270f695:32391
+[   61725ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17) @ http://localhost:5173/src/api/object.ts:20
+[   61764ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17) @ http://localhost:5173/src/composables/useApi.ts:13
+[   61831ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+[  214710ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17) @ http://localhost:5173/src/api/object.ts:20
+[  214714ms] [WARNING] The specified value "" does not conform to the required format.  The format is "#rrggbb" where rr, gg, bb are two-digit hexadecimal numbers. @ http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:8108
+[  214732ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17) @ http://localhost:5173/src/composables/useApi.ts:13
+[  214743ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:249:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=33535cc2:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+[  217238ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/api/object.ts:84
+[  217238ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/composables/useApi.ts:13
+[  217239ms] [WARNING] [Vue warn]: Unhandled error during execution of native event handler 
+  at <Primitive ref=fn<forwardRef> type="button" as-child=false  ... > 
+  at <Toggle data-slot="toggle" disabled=false modelValue=true  ... > 
+  at <Toggle model-value=true onClick=fn<onClick> size="default"  ... > 
+  at <CardDescription> 
+  at <CardContent> 
+  at <Card key="1f12247b-1056-6820-bd00-36f8d3d151b9" class="relative mx-auto w-full max-w-sm pt-0 min-w-58" > 
+  at <List> 
+  at <Primitive id="reka-splitter-panel-v-5" style= {flexBasis: 0, flexGrow: 75.0, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=75  ... > 
+  at <ResizablePanel default-size=75 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="vertical" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="vertical" > 
+  at <Primitive id="reka-splitter-panel-v-1" style= {flexBasis: 0, flexGrow: 33.3, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=50  ... > 
+  at <ResizablePanel default-size=50 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="horizontal" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="horizontal" class="max-w-dvwx min-h-11/12 rounded-lg border mt-1" > 
+  at <MapPanel> 
+  at <Main> 
+  at <App> @ http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1727
+[  217245ms] Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51)
+[  219470ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/api/object.ts:84
+[  219471ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/composables/useApi.ts:13
+[  219471ms] [WARNING] [Vue warn]: Unhandled error during execution of native event handler 
+  at <Primitive ref=fn<forwardRef> type="button" as-child=false  ... > 
+  at <Toggle data-slot="toggle" disabled=false modelValue=true  ... > 
+  at <Toggle model-value=true onClick=fn<onClick> size="default"  ... > 
+  at <CardDescription> 
+  at <CardContent> 
+  at <Card key="1f122475-5d57-6170-b84d-c6e8dd170fa3" class="relative mx-auto w-full max-w-sm pt-0 min-w-58" > 
+  at <List> 
+  at <Primitive id="reka-splitter-panel-v-5" style= {flexBasis: 0, flexGrow: 75.0, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=75  ... > 
+  at <ResizablePanel default-size=75 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="vertical" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="vertical" > 
+  at <Primitive id="reka-splitter-panel-v-1" style= {flexBasis: 0, flexGrow: 33.3, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=50  ... > 
+  at <ResizablePanel default-size=50 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="horizontal" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="horizontal" class="max-w-dvwx min-h-11/12 rounded-lg border mt-1" > 
+  at <MapPanel> 
+  at <Main> 
+  at <App> @ http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1727
+[  219477ms] Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51)
+[  219806ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/api/object.ts:84
+[  219807ms] [ERROR] API Error: Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51) @ http://localhost:5173/src/composables/useApi.ts:13
+[  219807ms] [WARNING] [Vue warn]: Unhandled error during execution of native event handler 
+  at <Primitive ref=fn<forwardRef> type="button" as-child=false  ... > 
+  at <Toggle data-slot="toggle" disabled=false modelValue=true  ... > 
+  at <Toggle model-value=true onClick=fn<onClick> size="default"  ... > 
+  at <CardDescription> 
+  at <CardContent> 
+  at <Card key="1f122475-5d57-6170-b84d-c6e8dd170fa3" class="relative mx-auto w-full max-w-sm pt-0 min-w-58" > 
+  at <List> 
+  at <Primitive id="reka-splitter-panel-v-5" style= {flexBasis: 0, flexGrow: 75.0, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=75  ... > 
+  at <ResizablePanel default-size=75 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="vertical" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="vertical" > 
+  at <Primitive id="reka-splitter-panel-v-1" style= {flexBasis: 0, flexGrow: 33.3, flexShrink: 1, overflow: hidden, pointerEvents: undefined} as=undefined  ... > 
+  at <SplitterPanel ref=fn<forwardRef> data-slot="resizable-panel" defaultSize=50  ... > 
+  at <ResizablePanel default-size=50 > 
+  at <Primitive ref=fn<forwardRef> as=undefined as-child=false  ... > 
+  at <SplitterGroup data-slot="resizable-panel-group" direction="horizontal" onLayout=fn  ... > 
+  at <ResizablePanelGroup direction="horizontal" class="max-w-dvwx min-h-11/12 rounded-lg border mt-1" > 
+  at <MapPanel> 
+  at <Main> 
+  at <App> @ http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1727
+[  219813ms] Error: pywebview is not registered
+    at updateObject (http://localhost:5173/src/api/object.ts:83:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at updateObject (http://localhost:5173/src/composables/useApi.ts:24:44)
+    at updateObjectInBackend (http://localhost:5173/src/components/List/List.vue:94:25)
+    at Proxy.toggleStroke (http://localhost:5173/src/components/List/List.vue:54:27)
+    at onClick (http://localhost:5173/src/components/List/List.vue:457:42)
+    at http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7545:58
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1880:51)
+[  220558ms] [ERROR] API Error: Error: pywebview is not registered
+    at deleteObject (http://localhost:5173/src/api/object.ts:68:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at deleteObject (http://localhost:5173/src/composables/useApi.ts:25:43)
+    at Proxy.delObject (http://localhost:5173/src/components/List/List.vue:101:26)
+    at onClick (http://localhost:5173/src/components/List/List.vue:289:41)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at HTMLButtonElement.invoker (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7526:3) @ http://localhost:5173/src/api/object.ts:69
+[  220894ms] [ERROR] API Error: Error: pywebview is not registered
+    at deleteObject (http://localhost:5173/src/api/object.ts:68:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at deleteObject (http://localhost:5173/src/composables/useApi.ts:25:43)
+    at Proxy.delObject (http://localhost:5173/src/components/List/List.vue:101:26)
+    at onClick (http://localhost:5173/src/components/List/List.vue:289:41)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at HTMLButtonElement.invoker (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7526:3) @ http://localhost:5173/src/api/object.ts:69
+[  221550ms] [ERROR] API Error: Error: pywebview is not registered
+    at deleteObject (http://localhost:5173/src/api/object.ts:68:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at deleteObject (http://localhost:5173/src/composables/useApi.ts:25:43)
+    at Proxy.delObject (http://localhost:5173/src/components/List/List.vue:101:26)
+    at onClick (http://localhost:5173/src/components/List/List.vue:289:41)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1865:17)
+    at callWithAsyncErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:1872:15)
+    at HTMLButtonElement.invoker (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-CQ2r9r_T.js?v=240df328:7526:3) @ http://localhost:5173/src/api/object.ts:69

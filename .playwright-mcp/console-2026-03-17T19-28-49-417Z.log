@@ -1,0 +1,69 @@
+[     382ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=91d2e1a0:32391
+[     623ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[   21134ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/api/object.ts:20
+[   21181ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/composables/useApi.ts:13
+[   21207ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17)
+[   69127ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/api/object.ts:20
+[   69130ms] [WARNING] The specified value "" does not conform to the required format.  The format is "#rrggbb" where rr, gg, bb are two-digit hexadecimal numbers. @ http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:8108
+[   69153ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/composables/useApi.ts:13
+[   69163ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17)

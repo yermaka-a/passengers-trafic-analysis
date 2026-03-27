@@ -49,7 +49,6 @@ const { updateObject, error: updateError } = useApi();
 const changeColor = async (value: string, id: string) => {
   if (!value) return;
   const newColor = hexToRGBA(value);
-  console.log('[List] changeColor:', { id, oldColor: Objects.value?.get(id)?.style.color, newColor });
   
   mapObjectStore.updateObjectStyle(id, {
     color: newColor,
@@ -60,7 +59,6 @@ const changeColor = async (value: string, id: string) => {
   if (updatedObj) {
     await updateObjectInBackend(updatedObj);
   }
-  console.log('[List] Цвет обновлён, новый:', updatedObj?.style.color);
 };
 
 const toggleStroke = async (id: string) => {
@@ -77,20 +75,16 @@ const toggleStroke = async (id: string) => {
 
 const changeDash = async (value: number[], id: string) => {
   const obj = Objects.value?.get(id);
-  console.log('[List] changeDash:', { id, oldValue: obj?.style.strokeDasharray, newValue: value });
   
   if (obj && value) {
     // [длина_штриха, длина_пробела] - пробел равен половине штриха
     const dashValue =
       value[0] === 0 ? [0, 0] : ([value[0], value[0]! / 2] as [number, number]);
-    console.log('[List] dashValue:', dashValue);
     
     mapObjectStore.updateObjectStyle(id, {
       strokeDasharray: dashValue as [number, number],
     });
     const updatedObj = mapObjectStore.getObjectById(id);
-    console.log('[List] Пунктир обновлён, новое:', updatedObj?.style.strokeDasharray);
-    console.log('[List] Весь style:', updatedObj?.style);
     if (updatedObj) await updateObjectInBackend(updatedObj);
   }
 };

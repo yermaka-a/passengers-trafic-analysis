@@ -1,0 +1,7 @@
+[     393ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=91d2e1a0:32391
+[    1438ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[  148295ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[  188689ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[  314085ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[  339651ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[  523917ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
