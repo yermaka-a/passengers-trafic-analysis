@@ -626,8 +626,12 @@ onMounted(() => {
     // Используем Array.from для реактивности Map
     watch(
       () => Array.from(Objects.value?.values() ?? []),
-      (newObjects) => {
-        console.log("[Map] Objects изменился:", newObjects.length);
+      (newObjects, oldObjects) => {
+        console.log("[Map] Objects изменился:", {
+          newCount: newObjects.length,
+          oldCount: oldObjects?.length ?? 0,
+          newObjects: newObjects.map(o => ({ id: o.id, coords: o.coordinates.length }))
+        });
         // Принудительно обновляем layers для Deck.gl
         if (deckOverlay && deckOverlay._deck) {
           deckOverlay._deck.setProps({
