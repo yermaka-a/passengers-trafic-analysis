@@ -207,11 +207,14 @@ const showObjectPopup = (id: string) => {
       });
     }
     
-    // Кнопки редактирования координат
-    const editBtns = document.querySelectorAll('.edit-coord-btn');
-    editBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const row = (e.target as HTMLElement).closest('.edit-coord-row') as HTMLElement;
+    // Кнопки редактирования координат - используем делегирование событий
+    const coordsContainer = document.querySelector('.max-h-\\[100px\\]');
+    if (coordsContainer) {
+      coordsContainer.addEventListener('click', (e) => {
+        const editBtn = (e.target as HTMLElement).closest('.edit-coord-btn');
+        if (!editBtn) return;
+        
+        const row = editBtn.closest('.edit-coord-row') as HTMLElement;
         if (!row) return;
         
         // Проверяем, уже редактируется ли
@@ -254,11 +257,6 @@ const showObjectPopup = (id: string) => {
             <span class="coord-values truncate max-w-[120px]">${row.dataset.lat}, ${row.dataset.lng}</span>
             <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
           `;
-          // Переназначаем обработчик на кнопку
-          const newEditBtn = row.querySelector('.edit-coord-btn');
-          if (newEditBtn) {
-            newEditBtn.addEventListener('click', arguments.callee);
-          }
           // TODO: Обновить координаты в store
         });
         
@@ -273,7 +271,7 @@ const showObjectPopup = (id: string) => {
           `;
         });
       });
-    });
+    }
   }, 100);
 };
 
