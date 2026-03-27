@@ -245,31 +245,44 @@ const showObjectPopup = (id: string) => {
         saveEditBtn?.addEventListener('click', () => {
           const latInput = row.querySelector('.edit-lat-input') as HTMLInputElement;
           const lngInput = row.querySelector('.edit-lng-input') as HTMLInputElement;
-          const coordValuesSpan = row.querySelector('.coord-values');
           
-          if (latInput && lngInput && coordValuesSpan) {
+          console.log('[Map] Save edit:', {
+            hasLatInput: !!latInput,
+            hasLngInput: !!lngInput,
+            lat: latInput?.value,
+            lng: lngInput?.value,
+            objId: id,
+            idx: idx
+          });
+          
+          if (latInput && lngInput) {
             const newLat = latInput.value;
             const newLng = lngInput.value;
-            coordValuesSpan.textContent = `${newLat}, ${newLng}`;
             row.dataset.lat = newLat;
             row.dataset.lng = newLng;
             
             // Обновляем координаты в store
             const obj = mapObjectStore.Objects.get(id);
+            console.log('[Map] Found object:', !!obj, obj?.coordinates.length);
+            
             if (obj) {
               const newCoordinates = [...obj.coordinates];
               newCoordinates[Number(idx)] = [Number(newLng), Number(newLat)];
+              console.log('[Map] New coordinates:', newCoordinates);
+              
               mapObjectStore.updateObjectCoordinates(id, newCoordinates);
               console.log('[Map] Координаты обновлены:', id, idx, newLat, newLng);
               
               // Принудительная перерисовка Deck.gl
               if (deckOverlay && deckOverlay._deck) {
+                console.log('[Map] Redrawing Deck.gl...');
                 deckOverlay._deck.setProps({
                   layers: createDeckLayers(),
                   _animate: false,
                 });
                 setTimeout(() => {
                   if (deckOverlay?._deck) {
+                    console.log('[Map] Deck.gl redrawn');
                     deckOverlay._deck.redraw();
                   }
                 }, 50);
