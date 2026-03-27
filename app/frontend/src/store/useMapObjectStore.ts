@@ -256,13 +256,6 @@ export const useMapObjectStore = defineStore("mapobjects", {
         ? { ...this.DraftObject.style, color: hexToRGBA(draftColor) }
         : { ...this.DraftObject.style };
 
-      console.log("[finalizeDraftObject]", {
-        draftColor,
-        draftStyleColor: this.DraftObject.style.color,
-        finalStyleColor: finalStyle.color,
-        type: this.DraftObject.type,
-      });
-
       // Создаём объект с координатами и стилем
       const newObject: DeckGLObject = {
         id: uuidv6(),
