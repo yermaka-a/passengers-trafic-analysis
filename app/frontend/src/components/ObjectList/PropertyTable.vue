@@ -46,7 +46,11 @@ const openEditDialog = (obj: [string, DeckGLObject]) => {
 const saveEdit = async () => {
   if (!editingObj.value) return;
   const [id, obj] = editingObj.value;
-  const updatedObj = { ...obj };
+  const updatedObj = {
+    ...obj,
+    customName: obj.customName || null,
+    description: obj.description || null,
+  };
   mapObjectStore.Objects.set(id, updatedObj);
   await updateObjectInBackend(updatedObj);
   dialogOpen.value = false;
@@ -284,7 +288,7 @@ const getColorBadge = (obj: DeckGLObject) => {
 
   <!-- Dialog для редактирования -->
   <Dialog v-model:open="dialogOpen">
-    <DialogContent>
+    <DialogContent v-if="editingObj">
       <DialogHeader>
         <DialogTitle>Редактировать объект</DialogTitle>
       </DialogHeader>
@@ -307,7 +311,7 @@ const getColorBadge = (obj: DeckGLObject) => {
       </div>
       <div class="flex justify-end gap-2">
         <Button variant="outline" @click="dialogOpen = false">Отмена</Button>
-        <Button @click="saveEdit" :disabled="!editingObj">Сохранить</Button>
+        <Button @click="saveEdit">Сохранить</Button>
       </div>
     </DialogContent>
   </Dialog>
