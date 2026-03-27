@@ -14,14 +14,46 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, X } from "lucide-vue-next";
+import { Search, X, Pencil } from "lucide-vue-next";
+import { ref } from "vue";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
 import useObjectActions from "@/composables/useObjectActions";
 import { useApi } from "@/composables";
 
+const props = defineProps<{
+  objects: [string, DeckGLObject][];
+}>();
+
 const mapObjectStore = useMapObjectStore();
-const { Objects } = storeToRefs(mapObjectStore);
+
+const editingObj = ref<[string, DeckGLObject] | null>(null);
+const dialogOpen = ref(false);
+
+const openEditDialog = (obj: [string, DeckGLObject]) => {
+  editingObj.value = obj;
+  dialogOpen.value = true;
+};
+
+const saveEdit = async () => {
+  if (!editingObj.value) return;
+  const [id, obj] = editingObj.value;
+  const updatedObj = { ...obj };
+  mapObjectStore.Objects.set(id, updatedObj);
+  await updateObjectInBackend(updatedObj);
+  dialogOpen.value = false;
+  editingObj.value = null;
+};
 
 const {
   changeColor,
@@ -83,7 +115,7 @@ const getColorBadge = (obj: DeckGLObject) => {
 
 <template>
   <div class="px-8 h-dvh overflow-scroll pb-60">
-    <div v-if="Objects && Objects.size > 0" class="w-full">
+    <div v-if="props.objects && props.objects.length > 0" class="w-full">
       <Table>
         <TableHeader>
           <TableRow>
@@ -103,7 +135,7 @@ const getColorBadge = (obj: DeckGLObject) => {
         </TableHeader>
         <TableBody>
           <TableRow
-            v-for="(obj, idx) in Objects.entries()"
+            v-for="(obj, idx) in props.objects"
             :key="obj[0]"
             class="group"
           >
@@ -115,22 +147,20 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <div class="flex flex-col gap-1">
-                <input
-                  v-if="obj[1].customName"
-                  :value="obj[1].customName"
-                  @change="(e) => updateCustomName(obj[0], (e.target as HTMLInputElement).value)"
-                  class="text-sm font-medium border rounded px-2 py-1 w-full"
-                  placeholder="Название"
-                />
-                <span v-else class="text-sm text-gray-500">{{ obj[1].name }}</span>
-                <textarea
-                  v-if="obj[1].description"
-                  :value="obj[1].description"
-                  @change="(e) => updateDescription(obj[0], (e.target as HTMLTextAreaElement).value)"
-                  class="text-xs text-gray-400 border rounded px-2 py-1 w-full resize-none"
-                  placeholder="Описание"
-                  rows="2"
-                />
+                <div class="flex items-center gap-2">
+                  <span v-if="!editingObj" class="text-sm font-medium">
+                    {{ obj[1].customName || obj[1].name }}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    @click="openEditDialog(obj)"
+                    class="h-6 w-6 p-0"
+                  >
+                    <Pencil class="w-3 h-3" />
+                  </Button>
+                </div>
+                <span v-if="obj[1].description" class="text-xs text-gray-500">{{ obj[1].description }}</span>
               </div>
             </TableCell>
             <TableCell class="text-sm text-gray-500">
@@ -146,13 +176,15 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Checkbox
+                v-if="obj[1].type !== 'CircleMarker'"
                 :model-value="(obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="toggleStroke(obj[0])"
               />
+              <span v-else class="text-gray-400">-</span>
             </TableCell>
             <TableCell>
               <Slider
-                v-if="(obj[1].style.strokeWidth ?? 0) > 0"
+                v-if="(obj[1].type !== 'CircleMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="
                   (value) => {
                     if (value) changeWeight(value, obj[0]);
@@ -168,7 +200,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Slider
-                v-if="(obj[1].style.strokeWidth ?? 0) > 0"
+                v-if="(obj[1].type !== 'CircleMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="
                   (value) => {
                     if (value) changeDash(value, obj[0]);
@@ -251,6 +283,36 @@ const getColorBadge = (obj: DeckGLObject) => {
       Нет созданных объектов
     </div>
   </div>
+
+  <!-- Dialog для редактирования -->
+  <Dialog v-model:open="dialogOpen">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Редактировать объект</DialogTitle>
+      </DialogHeader>
+      <div class="flex flex-col gap-4 py-4">
+        <div class="flex flex-col gap-2">
+          <Label>Название</Label>
+          <Input
+            v-model="editingObj[1].customName"
+            placeholder="Введите название"
+          />
+        </div>
+        <div class="flex flex-col gap-2">
+          <Label>Описание</Label>
+          <Textarea
+            v-model="editingObj[1].description"
+            placeholder="Введите описание"
+            rows="4"
+          />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <Button variant="outline" @click="dialogOpen = false">Отмена</Button>
+        <Button @click="saveEdit">Сохранить</Button>
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <style scoped>

@@ -1,16 +1,26 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { ObjectListView, PropertyTable } from "@/components/ObjectList";
+import { useMapObjectStore } from "@/store/useMapObjectStore";
+import { storeToRefs } from "pinia";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, Table as TableIcon, ChevronDown } from "lucide-vue-next";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LayoutGrid, Table as TableIcon, ChevronDown, Search } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 
 type ViewType = "cards" | "table";
 
+const mapObjectStore = useMapObjectStore();
+const { Objects } = storeToRefs(mapObjectStore);
 const tilesStore = useTilesStore();
-const view = ref<ViewType>("cards");
-const showTilesMenu = ref(false);
 
 // Загружаем предпочтения из localStorage
 onMounted(() => {
@@ -18,7 +28,20 @@ onMounted(() => {
   if (savedView === "cards" || savedView === "table") {
     view.value = savedView;
   }
+  
+  // Обработчик клика вне dropdown
+  document.addEventListener('click', handleClickOutside);
 });
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (showTilesMenu.value && tilesMenuRef.value && !tilesMenuRef.value.contains(event.target as Node)) {
+    showTilesMenu.value = false;
+  }
+};
 
 // Сохраняем выбор в localStorage
 const setView = (newView: ViewType) => {
@@ -42,8 +65,32 @@ const switchLayer = (layer: TileLayer) => {
     <div class="flex flex-wrap items-center justify-between gap-3 px-8 py-4 border-b">
       <h1 class="text-2xl font-semibold">Объекты на карте</h1>
       <div class="flex flex-wrap items-center gap-2">
+        <!-- Фильтры -->
+        <div class="flex items-center gap-2 mr-auto">
+          <Select v-model="filterType">
+            <SelectTrigger class="w-[150px]">
+              <SelectValue placeholder="Все типы" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все типы</SelectItem>
+              <SelectItem value="Polygon">Полигоны</SelectItem>
+              <SelectItem value="Polyline">Полилинии</SelectItem>
+              <SelectItem value="CircleMarker">Маркеры</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <div class="relative">
+            <Search class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              v-model="searchQuery"
+              placeholder="Поиск по названию..."
+              class="pl-8 w-[200px]"
+            />
+          </div>
+        </div>
+        
         <!-- Переключатель тайлов -->
-        <div class="relative">
+        <div ref="tilesMenuRef" class="relative">
           <Button
             variant="outline"
             size="sm"
@@ -99,7 +146,8 @@ const switchLayer = (layer: TileLayer) => {
 
     <!-- Контент -->
     <div class="flex-1 overflow-hidden">
-      <component :is="view === 'cards' ? ObjectListView : PropertyTable" :key="view" />
+      <ObjectListView v-if="view === 'cards'" :objects="filteredObjects" />
+      <PropertyTable v-else :objects="filteredObjects" />
     </div>
   </div>
 </template>

@@ -2,38 +2,13 @@
 import { storeToRefs } from "pinia";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionTrigger,
-  AccordionItem,
-} from "@/components/ui/accordion";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
-import { AlertCircleIcon } from "lucide-vue-next";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Toggle } from "@/components/ui/toggle/";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
-import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
-import { rgbaToHex } from "@/utils";
-import useObjectActions from "@/composables/useObjectActions";
-import { useApi } from "@/composables";
+
+const props = defineProps<{
+  objects: [string, DeckGLObject][];
+}>();
 
 const mapObjectStore = useMapObjectStore();
-const { Objects } = storeToRefs(mapObjectStore);
 
 const {
   changeColor,
@@ -84,9 +59,9 @@ const onCloseModal = () => {
 
 <template>
   <div class="px-8 h-dvh overflow-scroll pb-60">
-    <div v-if="Objects && Objects.size > 0" class="flex gap-3 flex-wrap">
+    <div v-if="props.objects && props.objects.length > 0" class="flex gap-3 flex-wrap">
       <Card
-        v-for="(obj, idx) in Objects.entries()"
+        v-for="(obj, idx) in props.objects"
         :key="obj[0]"
         class="relative mx-auto w-full max-w-sm pt-0 min-w-58"
       >
@@ -196,7 +171,7 @@ const onCloseModal = () => {
                 >На карте</Toggle
               >
               <Separator class="my-2 w-full" />
-              <div>
+              <div v-if="obj[1].type !== 'CircleMarker'">
                 <small className="text-sm leading-none font-medium"
                   >Пунктир</small
                 >
@@ -260,7 +235,7 @@ const onCloseModal = () => {
                     class="mx-auto w-full max-w-xs"
                   />
                 </div>
-                <div class="flex gap-3 flex-wrap">
+                <div class="flex gap-3 flex-wrap" v-if="obj[1].type !== 'CircleMarker'">
                   <small class="text-sm leading-none font-medium"
                     >Жирность обводки</small
                   >
