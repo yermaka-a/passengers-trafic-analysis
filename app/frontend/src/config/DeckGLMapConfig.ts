@@ -27,6 +27,8 @@ export const DeckGLMapConfig = {
     Polyline: {
       color: [255, 0, 0, 255] as [number, number, number, number],
       strokeWidth: 5,
+      filled: false,  // Добавляем заливку для полилайнов
+      fillOpacity: 0.2,
     },
     CircleMarker: {
       color: [0, 255, 0, 255] as [number, number, number, number],

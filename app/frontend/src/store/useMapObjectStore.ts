@@ -301,8 +301,12 @@ export const useMapObjectStore = defineStore("mapobjects", {
           }
         }
 
-        obj.style = { ...obj.style, ...style };
-        this.Objects.set(id, obj);
+        // Создаём НОВЫЙ объект для реактивности Vue
+        const updatedObj: DeckGLObject = {
+          ...obj,
+          style: { ...obj.style, ...style },
+        };
+        this.Objects.set(id, updatedObj);
       }
     },
 
@@ -311,15 +315,20 @@ export const useMapObjectStore = defineStore("mapobjects", {
       const obj = this.Objects.get(id);
       const state = this.strokeState.get(id);
       if (obj && state) {
-        if (hide) {
-          // Выключаем обводку - просто ставим 0, strokeState не трогаем
-          obj.style.strokeWidth = 0;
-        } else {
-          // Включаем обводку - восстанавливаем из strokeState
-          obj.style.strokeWidth = state.strokeWidth;
-          obj.style.strokeDasharray = state.strokeDasharray;
-        }
-        this.Objects.set(id, obj);
+        // Создаём НОВЫЙ объект для реактивности Vue
+        const updatedStyle = hide
+          ? { ...obj.style, strokeWidth: 0 }
+          : {
+              ...obj.style,
+              strokeWidth: state.strokeWidth,
+              strokeDasharray: state.strokeDasharray,
+            };
+
+        const updatedObj: DeckGLObject = {
+          ...obj,
+          style: updatedStyle,
+        };
+        this.Objects.set(id, updatedObj);
       }
     },
 
@@ -327,8 +336,12 @@ export const useMapObjectStore = defineStore("mapobjects", {
     updateObjectCoordinates(id: string, coordinates: LngLatTuple[]) {
       const obj = this.Objects.get(id);
       if (obj) {
-        obj.coordinates = coordinates;
-        this.Objects.set(id, obj);
+        // Создаём НОВЫЙ объект с новыми координатами
+        const updatedObj: DeckGLObject = {
+          ...obj,
+          coordinates: [...coordinates],
+        };
+        this.Objects.set(id, updatedObj);
       }
     },
 

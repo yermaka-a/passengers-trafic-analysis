@@ -3,7 +3,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import "maplibre-gl/dist/maplibre-gl.css";
 import maplibregl from "maplibre-gl";
 import { storeToRefs } from "pinia";
-import { useMapObjectStore } from "@/store/useMapObjectStore";
+import { useMapObjectStore, useMapStore } from "@/store";
 import { useL7 } from "@/composables/useL7";
 import { TilesSwitcher } from "@/components/TilesSwitcher";
 import MapOptions from "./MapOptions.vue";
@@ -14,9 +14,11 @@ import type { LngLatTuple, DeckGLObject } from "@/types";
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { PolygonLayer, PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
 const mapObjectStore = useMapObjectStore();
+const mapStore = useMapStore();
 
 const { Objects, DraftObject } = storeToRefs(mapObjectStore);
 
@@ -29,9 +31,6 @@ let deckOverlay: MapboxOverlay | null = null;
 // Курсоры
 const plusCursor = computed(() => `url("${PlusCursor}") 16 16, auto`);
 const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
-
-// Состояние для курсора
-const isDragging = ref(false);
 
 // L7 composable (переименовать потом в useDeckGL)
 const {
@@ -68,9 +67,9 @@ const createDeckLayers = () => {
   // СЛОИ ДЛЯ СУЩЕСТВУЮЩИХ ОБЪЕКТОВ
   // ========================================================================
 
-  // Polygon fill layer
+  // Polygon fill layer (и Polyline если filled=true)
   const polygonFillObjects = objectsArray.filter(
-    (obj) => obj.type === "Polygon" && obj.style.filled !== false
+    (obj) => (obj.type === "Polygon" || obj.type === "Polyline") && obj.style.filled !== false
   );
   
   if (polygonFillObjects.length > 0) {
@@ -79,16 +78,24 @@ const createDeckLayers = () => {
         id: "polygon-fill",
         data: polygonFillObjects,
         getPolygon: (obj: DeckGLObject) => obj.coordinates,
-        getFillColor: (obj: DeckGLObject) => obj.style.color,
+        getFillColor: (obj: DeckGLObject) => {
+          // Применяем прозрачность fillOpacity к цвету
+          const color = obj.style.color;
+          return [
+            color[0]!,
+            color[1]!,
+            color[2]!,
+            Math.round(color[3]! * (obj.style.fillOpacity ?? 0.5))
+          ] as [number, number, number, number];
+        },
+        updateTriggers: {
+          getFillColor: polygonFillObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
+        },
         getLineColor: [0, 0, 0, 0], // No outline from fill layer
         getElevation: 0,
-        pickable: true,
-        autoHighlight: true,
-        onClick: (info: any) => {
-          if (info.object) {
-            selectObject((info.object as DeckGLObject).id);
-          }
-        },
+        pickable: false,  // Заливка не должна перехватывать клики
+        stroked: false,
+        filled: true,
       })
     );
     console.log("[Map] Polygon fill слой добавлен");
@@ -98,19 +105,50 @@ const createDeckLayers = () => {
   const lineObjects = objectsArray.filter(
     (obj) => obj.type === "Polygon" || obj.type === "Polyline"
   );
-  
+
   if (lineObjects.length > 0) {
+    console.log("[Map] Line объекты:", lineObjects.map(o => ({ 
+      id: o.id, 
+      color: o.style.color, 
+      strokeWidth: o.style.strokeWidth,
+      strokeDasharray: o.style.strokeDasharray 
+    })));
+    
+    // Создаём PathStyleExtension для поддержки пунктира
+    const pathStyleExtension = new PathStyleExtension({
+      dash: true,
+      highPrecision: false,
+    });
+    
+    // Логи для updateTriggers
+    const dashTriggers = lineObjects.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray }));
+    console.log("[Map] updateTriggers.getDashArray:", dashTriggers);
+    
     layers.push(
       new PathLayer({
         id: "polygon-stroke",
         data: lineObjects,
         getPath: (obj: DeckGLObject) => obj.coordinates,
-        getColor: (obj: DeckGLObject) => obj.style.color,
-        getWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 2,
+        getColor: (obj: DeckGLObject) => {
+          console.log("[Map] getColor для", obj.id, ":", obj.style.color);
+          return obj.style.color;
+        },
+        getWidth: (obj: DeckGLObject) => {
+          console.log("[Map] getWidth для", obj.id, ":", obj.style.strokeWidth);
+          return obj.style.strokeWidth ?? 2;
+        },
         getDashArray: (obj: DeckGLObject) => {
           const dash = obj.style.strokeDasharray;
-          return dash && dash[0] > 0 ? dash : [0, 0];
+          console.log("[Map] getDashArray для", obj.id, ":", dash, "dash[0]:", dash?.[0]);
+          // Возвращаем [0, 0] если пунктир выключен
+          return dash && dash[0] && dash[0] > 0 ? dash : [0, 0];
         },
+        updateTriggers: {
+          getColor: lineObjects.map(o => ({ id: o.id, color: o.style.color })),
+          getWidth: lineObjects.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
+          getDashArray: dashTriggers,
+        },
+        extensions: [pathStyleExtension],
         pickable: true,
         autoHighlight: true,
         onClick: (info: any) => {
@@ -120,14 +158,14 @@ const createDeckLayers = () => {
         },
       })
     );
-    console.log("[Map] Line слой добавлен");
+    console.log("[Map] Line слой добавлен с PathStyleExtension");
   }
 
   // CircleMarker layer
   const pointObjects = objectsArray.filter(
     (obj) => obj.type === "CircleMarker"
   );
-  
+
   if (pointObjects.length > 0) {
     layers.push(
       new ScatterplotLayer({
@@ -138,6 +176,10 @@ const createDeckLayers = () => {
         getRadius: (obj: DeckGLObject) => obj.style.radius ?? 10,
         radiusMinPixels: 5,
         radiusMaxPixels: 20,
+        updateTriggers: {
+          getColor: pointObjects.map(o => ({ id: o.id, color: o.style.color })),
+          getRadius: pointObjects.map(o => ({ id: o.id, radius: o.style.radius })),
+        },
         pickable: true,
         autoHighlight: true,
         onClick: (info: any) => {
@@ -252,6 +294,7 @@ onMounted(() => {
 
     // Сохраняем instance
     mapInstance.value = map;
+    mapStore.mapInstance = map;  // Сохраняем в store для доступа из List.vue
     console.log("[Map] MapLibre создана");
 
     // Создаём Deck.gl overlay
@@ -268,21 +311,27 @@ onMounted(() => {
     map.on("click", onMapClick);
     console.log("[Map] MapLibre click обработчик добавлен");
 
-    // Применяем стили для курсоров
-    map.on("load", () => {
-      const canvas = map.getCanvas();
-      if (canvas) {
-        canvas.style.cursor = plusCursor.value;
-      }
-    });
+    // Применяем стили для курсоров через CSS
+    // Курсоры управляются через CSS классы maplibregl-map и maplibregl-canvas:active
 
     // Watch для реактивности - перерисовка при изменении объектов
+    // Используем Array.from для реактивности Map
     watch(
-      () => Objects.value,
-      () => {
-        console.log("[Map] Objects изменился, перерисовка Deck.gl");
-        if (deckOverlay) {
-          deckOverlay.setProps({ layers: createDeckLayers() });
+      () => Array.from(Objects.value?.values() ?? []),
+      (newObjects) => {
+        console.log("[Map] Objects изменился:", newObjects.length);
+        // Принудительно обновляем layers для Deck.gl
+        if (deckOverlay && deckOverlay._deck) {
+          deckOverlay._deck.setProps({
+            layers: createDeckLayers(),
+            _animate: true,
+          });
+          // Принудительная перерисовка для применения стилей
+          setTimeout(() => {
+            if (deckOverlay?._deck) {
+              deckOverlay._deck.redraw();
+            }
+          }, 50);
         }
       },
       { deep: true },
@@ -291,14 +340,22 @@ onMounted(() => {
     // Watch для draft объекта
     watch(
       () => DraftObject.value,
-      () => {
+      (newDraft) => {
         console.log(
           "[Map] Draft объект изменился:",
-          DraftObject.value?.coordinates.length ?? 0,
+          newDraft?.coordinates.length ?? 0,
           "точек",
         );
-        if (deckOverlay) {
-          deckOverlay.setProps({ layers: createDeckLayers() });
+        if (deckOverlay && deckOverlay._deck) {
+          deckOverlay._deck.setProps({
+            layers: createDeckLayers(),
+            _animate: true,
+          });
+          setTimeout(() => {
+            if (deckOverlay?._deck) {
+              deckOverlay._deck.redraw();
+            }
+          }, 50);
         }
       },
       { deep: true },
@@ -336,9 +393,6 @@ onUnmounted(() => {
     <div
       id="map"
       class="relative"
-      :style="{
-        cursor: isDragging ? grabCursor : plusCursor,
-      }"
     ></div>
   </div>
 </template>
@@ -350,14 +404,19 @@ onUnmounted(() => {
   outline: none;
   user-select: none;
   position: relative;
+  cursor: v-bind(plusCursor) !important;
 }
 
-/* MapLibre canvas */
+:deep(.maplibregl-map) {
+  cursor: v-bind(plusCursor) !important;
+}
+
 :deep(.maplibregl-canvas) {
-  cursor: inherit !important;
+  cursor: v-bind(plusCursor) !important;
 }
 
-:deep(.maplibregl-canvas:active) {
+:deep(.maplibregl-canvas:active),
+:deep(.maplibregl-map.dragging) {
   cursor: v-bind(grabCursor) !important;
 }
 
