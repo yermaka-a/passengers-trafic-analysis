@@ -116,6 +116,15 @@ const toggleFill = async (id: string) => {
   }
 };
 
+const changeRadius = async (value: number[], id: string) => {
+  const obj = Objects.value?.get(id);
+  if (obj && value) {
+    mapObjectStore.updateObjectStyle(id, { radius: value[0] });
+    const updatedObj = mapObjectStore.getObjectById(id);
+    if (updatedObj) await updateObjectInBackend(updatedObj);
+  }
+};
+
 // Обновление объекта в бэкенде
 const updateObjectInBackend = async (obj: DeckGLObject) => {
   const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
@@ -302,6 +311,23 @@ const getDashValue = (obj: DeckGLObject): number[] => {
                     :max="1"
                     :step="0.01"
                     :min="0"
+                    class="mx-auto w-full max-w-xs"
+                  />
+                </div>
+                <div class="flex gap-3 flex-wrap" v-if="obj[1].type === 'CircleMarker'">
+                  <small class="text-sm leading-none font-medium"
+                    >Размер маркера</small
+                  >
+                  <Slider
+                    @update:model-value="
+                      (value) => {
+                        if (value) changeRadius(value, obj[0]);
+                      }
+                    "
+                    :model-value="[obj[1].style.radius ?? 10]"
+                    :max="50"
+                    :step="1"
+                    :min="5"
                     class="mx-auto w-full max-w-xs"
                   />
                 </div>

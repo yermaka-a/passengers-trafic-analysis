@@ -28,6 +28,21 @@ const mapInstance = ref<maplibregl.Map | null>(null);
 // Deck.gl overlay
 let deckOverlay: MapboxOverlay | null = null;
 
+// Draft object color (default red)
+const draftColor = ref("#ff0000");
+
+// Convert hex to RGBA for Deck.gl
+const hexToRGBA = (hex: string, alpha: number = 255): [number, number, number, number] => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (!result) return [255, 0, 0, alpha];
+  return [
+    Number.parseInt(result[1]!, 16),
+    Number.parseInt(result[2]!, 16),
+    Number.parseInt(result[3]!, 16),
+    alpha,
+  ];
+};
+
 // Курсоры
 const plusCursor = computed(() => `url("${PlusCursor}") 16 16, auto`);
 const grabCursor = computed(() => `url("${GrabCursor}") 16 16, auto`);
@@ -195,12 +210,12 @@ const createDeckLayers = () => {
   // ========================================================================
   // СЛОЙ ДЛЯ DRAFT ОБЪЕКТА (в процессе создания)
   // ========================================================================
-  
+
   if (DraftObject.value && DraftObject.value.coordinates.length > 0) {
     const draft = DraftObject.value;
-    const draftColor = [255, 255, 0, 255] as [number, number, number, number];
-    
-    console.log("[Map] Draft объект:", draft.type, draft.coordinates.length, "точек");
+    // Используем цвет из state
+    const draftColorRGBA = hexToRGBA(draftColor.value, 255);
+    const draftColorRGBATransparent = hexToRGBA(draftColor.value, 100);
 
     // CircleMarker - даже с 1 точкой
     if (draft.type === "CircleMarker" && draft.coordinates.length > 0) {
@@ -209,13 +224,12 @@ const createDeckLayers = () => {
           id: "draft-circle",
           data: [draft],
           getPosition: (d: typeof draft) => d.coordinates[0] ?? [0, 0],
-          getColor: draftColor,
+          getColor: draftColorRGBA,
           getRadius: 15,
           radiusMinPixels: 10,
           pickable: false,
         })
       );
-      console.log("[Map] Draft CircleMarker слой добавлен");
     }
     // Polygon/Polyline - минимум 2 точки
     else if (draft.coordinates.length >= 2) {
@@ -225,12 +239,11 @@ const createDeckLayers = () => {
           id: "draft-line",
           data: [draft],
           getPath: (d: typeof draft) => d.coordinates,
-          getColor: draftColor,
+          getColor: draftColorRGBA,
           getWidth: 3,
           pickable: false,
         })
       );
-      console.log("[Map] Draft Line слой добавлен");
 
       // Polygon fill - если >= 3 точек
       if (draft.type === "Polygon" && draft.coordinates.length >= 3) {
@@ -239,17 +252,15 @@ const createDeckLayers = () => {
             id: "draft-polygon-fill",
             data: [draft],
             getPolygon: (d: typeof draft) => d.coordinates,
-            getFillColor: [255, 255, 0, 100] as [number, number, number, number],
+            getFillColor: draftColorRGBATransparent,
             getLineColor: [0, 0, 0, 0],
             pickable: false,
           })
         );
-        console.log("[Map] Draft Polygon fill слой добавлен");
       }
     }
   }
 
-  console.log("[Map] Всего слоёв Deck.gl:", layers.length);
   return layers;
 };
 
@@ -387,6 +398,8 @@ onUnmounted(() => {
     :next-action="redo"
     :can-undo="canUndo"
     :can-redo="canRedo"
+    :draft-color="draftColor"
+    @update:draft-color="draftColor = $event"
   />
   <TilesSwitcher />
   <div class="flex-1 h-screen overflow-scroll">
