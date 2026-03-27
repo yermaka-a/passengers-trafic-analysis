@@ -257,6 +257,19 @@ const showObjectPopup = (id: string) => {
               newCoordinates[Number(idx)] = [Number(newLng), Number(newLat)];
               mapObjectStore.updateObjectCoordinates(id, newCoordinates);
               console.log('[Map] Координаты обновлены:', id, idx, newLat, newLng);
+              
+              // Принудительная перерисовка Deck.gl
+              if (deckOverlay && deckOverlay._deck) {
+                deckOverlay._deck.setProps({
+                  layers: createDeckLayers(),
+                  _animate: false,
+                });
+                setTimeout(() => {
+                  if (deckOverlay?._deck) {
+                    deckOverlay._deck.redraw();
+                  }
+                }, 50);
+              }
             }
           }
           
