@@ -43,6 +43,7 @@ const mapObjectStore = useMapObjectStore();
 const editingId = ref<string | null>(null);
 const editingCustomName = ref<string>("");
 const editingDescription = ref<string>("");
+const expandedDescriptions = ref<Set<string>>(new Set());
 
 const startEditing = (id: string, obj: DeckGLObject) => {
   editingId.value = id;
@@ -68,6 +69,24 @@ const saveEditing = async (id: string) => {
     await updateObjectInBackend(updatedObj);
   }
   cancelEditing();
+};
+
+const toggleDescription = (id: string) => {
+  if (expandedDescriptions.value.has(id)) {
+    expandedDescriptions.value.delete(id);
+  } else {
+    expandedDescriptions.value.add(id);
+  }
+  // Force reactivity
+  expandedDescriptions.value = new Set(expandedDescriptions.value);
+};
+
+const isExpanded = (id: string) => expandedDescriptions.value.has(id);
+
+const truncateText = (text: string | null | undefined, maxLength: number = 10) => {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
 };
 
 const updateObjectInBackend = async (obj: DeckGLObject) => {
@@ -129,7 +148,9 @@ const onCloseModal = () => {
           </CardAction>
           <CardTitle class="min-w-min">
             <div class="flex items-center gap-2">
-              <span class="flex-1">{{ obj[1].customName || obj[1].name }}</span>
+              <span class="flex-1 truncate" :title="obj[1].customName || obj[1].name">
+                {{ truncateText(obj[1].customName || obj[1].name, 15) }}
+              </span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -139,7 +160,18 @@ const onCloseModal = () => {
                 <Pencil class="w-3 h-3" />
               </Button>
             </div>
-            <span v-if="obj[1].description && editingId !== obj[0]" class="text-xs text-gray-500 block mt-1">{{ obj[1].description }}</span>
+            <div v-if="obj[1].description && editingId !== obj[0]" class="flex items-start gap-1 mt-1">
+              <span class="text-xs text-gray-500 flex-1">
+                {{ isExpanded(obj[0]) ? obj[1].description : truncateText(obj[1].description, 10) }}
+              </span>
+              <button
+                v-if="obj[1].description && obj[1].description.length > 10"
+                @click="toggleDescription(obj[0])"
+                class="text-xs text-blue-500 hover:text-blue-700 flex-shrink-0"
+              >
+                {{ isExpanded(obj[0]) ? '▲' : '▼' }}
+              </button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

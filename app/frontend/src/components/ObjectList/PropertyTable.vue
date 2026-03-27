@@ -307,7 +307,7 @@ const getColorBadge = (obj: DeckGLObject) => {
       </div>
       <div class="flex justify-end gap-2">
         <Button variant="outline" @click="dialogOpen = false">Отмена</Button>
-        <Button @click="saveEdit">Сохранить</Button>
+        <Button @click="saveEdit" :disabled="!editingObj">Сохранить</Button>
       </div>
     </DialogContent>
   </Dialog>
