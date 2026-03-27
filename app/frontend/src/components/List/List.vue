@@ -22,6 +22,33 @@ const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
 const tilesStore = useTilesStore();
 
+const view = ref<ViewType>("cards");
+const showTilesMenu = ref(false);
+const tilesMenuRef = ref<HTMLElement | null>(null);
+
+// Фильтры
+const filterType = ref<string>("all");
+const searchQuery = ref<string>("");
+
+// Фильтрация объектов
+const filteredObjects = computed(() => {
+  const allObjects = Array.from(Objects.value?.entries() ?? []);
+
+  return allObjects.filter(([_, obj]) => {
+    // Фильтр по типу
+    const typeMatch = filterType.value === "all" || obj.type === filterType.value;
+
+    // Поиск по имени
+    const searchLower = searchQuery.value.toLowerCase();
+    const nameMatch = !searchQuery.value ||
+      (obj.customName && obj.customName.toLowerCase().includes(searchLower)) ||
+      (obj.description && obj.description.toLowerCase().includes(searchLower)) ||
+      obj.name.toLowerCase().includes(searchLower);
+
+    return typeMatch && nameMatch;
+  });
+});
+
 // Загружаем предпочтения из localStorage
 onMounted(() => {
   const savedView = localStorage.getItem("objectListView") as ViewType;
