@@ -29,9 +29,10 @@ import { Spinner } from "@/components/ui/spinner";
 import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
-import { useObjectActions } from "@/composables/useObjectActions";
+import useObjectActions from "@/composables/useObjectActions";
 
-const { Objects } = storeToRefs(useMapObjectStore());
+const mapObjectStore = useMapObjectStore();
+const { Objects } = storeToRefs(mapObjectStore);
 
 const {
   changeColor,

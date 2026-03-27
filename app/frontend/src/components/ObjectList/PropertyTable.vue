@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
+import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,9 +16,10 @@ import {
 } from "@/components/ui/table";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
-import { useObjectActions } from "@/composables/useObjectActions";
+import useObjectActions from "@/composables/useObjectActions";
 
-const { Objects } = storeToRefs(useMapObjectStore());
+const mapObjectStore = useMapObjectStore();
+const { Objects } = storeToRefs(mapObjectStore);
 
 const {
   changeColor,
