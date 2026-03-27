@@ -58,6 +58,15 @@ const {
   canRedo,
 } = useL7();
 
+// Обновляем цвет draft объекта при изменении
+watch(draftColor, (newColor) => {
+  const draft = mapObjectStore.getDraftObject;
+  if (draft) {
+    const rgbaColor = hexToRGBA(newColor, 255);
+    mapObjectStore.updateDraftStyle({ color: rgbaColor });
+  }
+});
+
 // Обработка клика по карте
 const onMapClick = (e: any) => {
   const lngLat: LngLatTuple = [e.lngLat.lng, e.lngLat.lat];

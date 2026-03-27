@@ -231,6 +231,12 @@ export const useMapObjectStore = defineStore("mapobjects", {
       this.DraftObject.coordinates = [...coords];
     },
 
+    /** Обновить стиль draft объекта */
+    updateDraftStyle(style: Partial<DeckGLObject["style"]>) {
+      if (!this.DraftObject) return;
+      this.DraftObject.style = { ...this.DraftObject.style, ...style };
+    },
+
     /** Завершить создание draft объекта */
     finalizeDraftObject(): DeckGLObject | null {
       if (!this.DraftObject || this.DraftObject.coordinates.length === 0) {
@@ -245,10 +251,14 @@ export const useMapObjectStore = defineStore("mapobjects", {
         coordinates = [...coordinates, firstCoord];
       }
 
-      const newObject = createNewDeckGLObject(
-        this.DraftObject.type as Exclude<ObjTypes, "Edit">,
+      // Создаём объект с координатами, но со стилем из draft
+      const newObject: DeckGLObject = {
+        id: uuidv6(),
+        type: this.DraftObject.type,
+        name: ObjectsTypes.find(([key]) => key === this.DraftObject.type)?.[1] ?? this.DraftObject.type,
+        style: { ...this.DraftObject.style }, // Копируем стиль из draft (включая цвет!)
         coordinates,
-      );
+      };
 
       this.Objects.set(newObject.id, newObject);
       const finalized = { ...newObject };
