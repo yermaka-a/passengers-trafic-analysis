@@ -469,7 +469,7 @@ onMounted(() => {
     // Сохраняем instance
     mapInstance.value = map;
     mapStore.mapInstance = map;  // Сохраняем в store для доступа из List.vue
-    mapStore.showObjectPopup = showObjectPopup;  // Устанавливаем функцию для popup
+    mapStore.showObjectPopupRef = showObjectPopup;  // Устанавливаем функцию для popup
     console.log("[Map] MapLibre создана");
 
     // Слушаем событие переключения тайлов из List.vue

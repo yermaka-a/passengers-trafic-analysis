@@ -15,7 +15,7 @@ export const useMapStore = defineStore("mapstore", () => {
   });
   
   // Функция для открытия popup (будет установлена из Map.vue)
-  const showObjectPopup = ref<(id: string) => void | null>(null);
+  const showObjectPopupRef = ref<((id: string) => void) | null>(null);
 
   function initMap(containerId: string) {
     if (mapInstance.value) return;
@@ -58,15 +58,15 @@ export const useMapStore = defineStore("mapstore", () => {
 
   // Метод для открытия popup из других компонентов
   const openPopup = (id: string) => {
-    if (showObjectPopup.value) {
-      showObjectPopup.value(id);
+    if (showObjectPopupRef.value) {
+      showObjectPopupRef.value(id);
     }
   };
 
   return {
     mapInstance,
     viewState,
-    showObjectPopup,
+    showObjectPopupRef,
     openPopup,
     initMap,
     updateViewState,
