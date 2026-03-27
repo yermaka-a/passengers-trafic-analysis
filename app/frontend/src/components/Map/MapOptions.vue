@@ -33,9 +33,8 @@ const handleCancel = () => {
   props.cancelChanges();
 };
 
-const handleColorChange = (e: Event) => {
-  const target = e.target as HTMLInputElement;
-  emit("update:draftColor", target.value);
+const handleColorChange = (value: string) => {
+  emit("update:draftColor", value);
 };
 </script>
 
