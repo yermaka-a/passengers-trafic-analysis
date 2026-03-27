@@ -2,7 +2,10 @@
 import { storeToRefs } from "pinia";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Input } from "@/components/ui/input";
+import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
+import useObjectActions from "@/composables/useObjectActions";
+import { useApi } from "@/composables";
 
 const props = defineProps<{
   objects: [string, DeckGLObject][];
