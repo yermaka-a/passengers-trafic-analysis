@@ -318,7 +318,7 @@ const onCloseModal = () => {
                       }
                     "
                     :model-value="[obj[1].style.radius ?? 10]"
-                    :max="50"
+                    :max="100"
                     :step="1"
                     :min="5"
                     class="mx-auto w-full max-w-xs"

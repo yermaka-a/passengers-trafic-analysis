@@ -213,7 +213,7 @@ const createDeckLayers = () => {
           getLineColor: (obj: DeckGLObject) => obj.style.color,
           getRadius: (obj: DeckGLObject) => (obj.style.radius ?? 10) + (obj.style.strokeWidth ?? 0) / 2,
           radiusMinPixels: 5,
-          radiusMaxPixels: 60,
+          radiusMaxPixels: 100,
           getLineWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 0,
           getLineDashArray: (obj: DeckGLObject) => {
             const dash = obj.style.strokeDasharray;
@@ -249,7 +249,7 @@ const createDeckLayers = () => {
         getLineColor: [0, 0, 0, 0],
         getRadius: (obj: DeckGLObject) => obj.style.radius ?? 10,
         radiusMinPixels: 5,
-        radiusMaxPixels: 20,
+        radiusMaxPixels: 100,
         updateTriggers: {
           getFillColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
           getRadius: pointObjects.map(o => ({ id: o.id, radius: o.style.radius })),
