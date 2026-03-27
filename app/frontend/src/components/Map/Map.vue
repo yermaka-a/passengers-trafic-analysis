@@ -241,12 +241,12 @@ const showObjectPopup = (id: string) => {
         saveEditBtn?.addEventListener('click', () => {
           const latInput = row.querySelector('.edit-lat-input') as HTMLInputElement;
           const lngInput = row.querySelector('.edit-lng-input') as HTMLInputElement;
-          const coordValues = row.querySelector('.coord-values');
+          const coordValuesSpan = row.querySelector('.coord-values');
           
-          if (latInput && lngInput && coordValues) {
+          if (latInput && lngInput && coordValuesSpan) {
             const newLat = latInput.value;
             const newLng = lngInput.value;
-            coordValues.textContent = `${newLat}, ${newLng}`;
+            coordValuesSpan.textContent = `${newLat}, ${newLng}`;
             row.dataset.lat = newLat;
             row.dataset.lng = newLng;
           }
@@ -257,6 +257,7 @@ const showObjectPopup = (id: string) => {
             <span class="coord-values truncate max-w-[120px]">${row.dataset.lat}, ${row.dataset.lng}</span>
             <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
           `;
+          // Обработчик уже назначен на контейнер через делегирование, не нужно переназначать
           // TODO: Обновить координаты в store
         });
         
