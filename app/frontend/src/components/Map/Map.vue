@@ -194,15 +194,16 @@ const closePopup = () => {
 // Создание слоёв Deck.gl
 const createDeckLayers = () => {
   const layers: any[] = [];
-  
+
   const objectsArray = Array.from(Objects.value?.values() ?? []);
   console.log("[Map] createDeckLayers:", objectsArray.length, "объектов");
 
   // ========================================================================
   // СЛОИ ДЛЯ СУЩЕСТВУЮЩИХ ОБЪЕКТОВ
+  // Порядок важен: сначала полигоны, потом линии, потом маркеры (поверх всех)
   // ========================================================================
 
-  // Polygon fill layer (и Polyline если filled=true)
+  // 1. Polygon fill layer (и Polyline если filled=true) - самый нижний слой
   const polygonFillObjects = objectsArray.filter(
     (obj) => (obj.type === "Polygon" || obj.type === "Polyline") && obj.style.filled !== false
   );
@@ -242,7 +243,7 @@ const createDeckLayers = () => {
     console.log("[Map] Polygon fill слой добавлен");
   }
 
-  // Polygon/Polyline stroke layer
+  // 2. Polygon/Polyline stroke layer - средний слой
   const lineObjects = objectsArray.filter(
     (obj) => obj.type === "Polygon" || obj.type === "Polyline"
   );
@@ -254,17 +255,17 @@ const createDeckLayers = () => {
       strokeWidth: o.style.strokeWidth,
       strokeDasharray: o.style.strokeDasharray 
     })));
-    
+
     // Создаём PathStyleExtension для поддержки пунктира
     const pathStyleExtension = new PathStyleExtension({
       dash: true,
       highPrecision: false,
     });
-    
+
     // Логи для updateTriggers
     const dashTriggers = lineObjects.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray }));
     console.log("[Map] updateTriggers.getDashArray:", dashTriggers);
-    
+
     layers.push(
       new PathLayer({
         id: "polygon-stroke",
@@ -302,7 +303,7 @@ const createDeckLayers = () => {
     console.log("[Map] Line слой добавлен с PathStyleExtension");
   }
 
-  // CircleMarker layer
+  // 3. CircleMarker layer - самый верхний слой (рисуется поверх всех)
   const pointObjects = objectsArray.filter(
     (obj) => obj.type === "CircleMarker"
   );
@@ -336,12 +337,12 @@ const createDeckLayers = () => {
             getLineWidth: objectsWithStroke.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
             getLineDashArray: objectsWithStroke.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray })),
           },
-          pickable: false,
+          pickable: false,  // Обводка не кликабельна, только fill
         })
       );
     }
     
-    // Затем рисуем заливку (обычный радиус)
+    // Затем рисуем заливку (обычный радиус) - кликабельна
     layers.push(
       new ScatterplotLayer({
         id: "circle-marker-fill",
