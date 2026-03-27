@@ -15,9 +15,10 @@ export const useL7 = () => {
 
   // История для undo/redo
   interface HistoryEntry {
-    objectId: string;
+    objectId?: string;  // Для finalized объектов
+    draftId?: string;   // Для draft объектов
     coordinates: LngLatTuple[];
-    type: "add" | "update" | "delete";
+    type: "add" | "update" | "delete" | "draft";
   }
 
   const history = ref<HistoryEntry[]>([]);
@@ -47,9 +48,23 @@ export const useL7 = () => {
     if (!canUndo.value) return null;
 
     const entry = history.value[historyIndex.value];
-    historyIndex.value--;
+    
+    // Для draft объектов - просто отменяем последнюю точку
+    if (entry.type === "draft") {
+      historyIndex.value--;
+      const prevCoords = historyIndex.value >= 0 
+        ? history.value[historyIndex.value].coordinates 
+        : [];
+      
+      // Восстанавливаем предыдущие координаты draft
+      if (entry.draftId) {
+        mapObjectStore.setDraftCoordinates(prevCoords);
+      }
+      return entry;
+    }
 
-    // Восстанавливаем предыдущее состояние
+    // Для finalized объектов
+    historyIndex.value--;
     if (entry && entry.objectId) {
       const prevEntry =
         historyIndex.value >= 0 ? history.value[historyIndex.value] : null;
@@ -73,6 +88,13 @@ export const useL7 = () => {
     historyIndex.value++;
     const entry = history.value[historyIndex.value];
 
+    // Для draft объектов
+    if (entry.type === "draft" && entry.draftId) {
+      mapObjectStore.setDraftCoordinates(entry.coordinates);
+      return entry;
+    }
+
+    // Для finalized объектов
     if (entry && entry.objectId) {
       mapObjectStore.updateObjectCoordinates(entry.objectId, entry.coordinates);
     }
@@ -88,9 +110,23 @@ export const useL7 = () => {
       // Начинаем создание нового объекта
       mapObjectStore.startDraftObject();
       mapObjectStore.addCoordinateToDraft(lngLat);
+      
+      // Сохраняем в историю для undo
+      pushToHistory({
+        draftId: "draft",
+        coordinates: [lngLat],
+        type: "draft",
+      });
     } else {
       // Добавляем точку к существующему draft
       mapObjectStore.addCoordinateToDraft(lngLat);
+      
+      // Сохраняем в историю
+      pushToHistory({
+        draftId: "draft",
+        coordinates: [...draft.coordinates, lngLat],
+        type: "draft",
+      });
     }
   };
 
@@ -99,6 +135,10 @@ export const useL7 = () => {
     const finalized = mapObjectStore.finalizeDraftObject();
 
     if (finalized) {
+      // Очищаем историю draft и добавляем finalized объект
+      history.value = [];
+      historyIndex.value = -1;
+      
       // Добавляем в историю
       pushToHistory({
         objectId: finalized.id,
@@ -114,6 +154,9 @@ export const useL7 = () => {
   // Отмена создания
   const cancelObject = () => {
     mapObjectStore.cancelDraftObject();
+    // Очищаем историю draft
+    history.value = [];
+    historyIndex.value = -1;
   };
 
   // Обновление координат объекта (при редактировании)

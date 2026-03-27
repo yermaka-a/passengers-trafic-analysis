@@ -225,6 +225,12 @@ export const useMapObjectStore = defineStore("mapobjects", {
       }
     },
 
+    /** Установить координаты draft объекта (для undo/redo) */
+    setDraftCoordinates(coords: LngLatTuple[]) {
+      if (!this.DraftObject) return;
+      this.DraftObject.coordinates = [...coords];
+    },
+
     /** Завершить создание draft объекта */
     finalizeDraftObject(): DeckGLObject | null {
       if (!this.DraftObject || this.DraftObject.coordinates.length === 0) {
