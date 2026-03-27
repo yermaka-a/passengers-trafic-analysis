@@ -46,9 +46,12 @@ export const useMapStore = defineStore("mapstore", () => {
 
     if (mapInstance.value) {
       const { latitude, longitude, zoom, pitch, bearing } = viewState;
-      
+
+      console.log("[useMapStore] updateViewState:", { latitude, longitude, zoom, animate });
+
       if (animate) {
         // Анимация полёта
+        console.log("[useMapStore] flyTo...");
         mapInstance.value.flyTo({
           center: [longitude, latitude],
           zoom,
@@ -59,6 +62,7 @@ export const useMapStore = defineStore("mapstore", () => {
         });
       } else {
         // Мгновенное перемещение
+        console.log("[useMapStore] easeTo...");
         mapInstance.value.easeTo({
           center: [longitude, latitude],
           zoom,
@@ -67,6 +71,8 @@ export const useMapStore = defineStore("mapstore", () => {
           duration: 500,
         });
       }
+    } else {
+      console.warn("[useMapStore] mapInstance is null!");
     }
   }
 
