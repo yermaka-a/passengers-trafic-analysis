@@ -30,6 +30,7 @@ import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
 import { rgbaToHex } from "@/utils";
 import useObjectActions from "@/composables/useObjectActions";
+import { useApi } from "@/composables";
 
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
@@ -47,6 +48,28 @@ const {
   getCoordinates,
   getDashValue,
 } = useObjectActions();
+
+const updateCustomName = async (id: string, value: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (obj) {
+    const updatedObj = { ...obj, customName: value || null };
+    mapObjectStore.Objects.set(id, updatedObj);
+    const backendObj = mapObjectStore.convertDeckGLToBackend(updatedObj);
+    const { updateObject } = useApi();
+    await updateObject(backendObj);
+  }
+};
+
+const updateDescription = async (id: string, value: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (obj) {
+    const updatedObj = { ...obj, description: value || null };
+    mapObjectStore.Objects.set(id, updatedObj);
+    const backendObj = mapObjectStore.convertDeckGLToBackend(updatedObj);
+    const { updateObject } = useApi();
+    await updateObject(backendObj);
+  }
+};
 
 const closeModalRef = ref(false);
 const deletingError = ref(false);
@@ -82,10 +105,32 @@ const onCloseModal = () => {
               Удаление
             </Badge>
           </CardAction>
-          <CardTitle class="min-w-min">{{ obj[1].name }}</CardTitle>
+          <CardTitle class="min-w-min">
+            <div class="flex flex-col gap-1">
+              <span>{{ obj[1].customName || obj[1].name }}</span>
+              <span v-if="obj[1].description" class="text-xs text-gray-500">{{ obj[1].description }}</span>
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <CardDescription>
+            <!-- Редактирование customName и description -->
+            <div class="flex gap-2 mb-4">
+              <Input
+                v-model="obj[1].customName"
+                @change="(e) => updateCustomName(obj[0], (e.target as HTMLInputElement).value)"
+                placeholder="Название"
+                class="flex-1"
+              />
+            </div>
+            <textarea
+              v-model="obj[1].description"
+              @change="(e) => updateDescription(obj[0], (e.target as HTMLTextAreaElement).value)"
+              placeholder="Описание"
+              class="w-full border rounded-md px-3 py-2 text-sm mb-4 resize-none"
+              rows="2"
+            />
+            
             <Accordion
               v-if="obj[1].type === 'Polygon' || obj[1].type === 'Polyline'"
               type="single"

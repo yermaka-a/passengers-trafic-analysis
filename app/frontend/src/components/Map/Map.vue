@@ -195,9 +195,42 @@ const createDeckLayers = () => {
   );
 
   if (pointObjects.length > 0) {
+    // Сначала рисуем обводку (больший радиус)
+    const objectsWithStroke = pointObjects.filter(
+      (obj) => (obj.style.strokeWidth ?? 0) > 0
+    );
+    
+    if (objectsWithStroke.length > 0) {
+      layers.push(
+        new ScatterplotLayer({
+          id: "circle-marker-stroke",
+          data: objectsWithStroke,
+          getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
+          getColor: (obj: DeckGLObject) => obj.style.color,
+          getRadius: (obj: DeckGLObject) => (obj.style.radius ?? 10) + (obj.style.strokeWidth ?? 0) / 2,
+          radiusMinPixels: 5,
+          radiusMaxPixels: 60,
+          getLineColor: (obj: DeckGLObject) => obj.style.color,
+          getLineWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 0,
+          getLineDashArray: (obj: DeckGLObject) => {
+            const dash = obj.style.strokeDasharray;
+            return dash && dash[0] && dash[0] > 0 ? dash : [0, 0];
+          },
+          updateTriggers: {
+            getColor: objectsWithStroke.map(o => ({ id: o.id, color: o.style.color })),
+            getRadius: objectsWithStroke.map(o => ({ id: o.id, radius: o.style.radius, strokeWidth: o.style.strokeWidth })),
+            getLineWidth: objectsWithStroke.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
+            getLineDashArray: objectsWithStroke.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray })),
+          },
+          pickable: false,
+        })
+      );
+    }
+    
+    // Затем рисуем заливку (обычный радиус)
     layers.push(
       new ScatterplotLayer({
-        id: "circle-marker",
+        id: "circle-marker-fill",
         data: pointObjects,
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
         // Заливка маркера
@@ -214,25 +247,9 @@ const createDeckLayers = () => {
         getRadius: (obj: DeckGLObject) => obj.style.radius ?? 10,
         radiusMinPixels: 5,
         radiusMaxPixels: 20,
-        // Обводка маркера
-        getLineColor: (obj: DeckGLObject) => {
-          // Если обводка выключена (strokeWidth=0), возвращаем прозрачный
-          if ((obj.style.strokeWidth ?? 0) === 0) {
-            return [0, 0, 0, 0];
-          }
-          return obj.style.color;
-        },
-        getLineWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 0,
-        getLineDashArray: (obj: DeckGLObject) => {
-          const dash = obj.style.strokeDasharray;
-          return dash && dash[0] && dash[0] > 0 ? dash : [0, 0];
-        },
         updateTriggers: {
           getColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
           getRadius: pointObjects.map(o => ({ id: o.id, radius: o.style.radius })),
-          getLineColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, strokeWidth: o.style.strokeWidth })),
-          getLineWidth: pointObjects.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
-          getLineDashArray: pointObjects.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray })),
         },
         pickable: true,
         autoHighlight: true,

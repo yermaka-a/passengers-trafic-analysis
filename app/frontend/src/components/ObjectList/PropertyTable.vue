@@ -196,7 +196,7 @@ const getColorBadge = (obj: DeckGLObject) => {
                   }
                 "
                 :model-value="[obj[1].style.radius ?? 10]"
-                :max="50"
+                :max="100"
                 :step="1"
                 :min="5"
                 class="w-20"

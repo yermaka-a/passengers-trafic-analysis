@@ -39,9 +39,9 @@ const switchLayer = (layer: TileLayer) => {
 <template>
   <div class="flex flex-col h-full">
     <!-- Переключатель вида и тайлов -->
-    <div class="flex items-center justify-between px-8 py-4 border-b">
+    <div class="flex flex-wrap items-center justify-between gap-3 px-8 py-4 border-b">
       <h1 class="text-2xl font-semibold">Объекты на карте</h1>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Переключатель тайлов -->
         <div class="relative">
           <Button
