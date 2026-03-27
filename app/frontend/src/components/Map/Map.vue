@@ -9,6 +9,7 @@ import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple, DeckGLObject } from "@/types";
+import { rgbaToHex } from "@/utils";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -33,6 +34,9 @@ const draftColor = ref("#ff0000");
 // Coordinates display
 const cursorCoords = ref<{ lat: number; lng: number } | null>(null);
 const showCoordinates = ref(true);
+
+// Popup для объектов
+let popup: maplibregl.Popup | null = null;
 
 // Convert hex to RGBA for Deck.gl
 const hexToRGBA = (hex: string, alpha: number = 255): [number, number, number, number] => {
@@ -80,12 +84,111 @@ const onMapClick = (e: any) => {
   const lngLat: LngLatTuple = [e.lngLat.lng, e.lngLat.lat];
   console.log("[Map] Клик:", lngLat);
   handleMapClick(lngLat);
+  
+  // Закрываем popup при клике по карте
+  closePopup();
 };
 
 // Выделение объекта при клике
 const selectObject = (id: string) => {
   console.log("[Map] Select object:", id);
   mapObjectStore.ClickedObjId = id;
+  
+  // Показываем popup с информацией об объекте
+  showObjectPopup(id);
+};
+
+// Генерация HTML для popup
+const generatePopupContent = (obj: DeckGLObject): string => {
+  const coords = obj.coordinates.map(([lng, lat]) => `${lat.toFixed(6)}:${lng.toFixed(6)}`).join(', ');
+  const colorHex = rgbaToHex(obj.style.color);
+  
+  return `
+    <div class="min-w-[200px]">
+      <h3 class="font-bold text-sm mb-2">${obj.customName || obj.name}</h3>
+      
+      <details class="mb-2 group" open>
+        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
+          <span class="group-open:rotate-90 transition-transform">▶</span>
+          📍 Координаты
+        </summary>
+        <div class="text-xs ml-4 mt-1 text-gray-600 font-mono">${coords}</div>
+      </details>
+      
+      <details class="mb-2 group">
+        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
+          <span class="group-open:rotate-90 transition-transform">▶</span>
+          🎨 Стиль
+        </summary>
+        <div class="text-xs ml-4 mt-1 space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded border" style="background-color: ${colorHex}"></span>
+            <span class="text-gray-600">${colorHex}</span>
+          </div>
+          ${obj.type !== 'CircleMarker' ? `<div class="text-gray-600">Обводка: ${obj.style.strokeWidth ?? 0}px</div>` : ''}
+          ${obj.type === 'CircleMarker' ? `<div class="text-gray-600">Размер: ${obj.style.radius ?? 10}px</div>` : ''}
+        </div>
+      </details>
+      
+      ${obj.description ? `
+      <details class="mb-2 group">
+        <summary class="cursor-pointer text-xs font-medium flex items-center gap-1 list-none">
+          <span class="group-open:rotate-90 transition-transform">▶</span>
+          📝 Описание
+        </summary>
+        <div class="text-xs ml-4 mt-1 text-gray-600">${obj.description}</div>
+      </details>
+      ` : ''}
+      
+      <div class="flex gap-2 mt-3 pt-2 border-t">
+        <button class="find-on-map-btn text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+          Приблизить
+        </button>
+      </div>
+    </div>
+  `;
+};
+
+// Показ popup для объекта
+const showObjectPopup = (id: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (!obj || obj.coordinates.length === 0 || !mapInstance.value) return;
+  
+  const [lng, lat] = obj.coordinates[0];
+  
+  // Закрываем предыдущий popup
+  if (popup) {
+    popup.remove();
+  }
+  
+  // Создаём новый popup
+  popup = new maplibregl.Popup({
+    closeButton: true,
+    closeOnClick: true,
+    maxWidth: '300px',
+  })
+  .setLngLat([lng, lat])
+  .setHTML(generatePopupContent(obj))
+  .addTo(mapInstance.value);
+  
+  // Добавляем обработчик для кнопки "Приблизить"
+  setTimeout(() => {
+    const btn = document.querySelector('.find-on-map-btn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 });
+        if (popup) popup.remove();
+      });
+    }
+  }, 100);
+};
+
+// Закрыть popup при клике на карту
+const closePopup = () => {
+  if (popup) {
+    popup.remove();
+    popup = null;
+  }
 };
 
 // Создание слоёв Deck.gl
@@ -465,6 +568,10 @@ onMounted(() => {
 // Очистка при размонтировании
 onUnmounted(() => {
   console.log("[Map] onUnmounted - очистка");
+  if (popup) {
+    popup.remove();
+    popup = null;
+  }
   if (deckOverlay) {
     deckOverlay.finalize();
     deckOverlay = null;
