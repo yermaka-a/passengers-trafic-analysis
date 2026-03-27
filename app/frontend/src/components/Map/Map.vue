@@ -98,7 +98,7 @@ const selectObject = (id: string) => {
   showObjectPopup(id);
 };
 
-// Генерация HTML для popup с shadcn стилями
+// Генерация HTML для popup с shadcn стилями и редактированием
 const generatePopupContent = (obj: DeckGLObject): string => {
   const coords = obj.coordinates.map(([lng, lat], idx) => ({
     lat: lat.toFixed(8),
@@ -107,8 +107,14 @@ const generatePopupContent = (obj: DeckGLObject): string => {
   }));
   const colorHex = rgbaToHex(obj.style.color);
   
+  // Цвета из вашего проекта
+  const primaryColor = '#0080FF';  // Polygon blue
+  const primaryHover = '#0066CC';
+  const dangerColor = '#EF4444';
+  const dangerHover = '#DC2626';
+  
   return `
-    <div class="min-w-[280px] font-sans">
+    <div class="min-w-[300px] font-sans" data-object-id="${obj.id}">
       <!-- Header -->
       <div class="border-b pb-3 mb-3">
         <h3 class="font-semibold text-base">${obj.customName || obj.name}</h3>
@@ -117,18 +123,24 @@ const generatePopupContent = (obj: DeckGLObject): string => {
       
       <!-- Coordinates -->
       <div class="mb-4">
-        <div class="flex items-center gap-2 mb-2">
+        <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium">📍 Координаты</span>
           <span class="text-xs text-gray-500">(${coords.length} точек)</span>
         </div>
         <div class="max-h-[150px] overflow-y-auto space-y-1 text-xs font-mono bg-gray-50 rounded-md p-2 border">
           ${coords.map(c => `
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-center edit-coord-row" data-idx="${c.idx}" data-lat="${c.lat}" data-lng="${c.lng}">
               <span class="text-gray-600">#${c.idx + 1}:</span>
-              <span>${c.lat}, ${c.lng}</span>
+              <span class="coord-values">${c.lat}, ${c.lng}</span>
+              <button class="edit-coord-btn ml-2 text-blue-500 hover:text-blue-700" data-idx="${c.idx}">
+                ✏️
+              </button>
             </div>
           `).join('')}
         </div>
+        <button class="add-coord-btn w-full mt-2 text-xs text-blue-500 hover:text-blue-700 border border-dashed border-blue-300 rounded-md py-1 hover:bg-blue-50 transition-colors">
+          + Добавить точку
+        </button>
       </div>
       
       <!-- Style -->
@@ -169,8 +181,14 @@ const generatePopupContent = (obj: DeckGLObject): string => {
       
       <!-- Actions -->
       <div class="flex gap-2 mt-4 pt-3 border-t">
-        <button class="find-on-map-btn flex-1 bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 rounded-md transition-colors">
+        <button class="find-on-map-btn flex-1" style="background-color: ${primaryColor}; color: white;" onmouseover="this.style.backgroundColor='${primaryHover}'" onmouseout="this.style.backgroundColor='${primaryColor}'">
           Приблизить
+        </button>
+        <button class="save-coords-btn flex-1" style="background-color: ${primaryColor}; color: white;" onmouseover="this.style.backgroundColor='${primaryHover}'" onmouseout="this.style.backgroundColor='${primaryColor}'">
+          Сохранить координаты
+        </button>
+        <button class="close-popup-btn" style="background-color: ${dangerColor}; color: white; padding: 6px 12px; border-radius: 6px;" onmouseover="this.style.backgroundColor='${dangerHover}'" onmouseout="this.style.backgroundColor='${dangerColor}'">
+          ✕
         </button>
       </div>
     </div>
@@ -199,15 +217,83 @@ const showObjectPopup = (id: string) => {
   .setHTML(generatePopupContent(obj))
   .addTo(mapInstance.value);
   
-  // Добавляем обработчик для кнопки "Приблизить"
+  // Добавляем обработчики для popup
   setTimeout(() => {
-    const btn = document.querySelector('.find-on-map-btn');
-    if (btn) {
-      btn.addEventListener('click', () => {
+    // Кнопка "Приблизить"
+    const findBtn = document.querySelector('.find-on-map-btn');
+    if (findBtn) {
+      findBtn.addEventListener('click', () => {
         mapStore.updateViewState({ latitude: lat, longitude: lng, zoom: 16 }, true);
         if (popup) popup.remove();
       });
     }
+    
+    // Кнопка "Закрыть"
+    const closeBtn = document.querySelector('.close-popup-btn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        if (popup) popup.remove();
+      });
+    }
+    
+    // Кнопка "Сохранить координаты"
+    const saveBtn = document.querySelector('.save-coords-btn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', () => {
+        console.log('[Map] Сохранение координат для объекта:', id);
+        // TODO: Реализовать сохранение изменённых координат
+        if (popup) popup.remove();
+      });
+    }
+    
+    // Кнопки редактирования координат
+    const editBtns = document.querySelectorAll('.edit-coord-btn');
+    editBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const row = (e.target as HTMLElement).closest('.edit-coord-row') as HTMLElement;
+        const idx = row.dataset.idx;
+        const currentLat = row.dataset.lat;
+        const currentLng = row.dataset.lng;
+        
+        // Заменяем на input для редактирования
+        row.innerHTML = `
+          <span class="text-gray-600">#${Number(idx) + 1}:</span>
+          <input type="text" class="edit-lat-input w-20 text-xs border rounded px-1" value="${currentLat}" />
+          <input type="text" class="edit-lng-input w-20 text-xs border rounded px-1" value="${currentLng}" />
+          <button class="save-edit-btn ml-1 text-green-600 hover:text-green-800">✓</button>
+          <button class="cancel-edit-btn ml-1 text-red-600 hover:text-red-800">✗</button>
+        `;
+        
+        // Обработчик сохранения
+        const saveEditBtn = row.querySelector('.save-edit-btn');
+        saveEditBtn?.addEventListener('click', () => {
+          const newLat = (row.querySelector('.edit-lat-input') as HTMLInputElement).value;
+          const newLng = (row.querySelector('.edit-lng-input') as HTMLInputElement).value;
+          row.querySelector('.coord-values')!.textContent = `${newLat}, ${newLng}`;
+          row.dataset.lat = newLat;
+          row.dataset.lng = newLng;
+          // Восстанавливаем отображение
+          row.innerHTML = `
+            <span class="text-gray-600">#${Number(idx) + 1}:</span>
+            <span class="coord-values">${newLat}, ${newLng}</span>
+            <button class="edit-coord-btn ml-2 text-blue-500 hover:text-blue-700" data-idx="${idx}">✏️</button>
+          `;
+          // Переназначаем обработчик
+          // TODO: Обновить координаты в store
+        });
+        
+        // Обработчик отмены
+        const cancelEditBtn = row.querySelector('.cancel-edit-btn');
+        cancelEditBtn?.addEventListener('click', () => {
+          // Восстанавливаем отображение
+          row.innerHTML = `
+            <span class="text-gray-600">#${Number(idx) + 1}:</span>
+            <span class="coord-values">${currentLat}, ${currentLng}</span>
+            <button class="edit-coord-btn ml-2 text-blue-500 hover:text-blue-700" data-idx="${idx}">✏️</button>
+          `;
+        });
+      });
+    });
   }, 100);
 };
 
