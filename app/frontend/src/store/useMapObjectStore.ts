@@ -252,9 +252,16 @@ export const useMapObjectStore = defineStore("mapobjects", {
       }
 
       // Если передан цвет, используем его, иначе берём из draft
-      const finalStyle = draftColor 
+      const finalStyle = draftColor
         ? { ...this.DraftObject.style, color: hexToRGBA(draftColor) }
         : { ...this.DraftObject.style };
+
+      console.log("[finalizeDraftObject]", {
+        draftColor,
+        draftStyleColor: this.DraftObject.style.color,
+        finalStyleColor: finalStyle.color,
+        type: this.DraftObject.type,
+      });
 
       // Создаём объект с координатами и стилем
       const newObject: DeckGLObject = {

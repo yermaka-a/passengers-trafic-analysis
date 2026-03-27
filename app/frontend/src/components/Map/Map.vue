@@ -60,14 +60,17 @@ const {
 
 // Wrapper для передачи цвета
 const finalizeObject = async () => {
+  console.log("[finalizeObject] Вызов с цветом:", draftColor.value);
   await finalizeObjectFromComposable(draftColor.value);
 };
 
 // Обновляем цвет draft объекта при изменении
-watch(draftColor, (newColor) => {
+watch(draftColor, (newColor, oldColor) => {
+  console.log("[watch draftColor]", { oldColor, newColor });
   const draft = mapObjectStore.getDraftObject;
   if (draft) {
     const rgbaColor = hexToRGBA(newColor, 255);
+    console.log("[watch] Обновляем цвет draft:", rgbaColor);
     mapObjectStore.updateDraftStyle({ color: rgbaColor });
   }
 });
