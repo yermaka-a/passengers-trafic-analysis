@@ -89,9 +89,7 @@ const switchLayer = (layer: TileLayer) => {
 
 // Открыть popup для объекта
 const openObjectPopup = (id: string) => {
-  if (mapStore.showObjectPopup.value) {
-    mapStore.showObjectPopup.value(id);
-  }
+  mapStore.openPopup(id);
 };
 </script>
 
