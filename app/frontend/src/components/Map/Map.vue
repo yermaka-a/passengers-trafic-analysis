@@ -228,7 +228,13 @@ const createDeckLayers = () => {
         },
         getLineColor: [0, 0, 0, 0], // No outline from fill layer
         getElevation: 0,
-        pickable: false,  // Заливка не должна перехватывать клики
+        pickable: true,  // ✅ Заливка теперь кликабельна
+        autoHighlight: false,  // Отключаем highlight
+        onClick: (info: any) => {
+          if (info.object) {
+            selectObject((info.object as DeckGLObject).id);
+          }
+        },
         stroked: false,
         filled: true,
       })
