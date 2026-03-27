@@ -32,6 +32,7 @@ const draftColor = ref("#ff0000");
 
 // Coordinates display
 const cursorCoords = ref<{ lat: number; lng: number } | null>(null);
+const showCoordinates = ref(true);
 
 // Convert hex to RGBA for Deck.gl
 const hexToRGBA = (hex: string, alpha: number = 255): [number, number, number, number] => {
@@ -484,7 +485,9 @@ onUnmounted(() => {
     :can-undo="canUndo"
     :can-redo="canRedo"
     :draft-color="draftColor"
+    :show-coordinates="showCoordinates"
     @update:draft-color="draftColor = $event"
+    @update:show-coordinates="showCoordinates = $event"
   />
   <div class="flex-1 h-screen overflow-scroll">
     <div
@@ -493,14 +496,14 @@ onUnmounted(() => {
     >
       <!-- Отображение координат курсора -->
       <div
-        v-if="cursorCoords"
-        class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md px-3 py-2 text-xs font-mono shadow-lg z-50 pointer-events-none"
+        v-if="showCoordinates && cursorCoords"
+        class="absolute top-4 left-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md px-3 py-2 text-xs font-mono shadow-lg z-50 pointer-events-none"
       >
         <span class="text-gray-600">Широта:</span>
-        <span class="ml-2 font-medium">{{ cursorCoords.lat.toFixed(6) }}</span>
+        <span class="ml-2 font-medium">{{ cursorCoords.lat.toFixed(8) }}</span>
         <span class="mx-2 text-gray-400">|</span>
         <span class="text-gray-600">Долгота:</span>
-        <span class="ml-2 font-medium">{{ cursorCoords.lng.toFixed(6) }}</span>
+        <span class="ml-2 font-medium">{{ cursorCoords.lng.toFixed(8) }}</span>
       </div>
     </div>
   </div>

@@ -2,6 +2,7 @@
 import { Plus, X, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 
 interface Props {
   cancelChanges: () => void;
@@ -11,16 +12,19 @@ interface Props {
   canUndo?: boolean;
   canRedo?: boolean;
   draftColor?: string;
+  showCoordinates?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   canUndo: false,
   canRedo: false,
   draftColor: "#ff0000",
+  showCoordinates: true,
 });
 
 const emit = defineEmits<{
   "update:draftColor": [value: string];
+  "update:showCoordinates": [value: boolean];
 }>();
 
 const handleSubmit = () => {
@@ -73,6 +77,16 @@ const handleColorChange = (value: string) => {
       @click="nextAction()"
     >
       <ChevronRight />
+    </Button>
+    <Separator orientation="vertical" class="h-6" />
+    <Button
+      variant="outline"
+      size="sm"
+      :class="props.showCoordinates ? 'bg-accent' : ''"
+      @click="emit('update:showCoordinates', !props.showCoordinates)"
+      title="Показать координаты"
+    >
+      <span class="text-xs font-mono">GPS</span>
     </Button>
     <Input
       v-if="draftColor !== undefined"
