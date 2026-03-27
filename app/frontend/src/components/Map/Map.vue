@@ -30,6 +30,9 @@ let deckOverlay: MapboxOverlay | null = null;
 // Draft object color (default red)
 const draftColor = ref("#ff0000");
 
+// Coordinates display
+const cursorCoords = ref<{ lat: number; lng: number } | null>(null);
+
 // Convert hex to RGBA for Deck.gl
 const hexToRGBA = (hex: string, alpha: number = 255): [number, number, number, number] => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -206,18 +209,19 @@ const createDeckLayers = () => {
           id: "circle-marker-stroke",
           data: objectsWithStroke,
           getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-          getColor: (obj: DeckGLObject) => obj.style.color,
+          getFillColor: (obj: DeckGLObject) => obj.style.color,
+          getLineColor: (obj: DeckGLObject) => obj.style.color,
           getRadius: (obj: DeckGLObject) => (obj.style.radius ?? 10) + (obj.style.strokeWidth ?? 0) / 2,
           radiusMinPixels: 5,
           radiusMaxPixels: 60,
-          getLineColor: (obj: DeckGLObject) => obj.style.color,
           getLineWidth: (obj: DeckGLObject) => obj.style.strokeWidth ?? 0,
           getLineDashArray: (obj: DeckGLObject) => {
             const dash = obj.style.strokeDasharray;
             return dash && dash[0] && dash[0] > 0 ? dash : [0, 0];
           },
           updateTriggers: {
-            getColor: objectsWithStroke.map(o => ({ id: o.id, color: o.style.color })),
+            getFillColor: objectsWithStroke.map(o => ({ id: o.id, color: o.style.color })),
+            getLineColor: objectsWithStroke.map(o => ({ id: o.id, color: o.style.color })),
             getRadius: objectsWithStroke.map(o => ({ id: o.id, radius: o.style.radius, strokeWidth: o.style.strokeWidth })),
             getLineWidth: objectsWithStroke.map(o => ({ id: o.id, strokeWidth: o.style.strokeWidth })),
             getLineDashArray: objectsWithStroke.map(o => ({ id: o.id, strokeDasharray: o.style.strokeDasharray })),
@@ -233,10 +237,8 @@ const createDeckLayers = () => {
         id: "circle-marker-fill",
         data: pointObjects,
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        // Заливка маркера
-        getColor: (obj: DeckGLObject) => {
+        getFillColor: (obj: DeckGLObject) => {
           const color = obj.style.color;
-          // Применяем fillOpacity к альфа-каналу
           return [
             color[0]!,
             color[1]!,
@@ -244,11 +246,12 @@ const createDeckLayers = () => {
             Math.round(color[3]! * (obj.style.fillOpacity ?? 1.0))
           ];
         },
+        getLineColor: [0, 0, 0, 0],
         getRadius: (obj: DeckGLObject) => obj.style.radius ?? 10,
         radiusMinPixels: 5,
         radiusMaxPixels: 20,
         updateTriggers: {
-          getColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
+          getFillColor: pointObjects.map(o => ({ id: o.id, color: o.style.color, fillOpacity: o.style.fillOpacity })),
           getRadius: pointObjects.map(o => ({ id: o.id, radius: o.style.radius })),
         },
         pickable: true,
@@ -391,6 +394,19 @@ onMounted(() => {
     map.on("click", onMapClick);
     console.log("[Map] MapLibre click обработчик добавлен");
 
+    // Обработчик движения мыши для отображения координат
+    map.on("mousemove", (e: any) => {
+      cursorCoords.value = {
+        lat: e.lngLat.lat,
+        lng: e.lngLat.lng,
+      };
+    });
+
+    // Очистка координат при выходе мыши из карты
+    map.on("mouseleave", () => {
+      cursorCoords.value = null;
+    });
+
     // Применяем стили для курсоров через CSS
     // Курсоры управляются через CSS классы maplibregl-map и maplibregl-canvas:active
 
@@ -474,7 +490,19 @@ onUnmounted(() => {
     <div
       id="map"
       class="relative"
-    ></div>
+    >
+      <!-- Отображение координат курсора -->
+      <div
+        v-if="cursorCoords"
+        class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-md px-3 py-2 text-xs font-mono shadow-lg z-50 pointer-events-none"
+      >
+        <span class="text-gray-600">Широта:</span>
+        <span class="ml-2 font-medium">{{ cursorCoords.lat.toFixed(6) }}</span>
+        <span class="mx-2 text-gray-400">|</span>
+        <span class="text-gray-600">Долгота:</span>
+        <span class="ml-2 font-medium">{{ cursorCoords.lng.toFixed(6) }}</span>
+      </div>
+    </div>
   </div>
 </template>
 

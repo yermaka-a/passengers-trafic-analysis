@@ -2,16 +2,82 @@
 import { storeToRefs } from "pinia";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionTrigger,
+  AccordionItem,
+} from "@/components/ui/accordion";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardContent,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircleIcon } from "lucide-vue-next";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Toggle } from "@/components/ui/toggle/";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
+import { Pencil } from "lucide-vue-next";
 import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
 import useObjectActions from "@/composables/useObjectActions";
 import { useApi } from "@/composables";
+import { rgbaToHex } from "@/utils";
 
 const props = defineProps<{
   objects: [string, DeckGLObject][];
 }>();
 
 const mapObjectStore = useMapObjectStore();
+
+const editingId = ref<string | null>(null);
+const editingCustomName = ref<string>("");
+const editingDescription = ref<string>("");
+
+const startEditing = (id: string, obj: DeckGLObject) => {
+  editingId.value = id;
+  editingCustomName.value = obj.customName || "";
+  editingDescription.value = obj.description || "";
+};
+
+const cancelEditing = () => {
+  editingId.value = null;
+  editingCustomName.value = "";
+  editingDescription.value = "";
+};
+
+const saveEditing = async (id: string) => {
+  const obj = mapObjectStore.Objects.get(id);
+  if (obj) {
+    const updatedObj = {
+      ...obj,
+      customName: editingCustomName.value || null,
+      description: editingDescription.value || null,
+    };
+    mapObjectStore.Objects.set(id, updatedObj);
+    await updateObjectInBackend(updatedObj);
+  }
+  cancelEditing();
+};
+
+const updateObjectInBackend = async (obj: DeckGLObject) => {
+  const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+  const { updateObject } = useApi();
+  const result = await updateObject(backendObj);
+  if (result?.status !== "success") {
+    console.error("[ObjectListView] Ошибка обновления:", result);
+  }
+};
 
 const {
   changeColor,
@@ -26,28 +92,6 @@ const {
   getCoordinates,
   getDashValue,
 } = useObjectActions();
-
-const updateCustomName = async (id: string, value: string) => {
-  const obj = mapObjectStore.Objects.get(id);
-  if (obj) {
-    const updatedObj = { ...obj, customName: value || null };
-    mapObjectStore.Objects.set(id, updatedObj);
-    const backendObj = mapObjectStore.convertDeckGLToBackend(updatedObj);
-    const { updateObject } = useApi();
-    await updateObject(backendObj);
-  }
-};
-
-const updateDescription = async (id: string, value: string) => {
-  const obj = mapObjectStore.Objects.get(id);
-  if (obj) {
-    const updatedObj = { ...obj, description: value || null };
-    mapObjectStore.Objects.set(id, updatedObj);
-    const backendObj = mapObjectStore.convertDeckGLToBackend(updatedObj);
-    const { updateObject } = useApi();
-    await updateObject(backendObj);
-  }
-};
 
 const closeModalRef = ref(false);
 const deletingError = ref(false);
@@ -84,30 +128,40 @@ const onCloseModal = () => {
             </Badge>
           </CardAction>
           <CardTitle class="min-w-min">
-            <div class="flex flex-col gap-1">
-              <span>{{ obj[1].customName || obj[1].name }}</span>
-              <span v-if="obj[1].description" class="text-xs text-gray-500">{{ obj[1].description }}</span>
+            <div class="flex items-center gap-2">
+              <span class="flex-1">{{ obj[1].customName || obj[1].name }}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="startEditing(obj[0], obj[1])"
+                class="h-6 w-6 p-0"
+              >
+                <Pencil class="w-3 h-3" />
+              </Button>
             </div>
+            <span v-if="obj[1].description && editingId !== obj[0]" class="text-xs text-gray-500 block mt-1">{{ obj[1].description }}</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <CardDescription>
             <!-- Редактирование customName и description -->
-            <div class="flex gap-2 mb-4">
-              <Input
-                v-model="obj[1].customName"
-                @change="(e) => updateCustomName(obj[0], (e.target as HTMLInputElement).value)"
-                placeholder="Название"
-                class="flex-1"
+            <template v-if="editingId === obj[0]">
+              <div class="flex gap-2 mb-4">
+                <Input
+                  v-model="editingCustomName"
+                  placeholder="Название"
+                  class="flex-1"
+                />
+                <Button variant="outline" size="sm" @click="cancelEditing">Отмена</Button>
+                <Button size="sm" @click="saveEditing(obj[0])">Сохранить</Button>
+              </div>
+              <Textarea
+                v-model="editingDescription"
+                placeholder="Описание"
+                class="w-full mb-4 resize-none"
+                rows="3"
               />
-            </div>
-            <textarea
-              v-model="obj[1].description"
-              @change="(e) => updateDescription(obj[0], (e.target as HTMLTextAreaElement).value)"
-              placeholder="Описание"
-              class="w-full border rounded-md px-3 py-2 text-sm mb-4 resize-none"
-              rows="2"
-            />
+            </template>
             
             <Accordion
               v-if="obj[1].type === 'Polygon' || obj[1].type === 'Polyline'"
