@@ -249,6 +249,15 @@ const showObjectPopup = (id: string) => {
             coordValuesSpan.textContent = `${newLat}, ${newLng}`;
             row.dataset.lat = newLat;
             row.dataset.lng = newLng;
+            
+            // Обновляем координаты в store
+            const obj = mapObjectStore.Objects.get(id);
+            if (obj) {
+              const newCoordinates = [...obj.coordinates];
+              newCoordinates[Number(idx)] = [Number(newLng), Number(newLat)];
+              mapObjectStore.updateObjectCoordinates(id, newCoordinates);
+              console.log('[Map] Координаты обновлены:', id, idx, newLat, newLng);
+            }
           }
           
           // Восстанавливаем отображение
@@ -257,8 +266,6 @@ const showObjectPopup = (id: string) => {
             <span class="coord-values truncate max-w-[120px]">${row.dataset.lat}, ${row.dataset.lng}</span>
             <button class="edit-coord-btn ml-1 text-blue-500 hover:text-blue-700 flex-shrink-0" data-idx="${idx}">✏️</button>
           `;
-          // Обработчик уже назначен на контейнер через делегирование, не нужно переназначать
-          // TODO: Обновить координаты в store
         });
         
         // Обработчик отмены

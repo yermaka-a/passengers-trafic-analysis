@@ -357,12 +357,13 @@ export const useMapObjectStore = defineStore("mapobjects", {
     updateObjectCoordinates(id: string, coordinates: LngLatTuple[]) {
       const obj = this.Objects.get(id);
       if (obj) {
-        // Создаём НОВЫЙ объект с новыми координатами
+        // Создаём НОВЫЙ объект с новыми координатами для реактивности
         const updatedObj: DeckGLObject = {
           ...obj,
-          coordinates: [...coordinates],
+          coordinates: coordinates.map(c => [c[0], c[1]] as LngLatTuple), // deep clone
         };
         this.Objects.set(id, updatedObj);
+        console.log('[useMapObjectStore] updateObjectCoordinates:', id, updatedObj.coordinates.length, 'coords');
       }
     },
 
