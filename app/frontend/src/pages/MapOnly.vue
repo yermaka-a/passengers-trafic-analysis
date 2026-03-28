@@ -11,18 +11,6 @@ const pyWebViewReadyHandler = async () => {
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
 };
 
-onMounted(() => {
-  // Слушаем события синхронизации
-  globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
-  
-  // Инициализация pywebview
-  if ((globalThis as any)?.pywebview?.api?.objects) {
-    pyWebViewReadyHandler();
-  } else {
-    globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
-  }
-});
-
 // Обработчик синхронизации между окнами
 const handlePanelSync = async (event: CustomEvent) => {
   console.log('[MapOnly] Panel sync event:', event.detail);
@@ -33,6 +21,35 @@ const handlePanelSync = async (event: CustomEvent) => {
     console.log('[MapOnly] Objects reloaded after', type);
   }
 };
+
+// Обработчик изменения выбранного типа
+const handleChosenTypeChanged = (event: CustomEvent) => {
+  console.log('[MapOnly] Chosen type changed:', event.detail);
+};
+
+onMounted(() => {
+  // Слушаем события синхронизации
+  globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
+  globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+  
+  // Инициализация pywebview
+  if ((globalThis as any)?.pywebview?.api?.objects) {
+    pyWebViewReadyHandler();
+  } else {
+    globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
+  }
+});
+
+// Обработчик изменения выбранного типа
+const handleChosenTypeChanged = (event: CustomEvent) => {
+  console.log('[MapOnly] Chosen type changed:', event.detail);
+};
+
+onUnmounted(() => {
+  globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
+  globalThis.removeEventListener('panel-sync', handlePanelSync as EventListener);
+  globalThis.removeEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+});
 </script>
 
 <template>

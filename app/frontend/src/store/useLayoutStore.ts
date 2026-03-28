@@ -1,27 +1,20 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
 
-export type LayoutOrientation = 'horizontal' | 'vertical';
-export type MapPosition = 'left' | 'right' | 'top' | 'bottom';
+export type MapPosition = 'top' | 'bottom' | 'left' | 'right';
 
 export interface LayoutConfig {
-  orientation: LayoutOrientation;  // Главное направление
-  leftOrientation: 'vertical' | 'horizontal';  // Для левой панели
-  mapPosition: MapPosition;
-  brushSize: number;  // Процент
-  listSize: number;
-  mapSize: number;
+  mapPosition: MapPosition;  // Позиция карты
+  mapSize: number;           // Размер карты (0-100)
+  toolsSize: number;         // Размер BrushTable (0-100)
 }
 
 const STORAGE_KEY = 'panelLayout';
 
 const defaultLayout: LayoutConfig = {
-  orientation: 'horizontal',
-  leftOrientation: 'vertical',
   mapPosition: 'right',
-  brushSize: 25,
-  listSize: 75,
   mapSize: 60,
+  toolsSize: 25,
 };
 
 export const useLayoutStore = defineStore('layout', () => {
@@ -46,34 +39,22 @@ export const useLayoutStore = defineStore('layout', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(layout.value));
   };
 
-  // Обновление layout
-  const setLayout = (config: Partial<LayoutConfig>) => {
-    layout.value = { ...layout.value, ...config };
-    saveToStorage();
-  };
-
-  // Позиция карты
+  // Установка позиции карты
   const setMapPosition = (position: MapPosition) => {
     layout.value.mapPosition = position;
-    
-    // Меняем ориентацию в зависимости от позиции
-    if (position === 'top' || position === 'bottom') {
-      // Карта сверху/снизу - главная ориентация vertical
-      layout.value.orientation = 'vertical';
-      layout.value.leftOrientation = 'horizontal';
-    } else {
-      // Карта слева/справа - главная ориентация horizontal
-      layout.value.orientation = 'horizontal';
-      layout.value.leftOrientation = 'vertical';
-    }
-    
     saveToStorage();
-    console.log('[LayoutStore] Set map position:', position, layout.value);
+    console.log('[LayoutStore] Set map position:', position);
   };
 
-  // Переключение ориентации
-  const toggleOrientation = () => {
-    layout.value.orientation = layout.value.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+  // Установка размера карты
+  const setMapSize = (size: number) => {
+    layout.value.mapSize = size;
+    saveToStorage();
+  };
+
+  // Установка размера инструментов
+  const setToolsSize = (size: number) => {
+    layout.value.toolsSize = size;
     saveToStorage();
   };
 
@@ -91,9 +72,9 @@ export const useLayoutStore = defineStore('layout', () => {
 
   return {
     layout,
-    setLayout,
     setMapPosition,
-    toggleOrientation,
+    setMapSize,
+    setToolsSize,
     resetLayout,
   };
 });

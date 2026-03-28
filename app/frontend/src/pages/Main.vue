@@ -39,6 +39,9 @@ onMounted(async () => {
   // Слушаем события синхронизации
   globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
   
+  // Слушаем изменения выбранного типа (для синхронизации BrushTable)
+  globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+  
   // Проверяем готовность pywebview
   if ((globalThis as any).pywebview?.api) {
     // pywebview уже готов (для отдельных окон)
@@ -50,9 +53,16 @@ onMounted(async () => {
   }
 });
 
+// Обработчик изменения выбранного типа
+const handleChosenTypeChanged = (event: CustomEvent) => {
+  console.log('[Main] Chosen type changed:', event.detail);
+  // Тип уже сохранён в localStorage и загрузится при создании store
+};
+
 onUnmounted(() => {
   globalThis.removeEventListener("pywebviewready", pyWebViewReadyHandler);
   globalThis.removeEventListener('panel-sync', handlePanelSync as EventListener);
+  globalThis.removeEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
 });
 </script>
 

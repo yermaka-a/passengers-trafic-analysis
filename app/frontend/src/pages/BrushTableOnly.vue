@@ -11,6 +11,22 @@ const pyWebViewReadyHandler = async () => {
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
 };
 
+// Обработчик синхронизации между окнами
+const handlePanelSync = async (event: CustomEvent) => {
+  console.log('[BrushTableOnly] Panel sync event:', event.detail);
+  const { type } = event.detail;
+  
+  if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED' || type === 'OBJECT_DELETED') {
+    await objectStore.loadAllObjectsFromDB();
+    console.log('[BrushTableOnly] Objects reloaded after', type);
+  }
+};
+
+// Обработчик изменения выбранного типа
+const handleChosenTypeChanged = (event: CustomEvent) => {
+  console.log('[BrushTableOnly] Chosen type changed:', event.detail);
+};
+
 onMounted(() => {
   // Слушаем события синхронизации
   globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);

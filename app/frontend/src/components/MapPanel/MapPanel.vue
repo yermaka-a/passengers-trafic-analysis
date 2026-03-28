@@ -16,7 +16,6 @@ const layout = layoutStore.layout;
 
 // Обработчики для кнопок
 const handleOpenWindow = async (panelId: string) => {
-  // Проверяем, доступен ли pywebview API
   if ((window as any).pywebview?.api?.open_panel_window) {
     try {
       const result = await (window as any).pywebview.api.open_panel_window(panelId);
@@ -26,7 +25,6 @@ const handleOpenWindow = async (panelId: string) => {
       alert('Ошибка открытия окна. Проверьте консоль.');
     }
   } else {
-    // pywebview недоступен - показываем ошибку
     alert('Откройте приложение через python main.py для работы с окнами');
   }
 };
@@ -68,70 +66,136 @@ const handleOpenWindow = async (panelId: string) => {
       </div>
     </div>
 
-    <!-- Main Layout -->
+    <!-- Main Layout: Карта сверху -->
     <ResizablePanelGroup
-      :direction="layout.orientation"
+      v-if="layout.mapPosition === 'top'"
+      direction="vertical"
       class="flex-1 h-full"
     >
-      <!-- Карта слева/справа -->
-      <template v-if="layout.mapPosition === 'left' || layout.mapPosition === 'right'">
-        <ResizablePanel :default-size="layout.mapSize" :min-size="20">
-          <div class="relative h-full">
-            <Map />
-          </div>
-        </ResizablePanel>
-        
-        <ResizableHandle withHandle />
-        
-        <!-- Левая панель с BrushTable и List -->
-        <ResizablePanel :default-size="100 - layout.mapSize" :min-size="20">
-          <ResizablePanelGroup :direction="layout.leftOrientation">
-            <ResizablePanel :default-size="layout.brushSize" :min-size="15">
-              <div class="relative h-full">
-                <BrushTable />
-              </div>
-            </ResizablePanel>
-            
-            <ResizableHandle withHandle />
-            
-            <ResizablePanel :default-size="layout.listSize" :min-size="15">
-              <div class="relative h-full">
-                <List />
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-      </template>
+      <ResizablePanel :default-size="layout.mapSize" :min-size="0" :max-size="100">
+        <div class="relative h-full">
+          <Map />
+        </div>
+      </ResizablePanel>
       
-      <!-- Карта сверху/снизу -->
-      <template v-else-if="layout.mapPosition === 'top' || layout.mapPosition === 'bottom'">
-        <!-- BrushTable и List -->
-        <ResizablePanel :default-size="100 - layout.mapSize" :min-size="20">
-          <ResizablePanelGroup :direction="layout.leftOrientation">
-            <ResizablePanel :default-size="layout.brushSize" :min-size="15">
-              <div class="relative h-full">
-                <BrushTable />
-              </div>
-            </ResizablePanel>
-            
-            <ResizableHandle withHandle />
-            
-            <ResizablePanel :default-size="layout.listSize" :min-size="15">
-              <div class="relative h-full">
-                <List />
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        </ResizablePanel>
-        
-        <ResizableHandle withHandle />
-        
-        <ResizablePanel :default-size="layout.mapSize" :min-size="20">
-          <div class="relative h-full">
-            <Map />
-          </div>
-        </ResizablePanel>
-      </template>
+      <ResizableHandle withHandle />
+      
+      <ResizablePanel :default-size="100 - layout.mapSize" :min-size="0" :max-size="100">
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel :default-size="layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <BrushTable />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel :default-size="100 - layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <List />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+
+    <!-- Main Layout: Карта снизу -->
+    <ResizablePanelGroup
+      v-else-if="layout.mapPosition === 'bottom'"
+      direction="vertical"
+      class="flex-1 h-full"
+    >
+      <ResizablePanel :default-size="100 - layout.mapSize" :min-size="0" :max-size="100">
+        <ResizablePanelGroup direction="horizontal">
+          <ResizablePanel :default-size="layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <BrushTable />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel :default-size="100 - layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <List />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+      
+      <ResizableHandle withHandle />
+      
+      <ResizablePanel :default-size="layout.mapSize" :min-size="0" :max-size="100">
+        <div class="relative h-full">
+          <Map />
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+
+    <!-- Main Layout: Карта слева -->
+    <ResizablePanelGroup
+      v-else-if="layout.mapPosition === 'left'"
+      direction="horizontal"
+      class="flex-1 h-full"
+    >
+      <ResizablePanel :default-size="layout.mapSize" :min-size="0" :max-size="100">
+        <div class="relative h-full">
+          <Map />
+        </div>
+      </ResizablePanel>
+      
+      <ResizableHandle withHandle />
+      
+      <ResizablePanel :default-size="100 - layout.mapSize" :min-size="0" :max-size="100">
+        <ResizablePanelGroup direction="vertical">
+          <ResizablePanel :default-size="layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <BrushTable />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel :default-size="100 - layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <List />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+    </ResizablePanelGroup>
+
+    <!-- Main Layout: Карта справа -->
+    <ResizablePanelGroup
+      v-else
+      direction="horizontal"
+      class="flex-1 h-full"
+    >
+      <ResizablePanel :default-size="100 - layout.mapSize" :min-size="0" :max-size="100">
+        <ResizablePanelGroup direction="vertical">
+          <ResizablePanel :default-size="layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <BrushTable />
+            </div>
+          </ResizablePanel>
+          
+          <ResizableHandle withHandle />
+          
+          <ResizablePanel :default-size="100 - layout.toolsSize" :min-size="0" :max-size="100">
+            <div class="relative h-full">
+              <List />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ResizablePanel>
+      
+      <ResizableHandle withHandle />
+      
+      <ResizablePanel :default-size="layout.mapSize" :min-size="0" :max-size="100">
+        <div class="relative h-full">
+          <Map />
+        </div>
+      </ResizablePanel>
     </ResizablePanelGroup>
   </div>
 </template>
@@ -139,7 +203,7 @@ const handleOpenWindow = async (panelId: string) => {
 <style scoped>
 /* Адаптивные размеры для панелей */
 .resizable-panel {
-  min-height: 200px;
-  min-width: 300px;
+  min-height: 100px;
+  min-width: 100px;
 }
 </style>

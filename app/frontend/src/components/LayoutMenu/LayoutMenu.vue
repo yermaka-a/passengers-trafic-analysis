@@ -29,29 +29,11 @@ const resetLayout = () => {
         <LayoutDashboard class="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-72">
+    <PopoverContent class="w-64">
       <div class="space-y-4">
         <div class="space-y-2">
           <Label>Позиция карты</Label>
           <div class="grid grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'left' }"
-              @click="setMapPosition('left')"
-              class="cursor-pointer"
-            >
-              ⬅ Слева
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'right' }"
-              @click="setMapPosition('right')"
-              class="cursor-pointer"
-            >
-              Справа ➡
-            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -69,6 +51,24 @@ const resetLayout = () => {
               class="cursor-pointer"
             >
               Снизу ⬇
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'left' }"
+              @click="setMapPosition('left')"
+              class="cursor-pointer"
+            >
+              ⬅ Слева
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'right' }"
+              @click="setMapPosition('right')"
+              class="cursor-pointer"
+            >
+              Справа ➡
             </Button>
           </div>
         </div>
