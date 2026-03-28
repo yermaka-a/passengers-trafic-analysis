@@ -42,10 +42,10 @@ const useApi = () => {
 
   // Tile layers
   const getCurrentTileLayer = async (): Promise<{ status: string; layer: string }> =>
-    await callApi((api as any).tile_layers.getCurrentLayer);
+    await callApi(api.tile_layers.getCurrentLayer);
 
   const setCurrentTileLayer = async (layer: string): Promise<{ status: string; layer: string }> =>
-    await callApi((api as any).tile_layers.setCurrentLayer, layer);
+    await callApi(api.tile_layers.setCurrentLayer, layer);
 
   return {
     // Состояние
