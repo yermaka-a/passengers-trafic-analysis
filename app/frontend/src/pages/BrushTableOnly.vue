@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import BrushTable from '@/components/BrushTable/BrushTable.vue';
 import { useMapObjectStore } from '@/store';
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 
 const objectStore = useMapObjectStore();
 
@@ -38,6 +38,12 @@ onMounted(() => {
   } else {
     globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
   }
+});
+
+onUnmounted(() => {
+  globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
+  globalThis.removeEventListener('panel-sync', handlePanelSync as EventListener);
+  globalThis.removeEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
 });
 </script>
 

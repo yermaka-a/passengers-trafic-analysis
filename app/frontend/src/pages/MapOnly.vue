@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Map } from '@/components/Map';
 import { useMapObjectStore } from '@/store';
-import { onMounted } from 'vue';
+import { onMounted, onUnmounted } from 'vue';
 
 const objectStore = useMapObjectStore();
 

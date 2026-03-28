@@ -209,16 +209,19 @@ export const useMapObjectStore = defineStore("mapobjects", {
     // УПРАВЛЕНИЕ ТИПОМ ОБЪЕКТА
     // ========================================================================
 
-    /** Установить тип создаваемого объекта и синхронизировать */
+    /** Установить тип создаваемого объекта и синхронизировать через Python API */
     setObjectType(option: (typeof ObjectsTypes)[number]) {
       this.$state.ChosenObjectType = option;
       
-      // Синхронизация через localStorage для других окон
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('chosenObjectType', JSON.stringify(option));
-        window.dispatchEvent(new CustomEvent('chosen-type-changed', {
-          detail: { option }
-        }));
+      // Синхронизация через Python API
+      if (typeof window !== 'undefined' && (window as any).pywebview?.api?.objects) {
+        (window as any).pywebview.api.objects.set_object_type(option)
+          .then(() => {
+            console.log('[MapObjectStore] Chosen type synced via Python API:', option);
+          })
+          .catch((err: Error) => {
+            console.error('[MapObjectStore] Error syncing chosen type:', err);
+          });
       }
     },
 

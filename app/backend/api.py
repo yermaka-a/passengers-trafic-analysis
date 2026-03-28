@@ -144,4 +144,60 @@ class Api:
             except Exception as e:
                 print(f'[API] Error syncing window {window_id}: {e}')
         
-        return {'status': 'success'}
+        return {{'status': 'success'}}
+    
+    def sync_chosen_type(self, option: list):
+        """
+        Синхронизировать выбранный тип объекта между всеми окнами.
+        
+        Args:
+            option: [type, name] например ['Polygon', 'Полигон']
+        """
+        message = json.dumps({
+            'type': 'CHOSEN_TYPE_CHANGED',
+            'data': {'option': option}
+        })
+        
+        print(f'[API] Syncing chosen type: {option}')
+        
+        # Отправляем в главное окно
+        if self._main_window:
+            try:
+                js_code = f"""
+                (function() {{
+                    try {{
+                        console.log('[Sync] Chosen type in main:', {message});
+                        const event = new CustomEvent('chosen-type-changed', {{
+                            detail: {message}
+                        }});
+                        window.dispatchEvent(event);
+                    }} catch(e) {{
+                        console.error('[Sync] Error in main:', e);
+                    }}
+                }})();
+                """
+                self._main_window.evaluate_js(js_code)
+            except Exception as e:
+                print(f'[API] Error syncing chosen type to main: {e}')
+        
+        # Отправляем во все дочерние окна
+        for window_id, window_info in list(self._windows.items()):
+            try:
+                js_code = f"""
+                (function() {{
+                    try {{
+                        console.log('[Sync] Chosen type:', {message});
+                        const event = new CustomEvent('chosen-type-changed', {{
+                            detail: {message}
+                        }});
+                        window.dispatchEvent(event);
+                    }} catch(e) {{
+                        console.error('[Sync] Error:', e);
+                    }}
+                }})();
+                """
+                window_info['window'].evaluate_js(js_code)
+            except Exception as e:
+                print(f'[API] Error syncing chosen type to window {window_id}: {e}')
+        
+        return {{'status': 'success'}}

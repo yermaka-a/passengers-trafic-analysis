@@ -56,7 +56,10 @@ onMounted(async () => {
 // Обработчик изменения выбранного типа
 const handleChosenTypeChanged = (event: CustomEvent) => {
   console.log('[Main] Chosen type changed:', event.detail);
-  // Тип уже сохранён в localStorage и загрузится при создании store
+  const { option } = event.detail.data;
+  if (option && Array.isArray(option) && option.length === 2) {
+    objectStore.setObjectType(option);
+  }
 };
 
 onUnmounted(() => {

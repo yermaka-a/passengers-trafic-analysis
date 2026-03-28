@@ -87,5 +87,17 @@ class ObjectController:
             log.error(op, {"err": e})
             return {"status": "failed", "message": e.errors()}
 
+    def set_object_type(self, option: list):
+        """Установить тип объекта и синхронизировать"""
+        try:
+            # Синхронизируем все окна
+            if self.api:
+                self.api.sync_chosen_type(option)
+            return {"status": "success", "option": option}
+        except Exception as e:
+            op = "set_object_type"
+            log.error(op, {"err": e})
+            return {"status": "failed", "message": str(e)}
+
     def delete_all_objects(self):
         pass
