@@ -32,12 +32,20 @@ class Api:
         print('[API] Main window set')
 
     def open_panel_window(self, panel_id: str):
-        """Открыть панель в отдельном окне pywebview"""
+        """Открыть панель в отдельном окне pywebview через Vue Router"""
         # Уникальный ID для окна
         window_id = str(uuid.uuid4())[:8]
         
-        # URL для отдельной панели
-        url = f"http://localhost:5173/?panel={panel_id}&wid={window_id}"
+        # Маршруты Vue Router для отдельных панелей
+        routes = {
+            'map': '/map',
+            'list': '/list',
+            'brushTable': '/brush',
+        }
+        
+        route = routes.get(panel_id, '/map')
+        # URL для отдельной панели через роутинг
+        url = f"http://localhost:5173{route}"
         
         # Заголовки окон
         titles = {

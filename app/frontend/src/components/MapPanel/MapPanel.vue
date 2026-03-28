@@ -6,8 +6,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import BrushTable from "@/components/BrushTable/BrushTable.vue";
 import { Button } from "@/components/ui/button";
+import BrushTable from "@/components/BrushTable/BrushTable.vue";
+import LayoutMenu from "@/components/LayoutMenu/LayoutMenu.vue";
+import { useLayoutStore } from "@/store/useLayoutStore";
+
+const layoutStore = useLayoutStore();
+const layout = layoutStore.layout;
 
 // Обработчики для кнопок
 const handleOpenWindow = async (panelId: string) => {
@@ -28,67 +33,113 @@ const handleOpenWindow = async (panelId: string) => {
 </script>
 
 <template>
-  <ResizablePanelGroup
-    direction="horizontal"
-    class="max-w-dvw min-h-[95vh] rounded-lg border mt-1"
-  >
-    <!-- Левая панель с BrushTable и List -->
-    <ResizablePanel :default-size="40">
-      <ResizablePanelGroup direction="vertical">
-        <!-- BrushTable -->
-        <ResizablePanel :default-size="30">
+  <div class="flex flex-col h-screen w-screen">
+    <!-- Toolbar с кнопками управления -->
+    <div class="flex justify-between items-center p-2 border-b bg-gray-50">
+      <LayoutMenu />
+      <div class="flex gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          class="cursor-pointer"
+          @click="handleOpenWindow('map')"
+          title="Открыть карту в отдельном окне"
+        >
+          📤 Карта
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="cursor-pointer"
+          @click="handleOpenWindow('list')"
+          title="Открыть список в отдельном окне"
+        >
+          📤 Список
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="cursor-pointer"
+          @click="handleOpenWindow('brushTable')"
+          title="Открыть инструменты в отдельном окне"
+        >
+          📤 Инструменты
+        </Button>
+      </div>
+    </div>
+
+    <!-- Main Layout -->
+    <ResizablePanelGroup
+      :direction="layout.orientation"
+      class="flex-1 h-full"
+    >
+      <!-- Карта слева/справа -->
+      <template v-if="layout.mapPosition === 'left' || layout.mapPosition === 'right'">
+        <ResizablePanel :default-size="layout.mapSize" :min-size="20">
           <div class="relative h-full">
-            <BrushTable />
-            <Button
-              variant="outline"
-              size="sm"
-              class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
-              @click="handleOpenWindow('brushTable')"
-              title="Открыть в отдельном окне pywebview"
-            >
-              📤
-            </Button>
+            <Map />
           </div>
         </ResizablePanel>
         
         <ResizableHandle withHandle />
         
-        <!-- List -->
-        <ResizablePanel :default-size="70">
+        <!-- Левая панель с BrushTable и List -->
+        <ResizablePanel :default-size="100 - layout.mapSize" :min-size="20">
+          <ResizablePanelGroup :direction="layout.leftOrientation">
+            <ResizablePanel :default-size="layout.brushSize" :min-size="15">
+              <div class="relative h-full">
+                <BrushTable />
+              </div>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle />
+            
+            <ResizablePanel :default-size="layout.listSize" :min-size="15">
+              <div class="relative h-full">
+                <List />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+      </template>
+      
+      <!-- Карта сверху/снизу -->
+      <template v-else-if="layout.mapPosition === 'top' || layout.mapPosition === 'bottom'">
+        <!-- BrushTable и List -->
+        <ResizablePanel :default-size="100 - layout.mapSize" :min-size="20">
+          <ResizablePanelGroup :direction="layout.leftOrientation">
+            <ResizablePanel :default-size="layout.brushSize" :min-size="15">
+              <div class="relative h-full">
+                <BrushTable />
+              </div>
+            </ResizablePanel>
+            
+            <ResizableHandle withHandle />
+            
+            <ResizablePanel :default-size="layout.listSize" :min-size="15">
+              <div class="relative h-full">
+                <List />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <ResizablePanel :default-size="layout.mapSize" :min-size="20">
           <div class="relative h-full">
-            <List />
-            <Button
-              variant="outline"
-              size="sm"
-              class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
-              @click="handleOpenWindow('list')"
-              title="Открыть в отдельном окне pywebview"
-            >
-              📤
-            </Button>
+            <Map />
           </div>
         </ResizablePanel>
-      </ResizablePanelGroup>
-    </ResizablePanel>
-
-    <ResizableHandle withHandle />
-
-    <!-- Map панель -->
-    <ResizablePanel :default-size="60">
-      <div class="relative h-full">
-        <Map />
-        <Button
-          variant="outline"
-          size="sm"
-          class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
-          @click="handleOpenWindow('map')"
-          title="Открыть в отдельном окне pywebview"
-        >
-          📤
-        </Button>
-      </div>
-    </ResizablePanel>
-  </ResizablePanelGroup>
+      </template>
+    </ResizablePanelGroup>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* Адаптивные размеры для панелей */
+.resizable-panel {
+  min-height: 200px;
+  min-width: 300px;
+}
+</style>
