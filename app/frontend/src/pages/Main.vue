@@ -10,6 +10,18 @@ const layoutStore = usePanelLayoutStore();
 const pyWebViewReadyHandler = async () => {
   console.log('[Main] pywebview ready - loading objects from DB');
   await objectStore.loadAllObjectsFromDB();
+  
+  // Загружаем сохранённый слой карт через useApi
+  const { getCurrentTileLayer } = await import('@/composables/useApi');
+  try {
+    const result = await getCurrentTileLayer();
+    if (result?.status === 'success' && result?.layer) {
+      tilesStore.setLayer(result.layer);
+    }
+  } catch (e) {
+    console.error('[Main] Error loading tile layer:', e);
+  }
+  
   globalThis.removeEventListener("pywebviewready", pyWebViewReadyHandler);
 };
 

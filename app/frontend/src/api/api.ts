@@ -74,6 +74,14 @@ class InnerAPI {
     return null;
   }
 
+  get tile_layers() {
+    if ((globalThis as any)?.pywebview?.api?.tile_layers) {
+      return (globalThis as any).pywebview?.api?.tile_layers as APITileLayers;
+    }
+    console.log("pywebview tile_layers not registered yet");
+    return null;
+  }
+
   get logs() {
     if ((globalThis as any)?.pywebview?.api?.logs) {
       return (globalThis as any).pywebview?.api?.logs as APILogs;

@@ -82,13 +82,13 @@ const switchLayer = async (layer: TileLayer) => {
   tilesStore.setLayer(layer);
   showTilesMenu.value = false;
   
-  // Сохраняем через Python API для синхронизации между окнами
-  if ((window as any).pywebview?.api?.set_current_tile_layer) {
-    try {
-      await (window as any).pywebview.api.set_current_tile_layer(layer);
-    } catch (e) {
-      console.error('[List] Error saving tile layer:', e);
-    }
+  // Сохраняем через useApi для синхронизации между окнами
+  const { setCurrentTileLayer } = await import('@/composables/useApi');
+  const api = setCurrentTileLayer;
+  try {
+    await api(layer);
+  } catch (e) {
+    console.error('[List] Error saving tile layer:', e);
   }
   
   // Сообщаем карте что нужно обновить тайлы

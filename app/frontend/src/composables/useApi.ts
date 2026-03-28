@@ -40,6 +40,13 @@ const useApi = () => {
   const deleteObject = async (id: string) =>
     await callApi(api.objects.deleteObject, id);
 
+  // Tile layers
+  const getCurrentTileLayer = async () =>
+    await callApi(api.tile_layers.getCurrentLayer);
+
+  const setCurrentTileLayer = async (layer: string) =>
+    await callApi(api.tile_layers.setCurrentLayer, layer);
+
   return {
     // Состояние
     loading: readonly(loading),
@@ -50,6 +57,8 @@ const useApi = () => {
     getAllObjects,
     updateObject,
     deleteObject,
+    getCurrentTileLayer,
+    setCurrentTileLayer,
   };
 };
 
