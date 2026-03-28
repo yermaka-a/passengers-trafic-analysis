@@ -1,13 +1,29 @@
 <script setup lang="ts">
 import { List } from '@/components/List';
 import { useMapObjectStore } from '@/store';
+import { useTilesStore } from '@/store/useTilesStore';
 import { onMounted, onUnmounted } from 'vue';
 
 const objectStore = useMapObjectStore();
+const tilesStore = useTilesStore();
 
 const pyWebViewReadyHandler = async () => {
   console.log('[ListOnly] pywebview ready - loading objects from DB');
   await objectStore.loadAllObjectsFromDB();
+  
+  // Загружаем сохранённый слой карт через useApi
+  const useApiModule = await import('@/composables/useApi');
+  const { getCurrentTileLayer } = useApiModule.default();
+  try {
+    const result = await getCurrentTileLayer();
+    if (result?.status === 'success' && result?.layer) {
+      tilesStore.setLayer(result.layer as typeof tilesStore.currentLayer);
+      console.log('[ListOnly] Loaded tile layer:', result.layer);
+    }
+  } catch (e) {
+    console.error('[ListOnly] Error loading tile layer:', e);
+  }
+  
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
 };
 

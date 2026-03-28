@@ -82,18 +82,24 @@ const switchLayer = async (layer: TileLayer) => {
   tilesStore.setLayer(layer);
   showTilesMenu.value = false;
   
+  console.log('[List] Switching to layer:', layer);
+  console.log('[List] Layer config:', tilesStore.getCurrentLayerConfig());
+  
   // Сохраняем через useApi для синхронизации между окнами
   const useApiModule = await import('@/composables/useApi');
   const { setCurrentTileLayer } = useApiModule.default();
   try {
-    await setCurrentTileLayer(layer);
+    const result = await setCurrentTileLayer(layer);
+    console.log('[List] Tile layer saved:', result);
   } catch (e) {
     console.error('[List] Error saving tile layer:', e);
   }
   
   // Сообщаем карте что нужно обновить тайлы
+  const config = tilesStore.getCurrentLayerConfig();
+  console.log('[List] Dispatching map-tiles-change with:', config);
   window.dispatchEvent(new CustomEvent('map-tiles-change', {
-    detail: tilesStore.getCurrentLayerConfig()
+    detail: config
   }));
 };
 
