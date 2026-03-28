@@ -57,17 +57,17 @@ class API {
   objects = new ObjectController();
   tile_layers = new (class {
     getCurrentLayer = () => {
-      if ((globalThis as any)?.pywebview?.api?.tile_layers) {
-        return (globalThis as any).pywebview?.api?.tile_layers.getCurrentLayer();
+      if ((globalThis as any)?.pywebview?.api?.get_current_tile_layer) {
+        return (globalThis as any).pywebview?.api?.get_current_tile_layer();
       }
-      console.log("pywebview tile_layers not registered yet");
+      console.log("pywebview get_current_tile_layer not registered yet");
       return Promise.resolve({ status: "failed", layer: "osm" });
     };
     setCurrentLayer = (layer: string) => {
-      if ((globalThis as any)?.pywebview?.api?.tile_layers) {
-        return (globalThis as any).pywebview?.api?.tile_layers.setCurrentLayer(layer);
+      if ((globalThis as any)?.pywebview?.api?.set_current_tile_layer) {
+        return (globalThis as any).pywebview?.api?.set_current_tile_layer(layer);
       }
-      console.log("pywebview tile_layers not registered yet");
+      console.log("pywebview set_current_tile_layer not registered yet");
       return Promise.resolve({ status: "failed", layer });
     };
   })();
