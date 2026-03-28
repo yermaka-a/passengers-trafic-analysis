@@ -28,14 +28,14 @@ const handleChosenTypeChanged = (event: CustomEvent) => {
   const { option } = event.detail.data;
   if (option && Array.isArray(option) && option.length === 2) {
     // Обновляем store напрямую без вызова Python API
-    objectStore.$state.ChosenObjectType = option as typeof objectStore.$state.ChosenObjectType;
+    objectStore.$state.ChosenObjectType = option as unknown as typeof objectStore.$state.ChosenObjectType;
   }
 };
 
 onMounted(() => {
   // Слушаем события синхронизации
-  globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
-  globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+  globalThis.addEventListener('panel-sync', handlePanelSync as unknown as EventListener);
+  globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as unknown as EventListener);
 
   // Инициализация pywebview
   if ((globalThis as any)?.pywebview?.api?.objects) {
@@ -47,8 +47,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
-  globalThis.removeEventListener('panel-sync', handlePanelSync as EventListener);
-  globalThis.removeEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+  globalThis.removeEventListener('panel-sync', handlePanelSync as unknown as EventListener);
+  globalThis.removeEventListener('chosen-type-changed', handleChosenTypeChanged as unknown as EventListener);
 });
 </script>
 

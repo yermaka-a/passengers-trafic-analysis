@@ -239,7 +239,7 @@ const onCloseModal = () => {
             </template>
             <div class="flex flex-wrap items-center gap-1">
               <Input
-                @update:model-value="(value) => changeColor(value, obj[0])"
+                @update:model-value="(value) => changeColor(value as string, obj[0])"
                 class="w-1/4 min-w-16"
                 type="color"
                 :model-value="

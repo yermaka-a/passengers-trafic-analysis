@@ -92,7 +92,7 @@ const handleColorChange = (value: string) => {
       v-if="draftColor !== undefined"
       type="color"
       :model-value="draftColor"
-      @update:model-value="handleColorChange"
+      @update:model-value="(value) => handleColorChange(value as string)"
       class="w-10 h-9 p-1 cursor-pointer"
       title="Цвет создаваемого объекта"
     />

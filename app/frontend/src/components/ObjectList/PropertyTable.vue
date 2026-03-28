@@ -164,7 +164,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Input
-                @update:model-value="(value) => changeColor(value, obj[0])"
+                @update:model-value="(value) => changeColor(value as string, obj[0])"
                 type="color"
                 :model-value="getColorBadge(obj[1])"
                 class="w-8 h-8 p-0 border-0 cursor-pointer"
@@ -290,14 +290,16 @@ const getColorBadge = (obj: DeckGLObject) => {
         <div class="flex flex-col gap-2">
           <Label>Название</Label>
           <Input
-            v-model="editingObj[1].customName"
+            :model-value="editingObj[1].customName || ''"
+            @update:model-value="(value) => { if (editingObj) editingObj[1].customName = value as string }"
             placeholder="Введите название"
           />
         </div>
         <div class="flex flex-col gap-2">
           <Label>Описание</Label>
           <Textarea
-            v-model="editingObj[1].description"
+            :model-value="editingObj[1].description || ''"
+            @update:model-value="(value) => { if (editingObj) editingObj[1].description = value as string }"
             placeholder="Введите описание"
             rows="4"
           />

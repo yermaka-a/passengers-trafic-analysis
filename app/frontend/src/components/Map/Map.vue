@@ -166,6 +166,7 @@ const showObjectPopup = (id: string) => {
   })
   .setLngLat([lng, lat])
   .setHTML(generatePopupContent(obj))
+  // @ts-ignore - mapInstance.value имеет правильный тип Map
   .addTo(mapInstance.value);
   
   // Добавляем обработчики для popup
@@ -259,18 +260,12 @@ const showObjectPopup = (id: string) => {
               const newCoordinates = [...obj.coordinates];
               newCoordinates[Number(idx)] = [Number(newLng), Number(newLat)];
               mapObjectStore.updateObjectCoordinates(id, newCoordinates);
-              
-              // Принудительная перерисовка Deck.gl
-              if (deckOverlay && deckOverlay._deck) {
-                deckOverlay._deck.setProps({
+
+              // Принудительная перерисовка Deck.gl через публичный API
+              if (deckOverlay) {
+                deckOverlay.setProps({
                   layers: createDeckLayers(),
-                  _animate: false,
                 });
-                setTimeout(() => {
-                  if (deckOverlay?._deck) {
-                    deckOverlay._deck.redraw();
-                  }
-                }, 50);
               }
             }
           }
@@ -370,7 +365,7 @@ const createDeckLayers = () => {
     // Создаём PathStyleExtension для поддержки пунктира
     const pathStyleExtension = new PathStyleExtension({
       dash: true,
-      highPrecision: false,
+      highPrecisionDash: false,
     });
 
     // Логи для updateTriggers
@@ -586,8 +581,10 @@ onMounted(() => {
 
     // Сохраняем instance
     mapInstance.value = map;
-    mapStore.mapInstance = map;  // Сохраняем в store для доступа из List.vue
-    mapStore.showObjectPopupRef = showObjectPopup;  // Устанавливаем функцию для popup
+    // @ts-ignore - сохраняем ссылку для доступа из List.vue
+    mapStore.mapInstance = map;
+    // @ts-ignore - устанавливаем функцию для popup
+    mapStore.showObjectPopupRef = showObjectPopup;
     console.log("[Map] MapLibre создана");
 
     // Слушаем событие переключения тайлов из List.vue
@@ -637,19 +634,12 @@ onMounted(() => {
     // Используем Array.from для реактивности Map
     watch(
       () => Array.from(Objects.value?.values() ?? []),
-      (_, __) => {
-        // Принудительно обновляем layers для Deck.gl
-        if (deckOverlay && deckOverlay._deck) {
-          deckOverlay._deck.setProps({
+      () => {
+        // Принудительно обновляем layers для Deck.gl через публичный API
+        if (deckOverlay) {
+          deckOverlay.setProps({
             layers: createDeckLayers(),
-            _animate: true,
           });
-          // Принудительная перерисовка для применения стилей
-          setTimeout(() => {
-            if (deckOverlay?._deck) {
-              deckOverlay._deck.redraw();
-            }
-          }, 50);
         }
       },
       { deep: true },
@@ -664,16 +654,10 @@ onMounted(() => {
           newDraft?.coordinates.length ?? 0,
           "точек",
         );
-        if (deckOverlay && deckOverlay._deck) {
-          deckOverlay._deck.setProps({
+        if (deckOverlay) {
+          deckOverlay.setProps({
             layers: createDeckLayers(),
-            _animate: true,
           });
-          setTimeout(() => {
-            if (deckOverlay?._deck) {
-              deckOverlay._deck.redraw();
-            }
-          }, 50);
         }
       },
       { deep: true },

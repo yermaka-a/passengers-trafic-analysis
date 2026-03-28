@@ -14,12 +14,21 @@ export default defineConfig({
     rollupOptions: {
       input: "index.html",
       output: {
-        manualChunks: {
-          // Split vendor chunks for better caching
-          vendor: ["vue", "pinia", "vue-router"],
-          deck: ["@deck.gl/core", "@deck.gl/layers", "@deck.gl/mapbox", "@deck.gl/extensions"],
-          map: ["maplibre-gl"],
-          ui: ["shadcn-vue", "reka-ui", "lucide-vue-next"],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
+              return 'vendor';
+            }
+            if (id.includes('@deck.gl')) {
+              return 'deck';
+            }
+            if (id.includes('maplibre-gl')) {
+              return 'map';
+            }
+            if (id.includes('shadcn-vue') || id.includes('reka-ui') || id.includes('lucide-vue-next')) {
+              return 'ui';
+            }
+          }
         },
       },
     },

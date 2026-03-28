@@ -140,34 +140,15 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
 // ============================================================================
 
 export const useMapObjectStore = defineStore("mapobjects", {
-  state: (): MapObjectStoreState => {
-    // Загрузка выбранного типа из localStorage
-    let initialChosenType = ObjectsTypes[0];
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('chosenObjectType');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length === 2) {
-            initialChosenType = parsed;
-            console.log('[MapObjectStore] Loaded chosen type from storage:', parsed);
-          }
-        } catch (e) {
-          console.error('[MapObjectStore] Error loading chosen type:', e);
-        }
-      }
-    }
-    
-    return {
-      Objects: new Map(),
-      ObjectsTypes,
-      ChosenObjectType: initialChosenType,
-      DraftObject: null,
-      EditingObjectId: null,
-      ClickedObjId: null,
-      strokeState: new Map(),
-    };
-  },
+  state: (): MapObjectStoreState => ({
+    Objects: new Map(),
+    ObjectsTypes,
+    ChosenObjectType: ObjectsTypes[0] as typeof ObjectsTypes[number],
+    DraftObject: null,
+    EditingObjectId: null,
+    ClickedObjId: null,
+    strokeState: new Map(),
+  }),
 
   getters: {
     /** Все объекты на карте */
@@ -275,8 +256,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
       // Создаём объект с координатами и стилем
       const newObject: DeckGLObject = {
         id: uuidv6(),
-        type: this.DraftObject.type,
-        name: ObjectsTypes.find(([key]) => key === this.DraftObject.type)?.[1] ?? this.DraftObject.type,
+        type: this.DraftObject.type as Exclude<ObjTypes, "Edit">,
+        name: ObjectsTypes.find(([key]) => key === this.DraftObject?.type)?.[1] ?? (this.DraftObject?.type as ObjNames),
         style: finalStyle,
         coordinates,
       };
