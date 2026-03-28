@@ -154,8 +154,8 @@ class Api:
                 window_info['window'].evaluate_js(js_code)
             except Exception as e:
                 print(f'[API] Error syncing window {window_id}: {e}')
-        
-        return {{'status': 'success'}}
+
+        return {'status': 'success'}
     
     def sync_chosen_type(self, option: list, exclude_window = None):
         """
@@ -214,5 +214,5 @@ class Api:
                 window_info['window'].evaluate_js(js_code)
             except Exception as e:
                 print(f'[API] Error syncing chosen type to window {window_id}: {e}')
-        
-        return {{'status': 'success'}}
+
+        return {'status': 'success'}
