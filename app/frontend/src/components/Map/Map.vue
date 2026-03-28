@@ -606,15 +606,18 @@ onMounted(() => {
     window.addEventListener('panel-sync', (event: any) => {
       if (event.detail?.type === 'TILE_LAYER_CHANGED') {
         const layer = event.detail.data?.layer;
+        console.log('[Map] Received TILE_LAYER_CHANGED:', layer, 'current:', tilesStore.currentLayer);
         if (layer && tilesStore.currentLayer !== layer) {
           tilesStore.setLayer(layer);
           // Применяем слой
           const config = tilesStore.getCurrentLayerConfig();
+          console.log('[Map] Applying config:', config);
           const style = mapInstance.value?.getStyle();
           if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
             (style.sources["osm"] as any).tiles = config.tiles;
             (style.sources["osm"] as any).attribution = config.attribution;
             mapInstance.value?.setStyle(style);
+            console.log('[Map] Layer applied successfully!');
           }
         }
       }
@@ -663,6 +666,22 @@ onMounted(() => {
         }
       },
       { deep: true },
+    );
+    
+    // Watch для переключения слоёв карты
+    watch(
+      () => tilesStore.currentLayer,
+      (newLayer) => {
+        console.log('[Map] Tile layer changed to:', newLayer);
+        const config = tilesStore.getCurrentLayerConfig();
+        const style = mapInstance.value?.getStyle();
+        if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
+          (style.sources["osm"] as any).tiles = config.tiles;
+          (style.sources["osm"] as any).attribution = config.attribution;
+          mapInstance.value?.setStyle(style);
+          console.log('[Map] Layer applied via watch!');
+        }
+      },
     );
 
     // Watch для draft объекта

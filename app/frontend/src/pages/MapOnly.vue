@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Map } from '@/components/Map';
 import { useMapObjectStore } from '@/store';
+import { useTilesStore } from '@/store/useTilesStore';
 import { onMounted, onUnmounted } from 'vue';
 
 const objectStore = useMapObjectStore();
@@ -14,11 +15,20 @@ const pyWebViewReadyHandler = async () => {
 // Обработчик синхронизации между окнами
 const handlePanelSync = async (event: CustomEvent) => {
   console.log('[MapOnly] Panel sync event:', event.detail);
-  const { type } = event.detail;
-  
+  const { type, data } = event.detail;
+
   if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED' || type === 'OBJECT_DELETED') {
     await objectStore.loadAllObjectsFromDB();
     console.log('[MapOnly] Objects reloaded after', type);
+  }
+  
+  if (type === 'TILE_LAYER_CHANGED' && data?.layer) {
+    const tilesStore = useTilesStore();
+    if (tilesStore.currentLayer !== data.layer) {
+      tilesStore.setLayer(data.layer as typeof tilesStore.currentLayer);
+      console.log('[MapOnly] Tile layer changed to:', data.layer);
+      // Применяем слой - карта обновится через watch
+    }
   }
 };
 

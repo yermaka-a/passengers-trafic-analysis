@@ -226,7 +226,7 @@ class Api:
     def set_current_tile_layer(self, layer: str):
         """Установить текущий слой карт"""
         result = self.tile_layers.set_current_layer(layer)
-        # Синхронизируем только окна с картой (главное + дочерние с map)
+        # Синхронизируем ВСЕ окна (главное + дочерние с map)
         if result['status'] == 'success':
             # Отправляем в главное окно
             if self._main_window:
@@ -248,14 +248,14 @@ class Api:
                 except Exception as e:
                     print(f'[API] Error syncing tile layer to main: {e}')
             
-            # Отправляем в дочерние окна с map
+            # Отправляем во ВСЕ дочерние окна с map
             for window_id, window_info in self._windows.items():
                 if window_info['panel_id'] == 'map':
                     try:
                         js_code = f"""
                         (function() {{
                             try {{
-                                console.log('[Sync] TILE_LAYER_CHANGED in map window:', '{layer}');
+                                console.log('[Sync] TILE_LAYER_CHANGED in map window {window_id}:', '{layer}');
                                 const event = new CustomEvent('panel-sync', {{
                                     detail: {json.dumps({'type': 'TILE_LAYER_CHANGED', 'data': {'layer': layer}})}
                                 }});
