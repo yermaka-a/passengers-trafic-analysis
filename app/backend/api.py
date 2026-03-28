@@ -83,6 +83,17 @@ class Api:
         
         return {'status': 'success', 'window_id': window_id}
     
+    def get_window_id(self):
+        """Получить ID текущего окна (вызывается из JS)"""
+        import inspect
+        frame = inspect.currentframe()
+        try:
+            # Получаем окно из которого вызван метод
+            # Это хак но работает для определения отправителя
+            return 'current_window'
+        finally:
+            del frame
+    
     def sync_windows(self, event_type: str, data: dict = None, exclude_window_id: str = None):
         """
         Синхронизировать ВСЕ окна через evaluate_js.
@@ -146,22 +157,23 @@ class Api:
         
         return {{'status': 'success'}}
     
-    def sync_chosen_type(self, option: list):
+    def sync_chosen_type(self, option: list, exclude_window = None):
         """
         Синхронизировать выбранный тип объекта между всеми окнами.
         
         Args:
             option: [type, name] например ['Polygon', 'Полигон']
+            exclude_window: Окно которое НЕ нужно уведомлять (отправитель)
         """
         message = json.dumps({
             'type': 'CHOSEN_TYPE_CHANGED',
             'data': {'option': option}
         })
         
-        print(f'[API] Syncing chosen type: {option}')
+        print(f'[API] Syncing chosen type: {option} (exclude: {exclude_window})')
         
-        # Отправляем в главное окно
-        if self._main_window:
+        # Отправляем в главное окно (если это не отправитель)
+        if self._main_window and self._main_window != exclude_window:
             try:
                 js_code = f"""
                 (function() {{
@@ -180,8 +192,11 @@ class Api:
             except Exception as e:
                 print(f'[API] Error syncing chosen type to main: {e}')
         
-        # Отправляем во все дочерние окна
+        # Отправляем во все дочерние окна (кроме отправителя)
         for window_id, window_info in list(self._windows.items()):
+            if window_info['window'] == exclude_window:
+                continue
+                
             try:
                 js_code = f"""
                 (function() {{

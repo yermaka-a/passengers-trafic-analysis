@@ -25,6 +25,11 @@ const handlePanelSync = async (event: CustomEvent) => {
 // Обработчик изменения выбранного типа
 const handleChosenTypeChanged = (event: CustomEvent) => {
   console.log('[BrushTableOnly] Chosen type changed:', event.detail);
+  const { option } = event.detail.data;
+  if (option && Array.isArray(option) && option.length === 2) {
+    // Обновляем store напрямую без вызова Python API
+    objectStore.$state.ChosenObjectType = option;
+  }
 };
 
 onMounted(() => {
