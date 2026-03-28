@@ -57,6 +57,7 @@ class Api:
         title = titles.get(panel_id, 'Panel - Passenger Traffic Analysis')
         
         # Создаём новое окно с ТОЙ ЖЕ САМОЙ ссылкой на API
+        # min_size=(100, 100) позволяет уменьшать до очень маленького размера
         window = webview.create_window(
             title,
             url,
@@ -64,7 +65,7 @@ class Api:
             width=1000,
             height=700,
             resizable=True,
-            min_size=(800, 600),
+            min_size=(100, 100),  # Минимальный размер для возможности уменьшения
         )
         
         # Сохраняем окно

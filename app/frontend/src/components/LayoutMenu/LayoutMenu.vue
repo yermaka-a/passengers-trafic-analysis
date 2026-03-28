@@ -22,17 +22,17 @@ const setMapPosition = (position: MapPosition) => {
         <LayoutDashboard class="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent class="w-64">
-      <div class="space-y-4">
+    <PopoverContent class="w-auto">
+      <div class="space-y-2">
         <div class="space-y-2">
-          <Label>Позиция карты</Label>
-          <div class="grid grid-cols-2 gap-2">
+          <Label class="text-xs font-semibold">Позиция карты</Label>
+          <div class="grid grid-cols-2 gap-1.5">
             <Button
               variant="outline"
               size="sm"
               :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'top' }"
               @click="setMapPosition('top')"
-              class="cursor-pointer"
+              class="cursor-pointer text-xs px-2 py-1 h-auto"
             >
               ⬆ Сверху
             </Button>
@@ -41,7 +41,7 @@ const setMapPosition = (position: MapPosition) => {
               size="sm"
               :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'bottom' }"
               @click="setMapPosition('bottom')"
-              class="cursor-pointer"
+              class="cursor-pointer text-xs px-2 py-1 h-auto"
             >
               Снизу ⬇
             </Button>
@@ -50,7 +50,7 @@ const setMapPosition = (position: MapPosition) => {
               size="sm"
               :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'left' }"
               @click="setMapPosition('left')"
-              class="cursor-pointer"
+              class="cursor-pointer text-xs px-2 py-1 h-auto"
             >
               ⬅ Слева
             </Button>
@@ -59,7 +59,7 @@ const setMapPosition = (position: MapPosition) => {
               size="sm"
               :class="{ 'bg-accent text-accent-foreground': layoutStore.layout.mapPosition === 'right' }"
               @click="setMapPosition('right')"
-              class="cursor-pointer"
+              class="cursor-pointer text-xs px-2 py-1 h-auto"
             >
               Справа ➡
             </Button>
