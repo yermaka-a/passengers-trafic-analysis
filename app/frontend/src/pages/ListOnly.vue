@@ -30,7 +30,8 @@ const handleChosenTypeChanged = (event: CustomEvent) => {
 onMounted(() => {
   // Слушаем события синхронизации
   globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
-  
+  globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
+
   // Инициализация pywebview
   if ((globalThis as any)?.pywebview?.api?.objects) {
     pyWebViewReadyHandler();
@@ -38,17 +39,6 @@ onMounted(() => {
     globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
   }
 });
-
-// Обработчик синхронизации между окнами
-const handlePanelSync = async (event: CustomEvent) => {
-  console.log('[ListOnly] Panel sync event:', event.detail);
-  const { type } = event.detail;
-  
-  if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED' || type === 'OBJECT_DELETED') {
-    await objectStore.loadAllObjectsFromDB();
-    console.log('[ListOnly] Objects reloaded after', type);
-  }
-};
 </script>
 
 <template>

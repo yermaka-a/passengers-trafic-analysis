@@ -31,7 +31,7 @@ onMounted(() => {
   // Слушаем события синхронизации
   globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
   globalThis.addEventListener('chosen-type-changed', handleChosenTypeChanged as EventListener);
-  
+
   // Инициализация pywebview
   if ((globalThis as any)?.pywebview?.api?.objects) {
     pyWebViewReadyHandler();
@@ -39,11 +39,6 @@ onMounted(() => {
     globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
   }
 });
-
-// Обработчик изменения выбранного типа
-const handleChosenTypeChanged = (event: CustomEvent) => {
-  console.log('[MapOnly] Chosen type changed:', event.detail);
-};
 
 onUnmounted(() => {
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
