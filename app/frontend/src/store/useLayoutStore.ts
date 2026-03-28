@@ -56,16 +56,19 @@ export const useLayoutStore = defineStore('layout', () => {
   const setMapPosition = (position: MapPosition) => {
     layout.value.mapPosition = position;
     
-    // Автоматически меняем ориентацию в зависимости от позиции
+    // Меняем ориентацию в зависимости от позиции
     if (position === 'top' || position === 'bottom') {
+      // Карта сверху/снизу - главная ориентация vertical
       layout.value.orientation = 'vertical';
       layout.value.leftOrientation = 'horizontal';
     } else {
+      // Карта слева/справа - главная ориентация horizontal
       layout.value.orientation = 'horizontal';
       layout.value.leftOrientation = 'vertical';
     }
     
     saveToStorage();
+    console.log('[LayoutStore] Set map position:', position, layout.value);
   };
 
   // Переключение ориентации

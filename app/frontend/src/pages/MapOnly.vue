@@ -1,5 +1,38 @@
 <script setup lang="ts">
 import { Map } from '@/components/Map';
+import { useMapObjectStore } from '@/store';
+import { onMounted } from 'vue';
+
+const objectStore = useMapObjectStore();
+
+const pyWebViewReadyHandler = async () => {
+  console.log('[MapOnly] pywebview ready - loading objects from DB');
+  await objectStore.loadAllObjectsFromDB();
+  globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
+};
+
+onMounted(() => {
+  // Слушаем события синхронизации
+  globalThis.addEventListener('panel-sync', handlePanelSync as EventListener);
+  
+  // Инициализация pywebview
+  if ((globalThis as any)?.pywebview?.api?.objects) {
+    pyWebViewReadyHandler();
+  } else {
+    globalThis.addEventListener('pywebviewready', pyWebViewReadyHandler);
+  }
+});
+
+// Обработчик синхронизации между окнами
+const handlePanelSync = async (event: CustomEvent) => {
+  console.log('[MapOnly] Panel sync event:', event.detail);
+  const { type } = event.detail;
+  
+  if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED' || type === 'OBJECT_DELETED') {
+    await objectStore.loadAllObjectsFromDB();
+    console.log('[MapOnly] Objects reloaded after', type);
+  }
+};
 </script>
 
 <template>
