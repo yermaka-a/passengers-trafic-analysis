@@ -1,34 +1,21 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
-import type { Component } from 'vue';
-import { Map } from '@/components/Map';
-import { List } from '@/components/List';
-import BrushTable from '@/components/BrushTable/BrushTable.vue';
+import { ref } from 'vue';
 
 export interface PanelConfig {
   id: 'map' | 'list' | 'brushTable';
   title: string;
-  component: Component;
-  position: number;
   isFloating: boolean;
   windowRef: Window | null;
   isVisible: boolean;
 }
 
-export interface PanelLayoutState {
-  panels: PanelConfig[];
-  layoutOrder: string[];
-}
-
-const STORAGE_KEY = 'panelLayout';
+const STORAGE_KEY = 'panelFloatingState';
 
 export const usePanelLayoutStore = defineStore('panelLayout', () => {
   const panels = ref<PanelConfig[]>([
     {
       id: 'brushTable',
       title: '🎨 Инструменты',
-      component: BrushTable,
-      position: 0,
       isFloating: false,
       windowRef: null,
       isVisible: true,
@@ -36,8 +23,6 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     {
       id: 'list',
       title: '📋 Список объектов',
-      component: List,
-      position: 1,
       isFloating: false,
       windowRef: null,
       isVisible: true,
@@ -45,15 +30,11 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     {
       id: 'map',
       title: '🗺️ Карта',
-      component: Map,
-      position: 2,
       isFloating: false,
       windowRef: null,
       isVisible: true,
     },
   ]);
-
-  const layoutOrder = ref<string[]>(['brushTable', 'list', 'map']);
 
   // BroadcastChannel для синхронизации между окнами
   const channel = new BroadcastChannel('panel-sync');
@@ -63,39 +44,26 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        const savedOrder = JSON.parse(saved);
-        if (Array.isArray(savedOrder) && savedOrder.length === 3) {
-          layoutOrder.value = savedOrder;
-          
-          // Обновляем позиции панелей
-          panels.value.forEach(panel => {
-            panel.position = layoutOrder.value.indexOf(panel.id);
-          });
-        }
+        const savedState = JSON.parse(saved);
+        panels.value.forEach(panel => {
+          const savedPanel = savedState.find((p: any) => p.id === panel.id);
+          if (savedPanel) {
+            panel.isFloating = savedPanel.isFloating || false;
+          }
+        });
       } catch (e) {
-        console.error('[PanelLayout] Error loading saved layout:', e);
+        console.error('[PanelLayout] Error loading saved state:', e);
       }
     }
   };
 
   // Сохранение в localStorage
-  const saveLayout = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(layoutOrder.value));
-  };
-
-  // Обновление порядка панелей
-  const updateLayoutOrder = (newOrder: string[]) => {
-    layoutOrder.value = newOrder;
-    panels.value.forEach(panel => {
-      panel.position = newOrder.indexOf(panel.id);
-    });
-    saveLayout();
-    
-    // Отправляем уведомление другим окнам
-    channel.postMessage({
-      type: 'LAYOUT_UPDATED',
-      order: newOrder,
-    });
+  const saveState = () => {
+    const state = panels.value.map(p => ({
+      id: p.id,
+      isFloating: p.isFloating,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   };
 
   // Открытие панели в отдельном окне
@@ -119,6 +87,7 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
           panel.windowRef = null;
           panel.isVisible = true;
           clearInterval(checkClosed);
+          saveState();
           
           channel.postMessage({
             type: 'PANEL_CLOSED',
@@ -126,6 +95,8 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
           });
         }
       }, 500);
+      
+      saveState();
     }
   };
 
@@ -134,9 +105,6 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     const panel = panels.value.find(p => p.id === panelId);
     if (panel?.windowRef) {
       panel.windowRef.close();
-      panel.isFloating = false;
-      panel.windowRef = null;
-      panel.isVisible = true;
     }
   };
 
@@ -147,28 +115,9 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     });
   };
 
-  // Сброс layout к значениям по умолчанию
-  const resetLayout = () => {
-    layoutOrder.value = ['brushTable', 'list', 'map'];
-    panels.value.forEach(panel => {
-      panel.position = layoutOrder.value.indexOf(panel.id);
-      if (panel.isFloating) {
-        closeFloatingPanel(panel.id);
-      }
-    });
-    saveLayout();
-  };
-
   // Получить панель по ID
   const getPanel = (panelId: string) => {
     return panels.value.find(p => p.id === panelId);
-  };
-
-  // Получить видимые панели (для основного окна)
-  const getVisiblePanels = () => {
-    return panels.value
-      .filter(p => p.isVisible && !p.isFloating)
-      .sort((a, b) => a.position - b.position);
   };
 
   // Обработка сообщений от других окон
@@ -185,19 +134,12 @@ export const usePanelLayoutStore = defineStore('panelLayout', () => {
     }
   };
 
-  // Сохранение при изменении порядка
-  watch(layoutOrder, saveLayout);
-
   return {
     panels,
-    layoutOrder,
     initLayout,
-    updateLayoutOrder,
     openPanelInWindow,
     closeFloatingPanel,
     showOnlyPanel,
-    resetLayout,
     getPanel,
-    getVisiblePanels,
   };
 });

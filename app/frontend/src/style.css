@@ -129,25 +129,3 @@
     @apply bg-background text-foreground;
     }
 }
-
-/* Drag-and-drop стили для панелей */
-.dragging-ghost {
-  opacity: 0.5;
-  background: #f3f4f6;
-  border: 2px dashed #9ca3af;
-  border-radius: 0.5rem;
-}
-
-.dragging-chosen {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  transform: scale(1.02);
-  z-index: 1000;
-}
-
-.dragging {
-  cursor: grabbing;
-}
-
-.flip-list-move {
-  transition: transform 0.3s ease-out;
-}

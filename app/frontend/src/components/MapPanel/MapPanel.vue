@@ -1,24 +1,16 @@
 <script lang="ts" setup>
 import { Map } from "@/components/Map";
 import { List } from "@/components/List";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import BrushTable from "@/components/BrushTable/BrushTable.vue";
-import PanelContainer from "@/components/PanelContainer/PanelContainer.vue";
 import { Button } from "@/components/ui/button";
-import draggable from "vuedraggable";
 import { usePanelLayoutStore } from "@/store/usePanelLayoutStore";
-import { computed } from "vue";
 
 const layoutStore = usePanelLayoutStore();
-
-// Получаем видимые панели, отсортированные по позиции
-const visiblePanels = computed(() => layoutStore.getVisiblePanels());
-
-// Компоненты для динамического рендеринга
-const componentMap: Record<string, any> = {
-  map: Map,
-  list: List,
-  brushTable: BrushTable,
-};
 
 // Обработчики для кнопок
 const handleOpenWindow = (panelId: string) => {
@@ -28,77 +20,70 @@ const handleOpenWindow = (panelId: string) => {
 const handleCloseWindow = (panelId: string) => {
   layoutStore.closeFloatingPanel(panelId);
 };
-
-const handleResetLayout = () => {
-  if (confirm("Сбросить layout к значениям по умолчанию?")) {
-    layoutStore.resetLayout();
-  }
-};
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 p-3">
-    <!-- Toolbar с кнопками управления -->
-    <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg border">
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-gray-600">
-          🖱️ Перетаскивайте панели за значок ≡
-        </span>
-      </div>
-      <Button
-        variant="outline"
-        size="sm"
-        @click="handleResetLayout"
-        class="text-xs"
-      >
-        🔄 Сбросить layout
-      </Button>
-    </div>
+  <ResizablePanelGroup
+    direction="horizontal"
+    class="max-w-dvw min-h-[95vh] rounded-lg border mt-1"
+  >
+    <!-- Левая панель с BrushTable и List -->
+    <ResizablePanel :default-size="50">
+      <ResizablePanelGroup direction="vertical">
+        <!-- BrushTable -->
+        <ResizablePanel :default-size="25">
+          <div class="relative h-full">
+            <BrushTable />
+            <Button
+              variant="outline"
+              size="sm"
+              class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
+              @click="handleOpenWindow('brushTable')"
+              title="Открыть в отдельном окне"
+            >
+              📤
+            </Button>
+          </div>
+        </ResizablePanel>
+        
+        <ResizableHandle withHandle />
+        
+        <!-- List -->
+        <ResizablePanel :default-size="75">
+          <div class="relative h-full">
+            <List />
+            <Button
+              variant="outline"
+              size="sm"
+              class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
+              @click="handleOpenWindow('list')"
+              title="Открыть в отдельном окне"
+            >
+              📤
+            </Button>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </ResizablePanel>
 
-    <!-- Draggable область для панелей -->
-    <draggable
-      v-model="layoutStore.panels"
-      item-key="id"
-      animation="300"
-      ghost-class="dragging-ghost"
-      chosen-class="dragging-chosen"
-      drag-class="dragging"
-      class="flex flex-col gap-3"
-    >
-      <template #item="{ element }">
-        <div v-if="element.isVisible && !element.isFloating">
-          <PanelContainer
-            :panel="element"
-            @open-window="handleOpenWindow"
-            @close-window="handleCloseWindow"
-          >
-            <component :is="componentMap[element.id]" />
-          </PanelContainer>
-        </div>
-      </template>
-    </draggable>
-  </div>
+    <ResizableHandle withHandle />
+
+    <!-- Map панель -->
+    <ResizablePanel :default-size="100">
+      <div class="relative h-full">
+        <Map />
+        <Button
+          variant="outline"
+          size="sm"
+          class="absolute top-2 right-2 h-7 px-2 text-xs opacity-50 hover:opacity-100"
+          @click="handleOpenWindow('map')"
+          title="Открыть в отдельном окне"
+        >
+          📤
+        </Button>
+      </div>
+    </ResizablePanel>
+  </ResizablePanelGroup>
 </template>
 
-<style scoped>
-/* Стили для drag-and-drop */
-.dragging-ghost {
-  opacity: 0.5;
-  background: #f3f4f6;
-  border: 2px dashed #9ca3af;
-}
-
-.dragging-chosen {
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  transform: scale(1.02);
-}
-
-.dragging {
-  cursor: grabbing;
-}
-
-/* Анимация перемещения */
-.flip-list-move {
-  transition: transform 0.3s ease-out;
-}
-</style>
+<style scoped></style>
