@@ -18,6 +18,7 @@ class Objects:
         try:
             with self.localSession() as ls:
                 objects = ls.query(MapObject).all()
+                log.info("get_all_objects", extra={"count": len(objects)})
                 return objects
         except Exception as e:
             op_method = "get_all_objects"
@@ -27,6 +28,7 @@ class Objects:
     def get(self, Id: UUID6):
         try:
             with self.localSession() as ls:
+                log.info("get_object", extra={"Id": str(Id)})
                 obj = ls.get(MapObject, str(Id))
                 return obj
         except Exception as e:
@@ -40,6 +42,15 @@ class Objects:
 
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
+                log.info(
+                    "create_object",
+                    extra={
+                        "Id": options.Id,
+                        "name": options.name,
+                        "obj_type": options.obj_type,
+                        "dash_array": options.dash_array,
+                    },
+                )
                 new_obj = MapObject(
                     Id=options.Id,
                     color=options.color,
@@ -52,10 +63,12 @@ class Objects:
                     weight=options.weight,
                     latlng=latlng,
                     obj_type=options.obj_type,
+                    dash_array=options.dash_array,
                 )
 
                 ls.add(new_obj)
                 ls.commit()
+                log.info("create_object_success", extra={"Id": options.Id})
             return True
         except Exception as e:
             op_method = "create"
@@ -65,8 +78,10 @@ class Objects:
     def delete(self, Id: UUID6):
         try:
             with self.localSession() as ls:
+                log.info("delete_object", extra={"Id": str(Id)})
                 ls.execute(delete(MapObject).where(MapObject.Id == str(Id)))
                 ls.commit()
+                log.info("delete_object_success", extra={"Id": str(Id)})
             return True
         except Exception as e:
             op_method = "delete"
@@ -79,6 +94,18 @@ class Objects:
 
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
+                log.info(
+                    "update_object",
+                    extra={
+                        "Id": options.Id,
+                        "name": options.name,
+                        "color": options.color,
+                        "weight": options.weight,
+                        "fill": options.fill,
+                        "fill_opacity": options.fill_opacity,
+                        "dash_array": options.dash_array,
+                    },
+                )
                 updated_obj = MapObject(
                     Id=options.Id,
                     color=options.color,
@@ -96,6 +123,7 @@ class Objects:
 
                 ls.merge(updated_obj)
                 ls.commit()
+                log.info("update_object_success", extra={"Id": options.Id})
             return True
         except Exception as e:
             op_method = "update"

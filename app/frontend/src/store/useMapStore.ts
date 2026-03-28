@@ -1,33 +1,88 @@
-import { markRaw } from "vue";
+import { ref, reactive } from "vue";
 import { defineStore } from "pinia";
-import * as L from "leaflet";
-import { LeafletMapConfig } from "@/config";
+import { Map, NavigationControl, AttributionControl } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { MaplibreMapConfig } from "@/config/MaplibreMapConfig";
 
-interface MapStore {
-  mapInstance: L.Map | null;
-}
+export const useMapStore = defineStore("mapstore", () => {
+  const mapInstance = ref<Map | null>(null);
+  const viewState = reactive({
+    latitude: MaplibreMapConfig.initialViewState.center[1]!,
+    longitude: MaplibreMapConfig.initialViewState.center[0]!,
+    zoom: MaplibreMapConfig.initialViewState.zoom,
+    pitch: MaplibreMapConfig.initialViewState.pitch,
+    bearing: MaplibreMapConfig.initialViewState.bearing,
+  });
+  
+  // Функция для открытия popup (будет установлена из Map.vue)
+  const showObjectPopupRef = ref<((id: string) => void) | null>(null);
 
-export const useMapStore = defineStore("mapstore", {
-  state: (): MapStore => {
-    return {
-      mapInstance: null,
-    };
-  },
-  getters: {
-    getMapRef(state) {
-      return state.mapInstance;
-    },
-  },
-  actions: {
-    initMap(id: string) {
-      if (this.mapInstance) return; // Не создаем дубликат
+  function initMap(containerId: string) {
+    if (mapInstance.value) return;
 
-      const instance = L.map(id, { zoomControl: false }).setView(
-        LeafletMapConfig.startedCoords,
-        LeafletMapConfig.startedZoom,
-      );
+    const instance = new Map({
+      container: containerId,
+      style: MaplibreMapConfig.style,
+      center: MaplibreMapConfig.initialViewState.center,
+      zoom: MaplibreMapConfig.initialViewState.zoom,
+      pitch: MaplibreMapConfig.initialViewState.pitch,
+      bearing: MaplibreMapConfig.initialViewState.bearing,
+      ...MaplibreMapConfig.interaction,
+    });
 
-      this.mapInstance = markRaw(instance);
-    },
-  },
+    // Добавляем контролы
+    if (MaplibreMapConfig.controls.navigation) {
+      instance.addControl(new NavigationControl());
+    }
+    if (MaplibreMapConfig.controls.attribution) {
+      instance.addControl(new AttributionControl());
+    }
+
+    mapInstance.value = instance;
+  }
+
+  function updateViewState(updates: Partial<typeof viewState>, animate: boolean = true) {
+    Object.assign(viewState, updates);
+
+    if (mapInstance.value) {
+      const { latitude, longitude, zoom, pitch, bearing } = viewState;
+
+      if (animate) {
+        // Анимация полёта
+        mapInstance.value.flyTo({
+          center: [longitude, latitude],
+          zoom,
+          pitch,
+          bearing,
+          duration: 1500,  // 1.5 секунды
+          essential: true,
+        });
+      } else {
+        // Мгновенное перемещение
+        mapInstance.value.easeTo({
+          center: [longitude, latitude],
+          zoom,
+          pitch,
+          bearing,
+          duration: 500,
+        });
+      }
+    }
+  }
+
+  // Метод для открытия popup из других компонентов
+  const openPopup = (id: string) => {
+    if (showObjectPopupRef.value) {
+      showObjectPopupRef.value(id);
+    }
+  };
+
+  return {
+    mapInstance,
+    viewState,
+    showObjectPopupRef,
+    openPopup,
+    initMap,
+    updateViewState,
+  };
 });

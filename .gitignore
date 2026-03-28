@@ -12,3 +12,13 @@ wheels/
 node_modules/
 
 passengers.db
+.qwen
+
+.env
+
+.kilocode
+.project-info
+.prompts
+
+.lsp.json
+*.png

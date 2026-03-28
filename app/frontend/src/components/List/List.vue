@@ -1,300 +1,202 @@
 <script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ObjectListView, PropertyTable } from "@/components/ObjectList";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
-import { storeToRefs } from "pinia";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionTrigger,
-  AccordionItem,
-} from "@/components/ui/accordion";
-import { Slider } from "@/components/ui/slider";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
-import { AlertCircleIcon } from "lucide-vue-next";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-import { Toggle } from "@/components/ui/toggle/";
-import { Button } from "@/components/ui/button";
 import { useMapStore } from "@/store";
-import L from "leaflet";
-import { useApi } from "@/composables";
-import { Spinner } from "@/components/ui/spinner";
-import { ref, Teleport } from "vue";
+import { storeToRefs } from "pinia";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LayoutGrid, Table as TableIcon, ChevronDown, Search } from "lucide-vue-next";
+import { useTilesStore } from "@/store/useTilesStore";
+import type { TileLayer } from "@/store/useTilesStore";
+
+type ViewType = "cards" | "table";
+
 const mapObjectStore = useMapObjectStore();
 const { Objects } = storeToRefs(mapObjectStore);
 const mapStore = useMapStore();
-const { mapInstance } = storeToRefs(mapStore);
-const closeModalRef = ref(false);
-const onCloseModal = () => {
-  closeModalRef.value = false;
-  console.error(deletingError);
-  console.error(updateError);
-};
-const { deleteObject, loading, error: deletingError } = useApi();
-const { updateObject, error: updateError } = useApi();
-const changeColor = async (e: MouseEvent, Id: string) => {
-  const target = e.target as HTMLInputElement;
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    obj.setStyle({ color: target.value });
-    await updateObject(obj);
+const tilesStore = useTilesStore();
+
+const view = ref<ViewType>("cards");
+const showTilesMenu = ref(false);
+const tilesMenuRef = ref<HTMLElement | null>(null);
+
+// Фильтры
+const filterType = ref<string>("all");
+const searchQuery = ref<string>("");
+
+// Фильтрация объектов
+const filteredObjects = computed(() => {
+  const allObjects = Array.from(Objects.value?.entries() ?? []);
+
+  return allObjects.filter(([_, obj]) => {
+    // Фильтр по типу
+    const typeMatch = filterType.value === "all" || obj.type === filterType.value;
+
+    // Поиск по имени
+    const searchLower = searchQuery.value.toLowerCase();
+    const nameMatch = !searchQuery.value ||
+      (obj.customName && obj.customName.toLowerCase().includes(searchLower)) ||
+      (obj.description && obj.description.toLowerCase().includes(searchLower)) ||
+      obj.name.toLowerCase().includes(searchLower);
+
+    return typeMatch && nameMatch;
+  });
+});
+
+// Загружаем предпочтения из localStorage
+onMounted(() => {
+  const savedView = localStorage.getItem("objectListView") as ViewType;
+  if (savedView === "cards" || savedView === "table") {
+    view.value = savedView;
   }
-};
-const toggleStroke = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    const isStroke = obj.options.stroke;
-    obj.setStyle({ stroke: !isStroke });
-    await updateObject(obj);
-  }
-};
-const changeDash = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj && value) {
-    obj.setStyle({ dashArray: value });
-    await updateObject(obj);
+  
+  // Обработчик клика вне dropdown
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (showTilesMenu.value && tilesMenuRef.value && !tilesMenuRef.value.contains(event.target as Node)) {
+    showTilesMenu.value = false;
   }
 };
 
-const changeFillOpacity = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj && value) {
-    console.log(value);
-    obj.setStyle({ fillOpacity: value[0] });
-    await updateObject(obj);
-  }
+// Сохраняем выбор в localStorage
+const setView = (newView: ViewType) => {
+  view.value = newView;
+  localStorage.setItem("objectListView", newView);
 };
-const changeWeight = async (value: number[] | undefined, Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj && value) {
-    obj.setStyle({ weight: value[0] });
-    await updateObject(obj);
-  }
+
+const switchLayer = (layer: TileLayer) => {
+  tilesStore.setLayer(layer);
+  showTilesMenu.value = false;
+  // Сообщаем карте что нужно обновить тайлы
+  window.dispatchEvent(new CustomEvent('map-tiles-change', { 
+    detail: tilesStore.getCurrentLayerConfig() 
+  }));
 };
-const toggleFill = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    const isFill = obj.options.fill;
-    obj.setStyle({ fill: !isFill });
-    await updateObject(obj);
-  }
-};
-const delObject = async (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    if (await deleteObject(obj.options.Id)) {
-      obj.remove();
-      Objects.value?.delete(Id);
-    }
-  }
-};
-const findOnMap = (Id: string) => {
-  const obj = Objects.value?.get(Id);
-  if (obj) {
-    if (obj instanceof L.Polygon || obj instanceof L.Polyline) {
-      mapInstance.value?.flyToBounds(obj.getBounds());
-    }
-    if (obj instanceof L.CircleMarker) {
-      mapInstance.value?.flyTo(obj.getLatLng());
-    }
-  }
+
+// Открыть popup для объекта
+const openObjectPopup = (id: string) => {
+  mapStore.openPopup(id);
 };
 </script>
 
 <template>
-  <div class="px-8 h-dvh overflow-scroll pb-60">
-    <h2
-      class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0 mb-4"
-    >
-      Настройки
-    </h2>
-    <div v-if="Objects" class="flex gap-3 flex-wrap">
-      <Card
-        v-for="(obj, idx) in Objects.entries()"
-        :key="obj[0]"
-        class="relative mx-auto w-full max-w-sm pt-0 min-w-58"
-      >
-        <CardHeader class="pt-2 min-w-min">
-          <CardAction class="relative">
-            <Button
-              v-if="!loading"
-              variant="link"
-              size="sm"
-              class="cursor-pointer relative bottom-2"
-              @click="delObject(obj[0])"
-              >Удалить</Button
+  <div class="flex flex-col h-full">
+    <!-- Переключатель вида и тайлов -->
+    <div class="flex flex-wrap items-center justify-between gap-3 px-8 py-4 border-b">
+      <h1 class="text-2xl font-semibold">Объекты на карте</h1>
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Фильтры -->
+        <div class="flex items-center gap-2 mr-auto">
+          <Select v-model="filterType">
+            <SelectTrigger class="w-[150px]">
+              <SelectValue placeholder="Все типы" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все типы</SelectItem>
+              <SelectItem value="Polygon">Полигоны</SelectItem>
+              <SelectItem value="Polyline">Полилинии</SelectItem>
+              <SelectItem value="CircleMarker">Маркеры</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <div class="relative">
+            <Search class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              v-model="searchQuery"
+              placeholder="Поиск по названию..."
+              class="pl-8 w-[200px]"
+            />
+          </div>
+        </div>
+        
+        <!-- Переключатель тайлов -->
+        <div ref="tilesMenuRef" class="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            @click="showTilesMenu = !showTilesMenu"
+            class="flex items-center gap-2"
+          >
+            <ChevronDown class="w-4 h-4" :class="{ 'rotate-180': showTilesMenu }" />
+            Слои карты
+          </Button>
+          
+          <!-- Выпадающее меню -->
+          <div
+            v-if="showTilesMenu"
+            class="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[150px]"
+          >
+            <button
+              v-for="(layer, key) in tilesStore.layers"
+              :key="key"
+              @click="switchLayer(key as TileLayer)"
+              :class="[
+                'w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors',
+                tilesStore.currentLayer === key ? 'bg-accent font-medium' : ''
+              ]"
             >
-            <Badge v-else variant="secondary">
-              <Spinner />
-              Удаление
-            </Badge>
-          </CardAction>
-          <CardTitle class="min-w-min">{{ obj[1].options.name }}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CardDescription>
-            <Accordion
-              v-if="obj[1] instanceof L.Polygon || obj[1] instanceof L.Polyline"
-              type="single"
-              collapsible
-            >
-              <AccordionItem value="item-1">
-                <AccordionTrigger class="mb-4 text-sm leading-none font-medium">
-                  широта:долгота
-                </AccordionTrigger>
-                <AccordionContent>
-                  <template
-                    v-for="latlng in obj[1]
-                      .getLatLngs()
-                      .flat()
-                      .map((el) => {
-                        el = el as L.LatLng;
-                        return el;
-                      })"
-                    :key="latlng.lat.toString() + latlng.lng.toString()"
-                  >
-                    {{ latlng.lat }} : {{ latlng.lng }}
-                    <Separator class="my-2" />
-                  </template>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-            <template v-else-if="obj[1] instanceof L.CircleMarker">
-              <Accordion type="single" collapsible>
-                <AccordionItem value="item-1">
-                  <AccordionTrigger
-                    class="mb-4 text-sm leading-none font-medium"
-                  >
-                    широта:долгота
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    {{
-                      `${obj[1].getLatLng().lat} : ${obj[1].getLatLng().lng}`
-                    }}
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </template>
-            <div class="flex flex-wrap items-center gap-1">
-              <Input
-                @change="changeColor($event, obj[0])"
-                class="w-1/4 min-w-16"
-                type="color"
-                :default-value="obj[1].options.color"
-              />
+              {{ layer.name }}
+            </button>
+          </div>
+        </div>
+        
+        <!-- Переключатель вида -->
+        <Button
+          variant="outline"
+          size="sm"
+          :class="view === 'cards' ? 'bg-accent' : ''"
+          @click="setView('cards')"
+          title="Вид: Карточки"
+        >
+          <LayoutGrid class="w-4 h-4 mr-2" />
+          Карточки
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          :class="view === 'table' ? 'bg-accent' : ''"
+          @click="setView('table')"
+          title="Вид: Таблица"
+        >
+          <TableIcon class="w-4 h-4 mr-2" />
+          Таблица
+        </Button>
+      </div>
+    </div>
 
-              <Toggle
-                :model-value="obj[1].options.stroke"
-                @click="toggleStroke(obj[0])"
-                size="default"
-                variant="outline"
-                >Обводка</Toggle
-              >
-              <Toggle
-                @click="findOnMap(obj[0])"
-                size="default"
-                variant="outline"
-                :model-value="false"
-                >На карте</Toggle
-              >
-              <Separator class="my-2 w-40" />
-              <div>
-                <small className="text-sm leading-none font-medium"
-                  >Пунктир</small
-                >
-                <Slider
-                  @update:model-value="(value) => changeDash(value, obj[0])"
-                  :defaultValue="[0]"
-                  :max="100"
-                  :step="1"
-                  :min="0"
-                  :model-value="(obj[1].options.dashArray as number[]) || [0]"
-                  class="mx-auto w-40 max-w-xs"
-                />
-              </div>
-              <Separator class="my-2 w-40" />
-              <div>
-                <div class="flex items-center gap-1">
-                  <small class="text-sm leading-none font-medium"
-                    >Заливка</small
-                  >
-                  <Checkbox
-                    class="size-5"
-                    :model-value="obj[1].options.fill"
-                    @click="toggleFill(obj[0])"
-                  />
-                </div>
-                <div class="flex gap-3 flex-wrap pb-2">
-                  <small class="text-sm leading-none font-medium"
-                    >Прозрачность заливки</small
-                  >
-                  <Slider
-                    @update:model-value="
-                      (value) => changeFillOpacity(value, obj[0])
-                    "
-                    :disabled="!obj[1].options.fill"
-                    :model-value="
-                      [obj[1].options.fillOpacity as unknown] as number[]
-                    "
-                    :max="1"
-                    :step="0.01"
-                    :min="0"
-                    class="mx-auto w-full max-w-xs"
-                  />
-                </div>
-                <div class="flex gap-3 flex-wrap">
-                  <small class="text-sm leading-none font-medium"
-                    >Жирность обводки</small
-                  >
-                  <Slider
-                    @update:model-value="(value) => changeWeight(value, obj[0])"
-                    :model-value="[obj[1].options.weight as number]"
-                    :max="30"
-                    :step="1"
-                    :min="0"
-                    class="mx-auto w-full max-w-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardDescription>
-        </CardContent>
-        <CardFooter class="flex justify-end">
-          <Badge variant="secondary">№ {{ idx + 1 }}</Badge>
-        </CardFooter>
-      </Card>
+    <!-- Контент -->
+    <div class="flex-1 overflow-hidden">
+      <ObjectListView 
+        v-if="view === 'cards'" 
+        :objects="filteredObjects"
+        @open-popup="openObjectPopup"
+      />
+      <PropertyTable 
+        v-else 
+        :objects="filteredObjects"
+        @open-popup="openObjectPopup"
+      />
     </div>
   </div>
-  <Teleport v-if="closeModalRef" to="body">
-    <div class="fixed bg-black/40 inset-0 z-400" @click="onCloseModal">
-      <Alert
-        variant="destructive"
-        class="max-w-fit p-5 z-500 fixed top-[50%] left-[45%]"
-      >
-        <AlertCircleIcon />
-        <AlertTitle>Произошла ошибка</AlertTitle>
-        <AlertDescription>
-          <p v-if="deletingError">Неудачное удаление</p>
-          <p v-if="updateError">Неудачное обновление</p>
-        </AlertDescription>
-      </Alert>
-    </div>
-  </Teleport>
 </template>
 
 <style scoped>
-.list {
-  display: flex;
+/* Анимация переключения */
+.view-transition {
+  transition: opacity 0.2s ease-in-out;
 }
 </style>

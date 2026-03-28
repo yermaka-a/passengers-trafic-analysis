@@ -1,0 +1,40 @@
+[     308ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=91d2e1a0:32391
+[    1350ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[   39963ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/api/object.ts:20
+[   40014ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17) @ http://localhost:5173/src/composables/useApi.ts:13
+[   40028ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:250:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4795:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=91d2e1a0:4482:40)
+    at Proxy.finalizeObject (http://localhost:5173/src/composables/useL7.ts:79:25)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:39:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:82:59)
+    at callWithErrorHandling (http://localhost:5173/node_modules/.vite/deps/vue.runtime.esm-bundler-2BtxhwZ0.js?v=91d2e1a0:1865:17)
+[   70618ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[ 1360407ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=91d2e1a0:32391
+[ 1361471ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782
+[ 1400969ms] [WARNING] WARNING: Invalid layout total size: 50%, 100%. Layout normalization will be applied. @ http://localhost:5173/node_modules/.vite/deps/reka-ui.js?v=91d2e1a0:32391
+[ 1402022ms] [WARNING] context creation error WebGLContextEvent @ http://localhost:5173/node_modules/.vite/deps/@antv_l7.js?v=91d2e1a0:31782

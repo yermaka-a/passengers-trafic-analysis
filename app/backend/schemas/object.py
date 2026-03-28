@@ -1,5 +1,5 @@
 from typing import List, Literal, Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..models.object import MapObject
 
@@ -32,9 +32,8 @@ class Options(RootObjBaseModel):
     )
     color: Optional[str] | None = Field(None, max_length=10)
     stroke: Optional[bool] | None = None
-    dash_array: Optional[list] | None = Field(
+    dash_array: Optional[List[float]] | None = Field(
         None,
-        max_length=255,
         alias="dashArray",
         serialization_alias="dashArray",
     )
@@ -50,6 +49,16 @@ class Options(RootObjBaseModel):
         alias="objType",
         serialization_alias="objType",
     )
+
+    @field_validator("dash_array", mode="before")
+    @classmethod
+    def validate_dash_array(cls, value):
+        """Валидация dash_array: принимаем None, пустой список, или [num, num]"""
+        if value is None or value == []:
+            return None
+        if isinstance(value, list) and len(value) == 2:
+            return [float(v) for v in value]
+        return value
 
 
 class ObjectCreate(RootObjBaseModel):

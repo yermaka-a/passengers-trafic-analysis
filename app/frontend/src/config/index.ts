@@ -1,1 +1,2 @@
-export { default as LeafletMapConfig } from "./LeafletMapConfig";
+export { default as MaplibreMapConfig } from "./MaplibreMapConfig";
+export { default as DeckGLMapConfig } from "./DeckGLMapConfig";

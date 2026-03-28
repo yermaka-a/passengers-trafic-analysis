@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import Main from "./pages/Main.vue";
+import { RouterView } from 'vue-router';
 </script>
 
 <template>
-    <Main />
+  <RouterView />
 </template>
 
-<style scoped>
-
+<style>
+/* Глобальные стили для fullscreen */
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
 </style>
