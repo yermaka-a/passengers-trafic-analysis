@@ -134,20 +134,6 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
 /**
  * Создаёт новый DeckGLObject по типу
  */
-const createNewDeckGLObject = (
-  type: Exclude<ObjTypes, "Edit">,
-  coordinates: LngLatTuple[],
-): DeckGLObject => {
-  const defaultStyle = DeckGLMapConfig.defaultStyles[type];
-
-  return {
-    id: uuidv6(),
-    type,
-    name: ObjectsTypes.find(([key]) => key === type)?.[1] ?? type,
-    style: { ...defaultStyle } as DeckGLObject["style"],
-    coordinates,
-  };
-};
 
 // ============================================================================
 // STORE

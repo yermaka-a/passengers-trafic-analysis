@@ -59,7 +59,7 @@ export const useDeckGL = () => {
 
       // Восстанавливаем предыдущие координаты draft
       if (entry.draftId) {
-        mapObjectStore.setDraftCoordinates(prevCoords);
+        mapObjectStore.setDraftCoordinates(prevCoords || []);
       }
       return entry;
     }

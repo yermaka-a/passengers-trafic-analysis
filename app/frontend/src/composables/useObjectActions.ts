@@ -2,7 +2,7 @@ import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { useMapStore } from "@/store";
 import { useApi } from "@/composables";
 import type { DeckGLObject } from "@/types";
-import { hexToRGBA, rgbaToHex } from "@/utils";
+import { hexToRGBA } from "@/utils";
 
 /**
  * Composable для управления действиями с объектами

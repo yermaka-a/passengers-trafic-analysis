@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { cn } from "@/lib/utils";
 import { DialogRoot, type DialogRootEmits, type DialogRootProps, useForwardPropsEmits } from "reka-ui";
 import { computed, type HTMLAttributes } from "vue";
 

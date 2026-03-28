@@ -9,7 +9,6 @@ import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple, DeckGLObject } from "@/types";
-import { rgbaToHex } from "@/utils";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -105,8 +104,7 @@ const generatePopupContent = (obj: DeckGLObject): string => {
     lng: lng.toFixed(8),
     idx
   }));
-  const colorHex = rgbaToHex(obj.style.color);
-  
+
   return `
     <div class="min-w-[280px] max-w-[320px] font-sans" data-object-id="${obj.id}">
       <!-- Header -->
@@ -149,9 +147,12 @@ const generatePopupContent = (obj: DeckGLObject): string => {
 const showObjectPopup = (id: string) => {
   const obj = mapObjectStore.Objects.get(id);
   if (!obj || obj.coordinates.length === 0 || !mapInstance.value) return;
+
+  const firstCoord = obj.coordinates[0];
+  if (!firstCoord) return;
   
-  const [lng, lat] = obj.coordinates[0];
-  
+  const [lng, lat] = firstCoord;
+
   // Закрываем предыдущий popup
   if (popup) {
     popup.remove();
@@ -636,7 +637,7 @@ onMounted(() => {
     // Используем Array.from для реактивности Map
     watch(
       () => Array.from(Objects.value?.values() ?? []),
-      (newObjects, oldObjects) => {
+      (_, __) => {
         // Принудительно обновляем layers для Deck.gl
         if (deckOverlay && deckOverlay._deck) {
           deckOverlay._deck.setProps({

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

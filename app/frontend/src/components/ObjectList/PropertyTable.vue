@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,24 +74,6 @@ const {
   getCoordinates,
   getDashValue,
 } = useObjectActions();
-
-const updateCustomName = async (id: string, value: string) => {
-  const obj = mapObjectStore.Objects.get(id);
-  if (obj) {
-    const updatedObj = { ...obj, customName: value || null };
-    mapObjectStore.Objects.set(id, updatedObj);
-    await updateObjectInBackend(updatedObj);
-  }
-};
-
-const updateDescription = async (id: string, value: string) => {
-  const obj = mapObjectStore.Objects.get(id);
-  if (obj) {
-    const updatedObj = { ...obj, description: value || null };
-    mapObjectStore.Objects.set(id, updatedObj);
-    await updateObjectInBackend(updatedObj);
-  }
-};
 
 const updateObjectInBackend = async (obj: DeckGLObject) => {
   const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
