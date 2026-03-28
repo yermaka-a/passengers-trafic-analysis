@@ -3,8 +3,7 @@ import { ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { LayoutDashboard, RotateCcw } from 'lucide-vue-next';
+import { LayoutDashboard } from 'lucide-vue-next';
 import { useLayoutStore, type MapPosition } from '@/store/useLayoutStore';
 
 const layoutStore = useLayoutStore();
@@ -13,12 +12,6 @@ const open = ref(false);
 const setMapPosition = (position: MapPosition) => {
   layoutStore.setMapPosition(position);
   open.value = false;
-};
-
-const resetLayout = () => {
-  if (confirm('Сбросить layout к значениям по умолчанию?')) {
-    layoutStore.resetLayout();
-  }
 };
 </script>
 
@@ -72,18 +65,6 @@ const resetLayout = () => {
             </Button>
           </div>
         </div>
-        
-        <Separator />
-        
-        <Button
-          variant="outline"
-          size="sm"
-          class="w-full cursor-pointer"
-          @click="resetLayout"
-        >
-          <RotateCcw class="h-4 w-4 mr-2" />
-          Сбросить layout
-        </Button>
       </div>
     </PopoverContent>
   </Popover>
