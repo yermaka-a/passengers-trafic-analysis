@@ -78,12 +78,22 @@ const setView = (newView: ViewType) => {
   localStorage.setItem("objectListView", newView);
 };
 
-const switchLayer = (layer: TileLayer) => {
+const switchLayer = async (layer: TileLayer) => {
   tilesStore.setLayer(layer);
   showTilesMenu.value = false;
+  
+  // Сохраняем через Python API для синхронизации между окнами
+  if ((window as any).pywebview?.api?.set_current_tile_layer) {
+    try {
+      await (window as any).pywebview.api.set_current_tile_layer(layer);
+    } catch (e) {
+      console.error('[List] Error saving tile layer:', e);
+    }
+  }
+  
   // Сообщаем карте что нужно обновить тайлы
-  window.dispatchEvent(new CustomEvent('map-tiles-change', { 
-    detail: tilesStore.getCurrentLayerConfig() 
+  window.dispatchEvent(new CustomEvent('map-tiles-change', {
+    detail: tilesStore.getCurrentLayerConfig()
   }));
 };
 

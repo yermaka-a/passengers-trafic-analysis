@@ -1,5 +1,5 @@
 import webview
-from .crud import ObjectController, LogsController
+from .crud import ObjectController, LogsController, TileLayerController
 from .storage import Storage
 import uuid
 import json
@@ -15,14 +15,15 @@ class Api:
     Все окна получают ссылку на один и тот же экземпляр,
     что обеспечивает синхронизацию данных через evaluate_js.
     """
-    
+
     def __init__(self, storage: Storage) -> None:
         self.objects = ObjectController(storage)
         self.logs = LogsController()
+        self.tile_layers = TileLayerController(storage)
         self._windows = {}  # Храним окна по ID для синхронизации
         self._main_window = None  # Главное окно
         self.storage = storage
-        
+
         # Устанавливаем ссылку на API в контроллере
         self.objects.set_api(self)
     
@@ -217,3 +218,15 @@ class Api:
                 print(f'[API] Error syncing chosen type to window {window_id}: {e}')
 
         return {'status': 'success'}
+    
+    def get_current_tile_layer(self):
+        """Получить текущий слой карт"""
+        return self.tile_layers.get_current_layer()
+    
+    def set_current_tile_layer(self, layer: str):
+        """Установить текущий слой карт"""
+        result = self.tile_layers.set_current_layer(layer)
+        # Синхронизируем все окна
+        if result['status'] == 'success':
+            self.sync_windows('TILE_LAYER_CHANGED', {'layer': layer})
+        return result

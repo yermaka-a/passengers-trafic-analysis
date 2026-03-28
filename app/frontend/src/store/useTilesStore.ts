@@ -42,9 +42,17 @@ export const useTilesStore = defineStore("tiles", {
   actions: {
     setLayer(layer: TileLayer) {
       this.currentLayer = layer;
+      // Сохраняем в localStorage для синхронизации
+      localStorage.setItem('currentTileLayer', layer);
     },
     getCurrentLayerConfig(): TileLayerConfig {
       return this.layers[this.currentLayer];
+    },
+    loadFromStorage() {
+      const saved = localStorage.getItem('currentTileLayer');
+      if (saved && ['osm', 'satellite', 'hybrid'].includes(saved)) {
+        this.currentLayer = saved as TileLayer;
+      }
     },
   },
 });

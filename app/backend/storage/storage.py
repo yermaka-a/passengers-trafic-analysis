@@ -3,6 +3,7 @@ import sys
 from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 from .object import Objects
+from .tile_layer import TileLayers
 from ..models import Base
 
 
@@ -11,6 +12,7 @@ class Storage:
     __instance = None
     localSession = None
     objects = None
+    tile_layers = None
 
     def __init__(self):
         raise Exception("use the create method to create a storage")
@@ -24,6 +26,7 @@ class Storage:
             )
             cls.__init_db(engine)
             cls.objects = Objects(cls.localSession)
+            cls.tile_layers = TileLayers(cls.localSession)
         return cls.__instance
 
     @staticmethod

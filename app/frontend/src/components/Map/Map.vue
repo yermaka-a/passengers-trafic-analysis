@@ -587,16 +587,54 @@ onMounted(() => {
     mapStore.showObjectPopupRef = showObjectPopup;
     console.log("[Map] MapLibre создана");
 
+    // Загружаем сохранённый слой карт
+    if ((window as any).pywebview?.api?.get_current_tile_layer) {
+      try {
+        const result = await (window as any).pywebview.api.get_current_tile_layer();
+        if (result?.status === 'success' && result?.layer) {
+          tilesStore.setLayer(result.layer);
+          // Применяем слой
+          const config = tilesStore.getCurrentLayerConfig();
+          const style = mapInstance.value.getStyle();
+          if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
+            (style.sources["osm"] as any).tiles = config.tiles;
+            (style.sources["osm"] as any).attribution = config.attribution;
+            mapInstance.value.setStyle(style);
+          }
+        }
+      } catch (e) {
+        console.error('[Map] Error loading tile layer:', e);
+      }
+    }
+
     // Слушаем событие переключения тайлов из List.vue
     window.addEventListener('map-tiles-change', (event: any) => {
       if (!mapInstance.value) return;
       const config = event.detail;
       const style = mapInstance.value.getStyle();
-      
+
       if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
         (style.sources["osm"] as any).tiles = config.tiles;
         (style.sources["osm"] as any).attribution = config.attribution;
         mapInstance.value.setStyle(style);
+      }
+    });
+
+    // Слушаем изменения слоя карт от других окон
+    window.addEventListener('panel-sync', (event: any) => {
+      if (event.detail?.type === 'TILE_LAYER_CHANGED') {
+        const layer = event.detail.data?.layer;
+        if (layer && tilesStore.currentLayer !== layer) {
+          tilesStore.setLayer(layer);
+          // Применяем слой
+          const config = tilesStore.getCurrentLayerConfig();
+          const style = mapInstance.value.getStyle();
+          if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
+            (style.sources["osm"] as any).tiles = config.tiles;
+            (style.sources["osm"] as any).attribution = config.attribution;
+            mapInstance.value.setStyle(style);
+          }
+        }
       }
     });
 
