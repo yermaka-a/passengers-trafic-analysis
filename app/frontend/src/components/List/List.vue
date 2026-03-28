@@ -83,10 +83,10 @@ const switchLayer = async (layer: TileLayer) => {
   showTilesMenu.value = false;
   
   // Сохраняем через useApi для синхронизации между окнами
-  const { setCurrentTileLayer } = await import('@/composables/useApi');
-  const api = setCurrentTileLayer;
+  const useApiModule = await import('@/composables/useApi');
+  const { setCurrentTileLayer } = useApiModule.default();
   try {
-    await api(layer);
+    await setCurrentTileLayer(layer);
   } catch (e) {
     console.error('[List] Error saving tile layer:', e);
   }

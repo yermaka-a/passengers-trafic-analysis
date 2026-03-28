@@ -38,6 +38,11 @@ export interface Logs {
 interface APILogs {
   write_log: (logs: Logs) => void;
 }
+
+interface APITileLayers {
+  getCurrentLayer: () => Promise<{ status: string; layer: string }>;
+  setCurrentLayer: (layer: string) => Promise<{ status: string; layer: string }>;
+}
 class API {
   private static api: API | null = null;
   private constructor() {}

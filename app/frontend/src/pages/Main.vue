@@ -2,21 +2,24 @@
 import MapPanel from "@/components/MapPanel/MapPanel.vue";
 import { useMapObjectStore } from "@/store";
 import { usePanelLayoutStore } from "@/store/usePanelLayoutStore";
+import { useTilesStore } from "@/store/useTilesStore";
 import { onMounted, onUnmounted } from "vue";
 
 const objectStore = useMapObjectStore();
 const layoutStore = usePanelLayoutStore();
+const tilesStore = useTilesStore();
 
 const pyWebViewReadyHandler = async () => {
   console.log('[Main] pywebview ready - loading objects from DB');
   await objectStore.loadAllObjectsFromDB();
   
   // Загружаем сохранённый слой карт через useApi
-  const { getCurrentTileLayer } = await import('@/composables/useApi');
+  const useApiModule = await import('@/composables/useApi');
+  const { getCurrentTileLayer } = useApiModule.default();
   try {
     const result = await getCurrentTileLayer();
     if (result?.status === 'success' && result?.layer) {
-      tilesStore.setLayer(result.layer);
+      tilesStore.setLayer(result.layer as typeof tilesStore.currentLayer);
     }
   } catch (e) {
     console.error('[Main] Error loading tile layer:', e);

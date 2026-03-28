@@ -9,6 +9,7 @@ import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple, DeckGLObject } from "@/types";
+import { useTilesStore } from "@/store/useTilesStore";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -18,6 +19,7 @@ import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
+const tilesStore = useTilesStore();
 
 const { Objects, DraftObject } = storeToRefs(mapObjectStore);
 
@@ -608,11 +610,11 @@ onMounted(() => {
           tilesStore.setLayer(layer);
           // Применяем слой
           const config = tilesStore.getCurrentLayerConfig();
-          const style = mapInstance.value.getStyle();
-          if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
+          const style = mapInstance.value?.getStyle();
+          if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
             (style.sources["osm"] as any).tiles = config.tiles;
             (style.sources["osm"] as any).attribution = config.attribution;
-            mapInstance.value.setStyle(style);
+            mapInstance.value?.setStyle(style);
           }
         }
       }

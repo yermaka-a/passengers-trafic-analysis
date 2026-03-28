@@ -41,11 +41,11 @@ const useApi = () => {
     await callApi(api.objects.deleteObject, id);
 
   // Tile layers
-  const getCurrentTileLayer = async () =>
-    await callApi(api.tile_layers.getCurrentLayer);
+  const getCurrentTileLayer = async (): Promise<{ status: string; layer: string }> =>
+    await callApi((api as any).tile_layers.getCurrentLayer);
 
-  const setCurrentTileLayer = async (layer: string) =>
-    await callApi(api.tile_layers.setCurrentLayer, layer);
+  const setCurrentTileLayer = async (layer: string): Promise<{ status: string; layer: string }> =>
+    await callApi((api as any).tile_layers.setCurrentLayer, layer);
 
   return {
     // Состояние
