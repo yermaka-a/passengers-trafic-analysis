@@ -13,8 +13,26 @@ import { usePanelLayoutStore } from "@/store/usePanelLayoutStore";
 const layoutStore = usePanelLayoutStore();
 
 // Обработчики для кнопок
-const handleOpenWindow = (panelId: string) => {
-  layoutStore.openPanelInWindow(panelId);
+const handleOpenWindow = async (panelId: string) => {
+  // Проверяем, доступен ли pywebview API
+  if ((window as any).pywebview?.api?.open_panel_window) {
+    try {
+      await (window as any).pywebview.api.open_panel_window(panelId);
+    } catch (e) {
+      console.error('[MapPanel] Error opening panel:', e);
+      // Fallback: открываем в новом окне браузера
+      fallbackOpenWindow(panelId);
+    }
+  } else {
+    // pywebview недоступен, открываем в браузере
+    fallbackOpenWindow(panelId);
+  }
+};
+
+const fallbackOpenWindow = (panelId: string) => {
+  const url = `${window.location.origin}?panel=${panelId}`;
+  const features = 'width=1000,height=700,menubar=no,toolbar=no';
+  window.open(url, `panel-${panelId}`, features);
 };
 
 const handleCloseWindow = (panelId: string) => {

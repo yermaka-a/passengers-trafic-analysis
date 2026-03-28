@@ -60,6 +60,8 @@ class App:
         engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
         storage = Storage.create(engine)
         api = Api(storage)
+        
+        # Главное окно
         window = webview.create_window(
             "passengers trafic analysis",
             url,
@@ -67,7 +69,9 @@ class App:
             width=1200,
             height=800,
         )
-        self.window = window
+        
+        # Запускаем приложение
+        # Все новые окна будут созданы через api.open_panel_window()
         debug_mode = not self.__is_nuitka()
         webview.start(debug=debug_mode)
 

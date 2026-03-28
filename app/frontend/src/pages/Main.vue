@@ -13,9 +13,6 @@ const pyWebViewReadyHandler = async () => {
 };
 
 onMounted(async () => {
-  // Инициализация layout
-  layoutStore.initLayout();
-  
   // Проверка на режим отдельной панели
   const urlParams = new URLSearchParams(window.location.search);
   const panelId = urlParams.get("panel");
