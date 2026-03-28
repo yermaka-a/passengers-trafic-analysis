@@ -3,14 +3,14 @@ import { useMapObjectStore } from "@/store/useMapObjectStore";
 import type { LngLatTuple } from "@/types";
 
 /**
- * Composable для управления AntV L7 объектами на карте
+ * Composable для управления Deck.gl объектами на карте
  *
  * Обрабатывает:
  * - Создание объектов (Polygon, Polyline, CircleMarker)
  * - Историю undo/redo
  * - Редактирование координат
  */
-export const useL7 = () => {
+export const useDeckGL = () => {
   const mapObjectStore = useMapObjectStore();
 
   // История для undo/redo
@@ -48,14 +48,15 @@ export const useL7 = () => {
     if (!canUndo.value) return null;
 
     const entry = history.value[historyIndex.value];
-    
+    if (!entry) return null;
+
     // Для draft объектов - просто отменяем последнюю точку
     if (entry.type === "draft") {
       historyIndex.value--;
-      const prevCoords = historyIndex.value >= 0 
-        ? history.value[historyIndex.value].coordinates 
+      const prevCoords = historyIndex.value >= 0
+        ? history.value[historyIndex.value]?.coordinates
         : [];
-      
+
       // Восстанавливаем предыдущие координаты draft
       if (entry.draftId) {
         mapObjectStore.setDraftCoordinates(prevCoords);
@@ -87,6 +88,7 @@ export const useL7 = () => {
 
     historyIndex.value++;
     const entry = history.value[historyIndex.value];
+    if (!entry) return null;
 
     // Для draft объектов
     if (entry.type === "draft" && entry.draftId) {
@@ -202,4 +204,4 @@ export const useL7 = () => {
   };
 };
 
-export default useL7;
+export default useDeckGL;

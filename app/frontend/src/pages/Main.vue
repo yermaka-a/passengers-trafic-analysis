@@ -59,7 +59,7 @@ const handleChosenTypeChanged = (event: CustomEvent) => {
   const { option } = event.detail.data;
   if (option && Array.isArray(option) && option.length === 2) {
     // Обновляем store напрямую без вызова Python API
-    objectStore.$state.ChosenObjectType = option;
+    objectStore.$state.ChosenObjectType = option as typeof objectStore.$state.ChosenObjectType;
   }
 };
 

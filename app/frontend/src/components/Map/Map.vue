@@ -4,7 +4,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import maplibregl from "maplibre-gl";
 import { storeToRefs } from "pinia";
 import { useMapObjectStore, useMapStore } from "@/store";
-import { useL7 } from "@/composables/useL7";
+import { useDeckGL } from "@/composables/useDeckGL";
 import MapOptions from "./MapOptions.vue";
 import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
@@ -63,7 +63,7 @@ const {
   redo,
   canUndo,
   canRedo,
-} = useL7();
+} = useDeckGL();
 
 // Wrapper для передачи цвета
 const finalizeObject = async () => {
