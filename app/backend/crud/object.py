@@ -14,6 +14,11 @@ class ObjectController:
         if storage.objects is None:
             raise Exception("storage.objects not created")
         self.objects = storage.objects
+        self.api = None  # Будет установлен из app.py
+
+    def set_api(self, api):
+        """Установить ссылку на API для broadcast"""
+        self.api = api
 
     def get_object(self, data):
         try:
@@ -33,6 +38,9 @@ class ObjectController:
             obj_data = ObjectCreate(**data)
             res = self.objects.create(obj_data)
             if res:
+                # Синхронизируем ВСЕ окна (включая отправителя)
+                if self.api:
+                    self.api.sync_windows('OBJECT_CREATED', {'id': str(obj_data.options.Id)})
                 return {"status": "success", "message": obj_data.options.Id}
             return {"satus": "failed", "message": "data is not written"}
         except ValidationError as e:
@@ -55,7 +63,11 @@ class ObjectController:
         try:
             id_validator = TypeAdapter(UUID6)
             Id = id_validator.validate_python(Id)
-            return self.objects.delete(Id)
+            result = self.objects.delete(Id)
+            # Синхронизируем ВСЕ окна (включая отправителя)
+            if self.api:
+                self.api.sync_windows('OBJECT_DELETED', {'id': str(Id)})
+            return result
         except Exception as e:
             op = "delete_object"
             log.error(op, {"err": e})
@@ -65,6 +77,9 @@ class ObjectController:
             obj_data = ObjectCreate(**data)
             res = self.objects.update(obj_data)
             if res:
+                # Синхронизируем ВСЕ окна (включая отправителя)
+                if self.api:
+                    self.api.sync_windows('OBJECT_UPDATED', {'id': str(obj_data.options.Id)})
                 return {"status": "success", "message": obj_data.options.Id}
             return {"satus": "failed", "message": "data is not written"}
         except ValidationError as e:
