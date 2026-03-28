@@ -4,7 +4,7 @@ from sqlalchemy import Engine
 from sqlalchemy.orm import sessionmaker
 from .object import Objects
 from .tile_layer import TileLayers
-from ..models import Base
+from ..models import Base, TileLayerSetting  # Явный импорт для создания таблицы
 
 
 class Storage:
