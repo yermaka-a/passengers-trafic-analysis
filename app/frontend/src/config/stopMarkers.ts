@@ -79,7 +79,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
   car: {
     id: 'car',
     name: 'Car',
-    nameRu: 'Автомобиль',
+    nameRu: 'Легковое авто',
     path: LUCIDE_PATHS.car,
     size: [24, 24],
     anchor: [12, 24],
@@ -95,7 +95,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
   default: {
     id: 'default',
     name: 'Default',
-    nameRu: 'Маркер',
+    nameRu: 'Стандартный',
     path: LUCIDE_PATHS.default,
     size: [24, 24],
     anchor: [12, 24],

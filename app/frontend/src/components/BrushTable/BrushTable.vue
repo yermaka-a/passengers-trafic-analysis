@@ -63,7 +63,7 @@ const isStopMarkerSelected = computed(() => {
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Тип транспорта</SelectLabel>
+          <SelectLabel>Тип иконки</SelectLabel>
           <SelectItem
             v-for="(icon, key) in STOP_MARKER_ICONS"
             :key="key"
