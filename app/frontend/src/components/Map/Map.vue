@@ -559,6 +559,13 @@ const createDeckLayers = () => {
       const markerType = (draft as any).markerType || 'bus';
       const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
       
+      console.log("[Map] Draft StopMarker:", {
+        markerType,
+        coordinates: draft.coordinates[0],
+        iconMapping: Object.keys(iconMapping),
+        iconAtlasLength: iconAtlas.length
+      });
+      
       layers.push(
         new IconLayer({
           id: "draft-stop-marker",

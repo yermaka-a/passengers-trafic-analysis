@@ -30,12 +30,20 @@ export interface StopMarkerIcon {
 
 // Извлекаем path из Lucide компонента
 const getPathFromLucideComponent = (component: any): string => {
-  if (!component || !component.render) return '';
+  if (!component || !component.render) {
+    console.error('[stopMarkers] Component or render is undefined:', component);
+    return '';
+  }
   
   // Для lucide-vue-next компоненты хранят template с SVG
   const template = component.render.toString();
   const match = template.match(/d="([^"]*)"/g);
-  if (!match) return '';
+  if (!match) {
+    console.error('[stopMarkers] No path found in component');
+    return '';
+  }
+  
+  console.log('[stopMarkers] Found paths:', match.length);
   
   // Берём все path и объединяем
   const paths = match.map((m: string) => {
@@ -43,7 +51,9 @@ const getPathFromLucideComponent = (component: any): string => {
     return pathMatch ? pathMatch[1] : '';
   }).filter(Boolean);
   
-  return paths.join(' ');
+  const result = paths.join(' ');
+  console.log('[stopMarkers] Extracted path:', result.substring(0, 50) + '...');
+  return result;
 };
 
 export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
@@ -104,6 +114,8 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     anchor: [12, 24],
   },
 };
+
+console.log('[stopMarkers] STOP_MARKER_ICONS loaded:', Object.keys(STOP_MARKER_ICONS));
 
 /**
  * Получить SVG строку для иконки с указанным цветом
