@@ -17,7 +17,8 @@ class OverpassClient:
     
     OVERPASS_URL = "https://overpass-api.de/api/interpreter"
     RATE_LIMIT_DELAY = 0.5  # 2 запроса в секунду
-    TIMEOUT = 60.0  # 60 секунд таймаут
+    TIMEOUT = 120.0  # 120 секунд таймаут (для больших городов)
+    MAX_RETRIES = 3  # Количество попыток при ошибке
     
     def __init__(self):
         self._last_request_time = 0.0
@@ -57,24 +58,51 @@ class OverpassClient:
         return all_stops
     
     async def _fetch_city_stops(self, city: str, stop_types: List[str]) -> List[OverpassStop]:
-        """Получить остановки для одного города"""
+        """Получить остановки для одного города с retry логикой"""
         query = self._build_query(city, stop_types)
         
         log.info("overpass_sending_query", extra={"city": city, "query_length": len(query)})
         print(f'[Overpass] Отправка запроса для города: {city}')
         print(f'[Overpass] Query: {query[:200]}...')  # Первые 200 символов
         
-        async with httpx.AsyncClient(timeout=self.TIMEOUT) as client:
-            response = await client.post(
-                self.OVERPASS_URL,
-                data={"data": query},
-                headers={"Content-Type": "application/x-www-form-urlencoded"}
-            )
-            response.raise_for_status()
-            data = response.json()
+        # Retry логика для обработки временных ошибок
+        last_error = None
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                async with httpx.AsyncClient(timeout=self.TIMEOUT) as client:
+                    response = await client.post(
+                        self.OVERPASS_URL,
+                        data={"data": query},
+                        headers={"Content-Type": "application/x-www-form-urlencoded"}
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                
+                print(f'[Overpass] Получено элементов: {len(data.get("elements", []))}')
+                return self._parse_response(data, city)
+                
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 504 and attempt < self.MAX_RETRIES - 1:
+                    # Gateway Timeout - пробуем снова
+                    wait_time = 2 ** attempt  # Экспоненциальная задержка: 1s, 2s, 4s
+                    log.warning("overpass_504_retry", extra={"city": city, "attempt": attempt + 1, "wait_seconds": wait_time})
+                    print(f'[Overpass] 504 ошибка, попытка {attempt + 1}/{self.MAX_RETRIES}. Ждём {wait_time}s...')
+                    await asyncio.sleep(wait_time)
+                    last_error = e
+                else:
+                    raise
+            except httpx.ReadTimeout as e:
+                if attempt < self.MAX_RETRIES - 1:
+                    wait_time = 2 ** attempt
+                    log.warning("overpass_timeout_retry", extra={"city": city, "attempt": attempt + 1, "wait_seconds": wait_time})
+                    print(f'[Overpass] Timeout, попытка {attempt + 1}/{self.MAX_RETRIES}. Ждём {wait_time}s...')
+                    await asyncio.sleep(wait_time)
+                    last_error = e
+                else:
+                    raise
         
-        print(f'[Overpass] Получено элементов: {len(data.get("elements", []))}')
-        return self._parse_response(data, city)
+        # Все попытки исчерпаны
+        raise last_error or Exception("Неизвестная ошибка Overpass API")
     
     def _build_query(self, city: str, stop_types: List[str]) -> str:
         """
