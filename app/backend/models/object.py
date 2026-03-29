@@ -26,3 +26,6 @@ class MapObject(Base):
     dash_array: Mapped[List[float] | None] = mapped_column(
         MutableList.as_mutable(JSON), nullable=False, default=None
     )
+    marker_type: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, default=None
+    )

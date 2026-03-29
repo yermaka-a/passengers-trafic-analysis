@@ -125,6 +125,7 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       fill: obj.style.filled,
       fillOpacity: obj.style.fillOpacity,
       dashArray: dashArray ? Array.from(dashArray) : null, // Фактический пунктир из strokeState
+      markerType: obj.markerType ?? null, // Для StopMarker
     },
   };
 };

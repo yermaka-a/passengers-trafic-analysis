@@ -49,6 +49,12 @@ class Options(RootObjBaseModel):
         alias="objType",
         serialization_alias="objType",
     )
+    marker_type: Optional[str] | None = Field(
+        None,
+        alias="markerType",
+        serialization_alias="markerType",
+        max_length=50,
+    )
 
     @field_validator("dash_array", mode="before")
     @classmethod

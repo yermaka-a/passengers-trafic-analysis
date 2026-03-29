@@ -23,8 +23,9 @@ export interface BackendObjectOptions {
   weight?: number | null;
   fill?: boolean | null;
   fillOpacity?: number | null;
-  objType: Exclude<ObjTypes, "Edit">;
+  objType: Exclude<ObjTypes, "Edit"> | "StopMarker";
   dashArray?: number[] | null;
+  markerType?: string | null; // Для StopMarker
 }
 
 /** Объект для отправки на бэкенд */
