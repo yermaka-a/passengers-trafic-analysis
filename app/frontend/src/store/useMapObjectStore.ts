@@ -90,6 +90,8 @@ const backendToDeckGL = (
       fillOpacity: options.fillOpacity ?? 0.5,
     },
     coordinates,
+    // Для StopMarker
+    markerType: (options as any).markerType ?? undefined,
   };
 };
 

@@ -517,6 +517,11 @@ const createDeckLayers = () => {
         iconMapping,
         getIcon: (obj: DeckGLObject) => {
           const type = obj.markerType || 'bus';
+          console.log("[Map] getIcon для", obj.id, ":", {
+            markerType: obj.markerType,
+            type,
+            exists: iconMapping[type] ? true : false
+          });
           // Проверяем что тип существует в mapping
           return iconMapping[type] ? type : 'bus';
         },
