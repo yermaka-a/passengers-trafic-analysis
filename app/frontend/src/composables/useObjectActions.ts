@@ -108,7 +108,14 @@ export const useObjectActions = () => {
     if (obj && value && value[0]) {
       if (obj.type === 'StopMarker') {
         // Для StopMarker используем getSizeScale (1.0 - 3.0)
-        mapObjectStore.updateObjectStyle(id, { radius: value[0], getSizeScale: value[0] / 10 });
+        // Слайдер: 5-100 → getSizeScale: 0.5-3.0
+        const getSizeScale = Math.max(0.5, Math.min(3.0, value[0] / 30));
+        mapObjectStore.updateObjectStyle(id, { radius: value[0], getSizeScale });
+        console.log('[useObjectActions] changeRadius для StopMarker:', { 
+          radius: value[0], 
+          getSizeScale,
+          style: mapObjectStore.Objects.get(id)?.style 
+        });
       } else {
         mapObjectStore.updateObjectStyle(id, { radius: value[0] });
       }

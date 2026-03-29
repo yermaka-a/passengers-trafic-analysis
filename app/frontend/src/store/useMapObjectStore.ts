@@ -88,6 +88,11 @@ const backendToDeckGL = (
       strokeDasharray: options.dashArray as [number, number] | undefined,
       filled: options.fill ?? false,
       fillOpacity: options.fillOpacity ?? 0.5,
+      // Для StopMarker восстанавливаем getSizeScale из radius (5-100 → 0.5-3.0)
+      ...(options.objType === 'StopMarker' && {
+        radius: 30, // default
+        getSizeScale: 1.5, // default
+      }),
     },
     coordinates,
     // Для StopMarker
