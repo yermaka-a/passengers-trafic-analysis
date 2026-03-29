@@ -49,11 +49,22 @@ const useApi = () => {
 
   // Импорт остановок из Overpass API
   const importStopsFromOverpass = async (cities: string, types: string[]) => {
-    const result = await callApi((api as any).import_stops, {
-      cities,
-      stop_types: types
-    });
-    return result;
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const result = await (api as any).import_stops({
+        cities,
+        stop_types: types
+      });
+      return result;
+    } catch (err) {
+      error.value = (err as Error).message;
+      console.error("API Error:", err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
   };
 
   return {
