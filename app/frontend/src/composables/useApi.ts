@@ -53,10 +53,17 @@ const useApi = () => {
     error.value = null;
     
     try {
-      const result = await (api as any).import_stops({
+      // Проверка что pywebview доступен
+      if (!(window as any).pywebview?.api?.import_stops) {
+        throw new Error('pywebview.api.import_stops недоступен. Убедитесь что приложение запущено через pywebview.');
+      }
+      
+      console.log('[useApi] Вызов import_stops:', { cities, types });
+      const result = await (window as any).pywebview.api.import_stops({
         cities,
         stop_types: types
       });
+      console.log('[useApi] import_stops результат:', result);
       return result;
     } catch (err) {
       error.value = (err as Error).message;

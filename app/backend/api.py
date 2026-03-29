@@ -284,6 +284,8 @@ class Api:
             {"status": "success", "imported_count": 1234, "duplicate_count": 0, "cities": ["Ангарск"]}
         """
         try:
+            print(f'[API] import_stops вызван с данными: {data}')
+            
             # Валидация запроса
             request = StopImportRequest(**data)
             
@@ -291,17 +293,21 @@ class Api:
             cities = [city.strip() for city in request.cities.split(',') if city.strip()]
             
             if not cities:
+                print('[API] import_stops: города не указаны')
                 return {
                     "status": "failed",
                     "message": "Города не указаны"
                 }
             
             # Импорт через контроллер
+            print(f'[API] import_stops: начинаем импорт для {cities}')
             result = self.stop_import.import_stops(cities, request.stop_types)
+            print(f'[API] import_stops: результат {result}')
             
             return result.model_dump()
             
         except Exception as e:
+            print(f'[API] import_stops ошибка: {e}')
             log.error("api_import_stops", extra={"error": str(e)})
             return {
                 "status": "failed",
