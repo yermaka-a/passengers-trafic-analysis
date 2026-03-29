@@ -60,15 +60,21 @@ class StopImportController:
             # 4. Массовая вставка
             imported_count = self._bulk_insert(map_objects)
             
+            # Считаем общее количество дубликатов (из дедупликации + из БД)
+            duplicates_from_dedup = len(overpass_stops) - len(unique_stops)
+            duplicates_from_db = len(unique_stops) - imported_count
+            total_duplicates = duplicates_from_dedup + duplicates_from_db
+
             log.info("stop_import_complete", extra={
                 "imported": imported_count,
-                "cities": cities
+                "cities": cities,
+                "duplicates": total_duplicates
             })
-            
+
             return StopImportResponse(
                 status="success",
                 imported_count=imported_count,
-                duplicate_count=len(overpass_stops) - len(unique_stops),
+                duplicate_count=total_duplicates,
                 cities=cities
             )
             
@@ -164,7 +170,11 @@ class StopImportController:
                 ).all()
 
                 existing_osm_ids = {row.osm_id for row in existing}
-                log.info("stop_import_existing", extra={"count": len(existing_osm_ids)})
+                duplicate_count = len(objects) - len([
+                    obj for obj in objects
+                    if not (obj.stop_metadata and obj.stop_metadata.osm_id in existing_osm_ids)
+                ])
+                log.info("stop_import_existing", extra={"count": len(existing_osm_ids), "duplicates": duplicate_count})
 
                 # Фильтровать новые объекты
                 new_objects = [
@@ -173,6 +183,7 @@ class StopImportController:
                 ]
             else:
                 new_objects = objects
+                duplicate_count = 0
 
             log.info("stop_import_new", extra={"count": len(new_objects)})
 
@@ -185,5 +196,5 @@ class StopImportController:
 
             session.commit()
 
-            log.info("stop_import_inserted", extra={"count": len(new_objects)})
+            log.info("stop_import_inserted", extra={"count": len(new_objects), "duplicates": duplicate_count})
             return len(new_objects)
