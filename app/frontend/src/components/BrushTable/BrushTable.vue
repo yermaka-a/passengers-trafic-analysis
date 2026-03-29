@@ -12,11 +12,16 @@ import {
 } from "@/components/ui/select";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import { STOP_MARKER_ICONS, type StopMarkerType } from "@/config/stopMarkers";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 const mapObjectStore = useMapObjectStore();
 
 const selectedMarkerType = ref<StopMarkerType>('bus');
+
+// Сохраняем выбранный тип маркера глобально для доступа из useDeckGL
+watch(selectedMarkerType, (newValue) => {
+  (window as any).__selectedMarkerType = newValue;
+});
 
 const isActive = (option: (typeof mapObjectStore.getObjectsTypes)[number]) => {
   return option[1] === mapObjectStore.getChosenObjectType[1];

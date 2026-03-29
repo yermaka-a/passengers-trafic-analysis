@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { v6 as uuidv6 } from "uuid";
 import useApi from "@/composables/useApi";
 import type { BackendObjectCreate, DeckGLObject, LngLatTuple } from "@/types";
+import type { StopMarkerType } from "@/config/stopMarkers";
 import {
   backendCoordsToDeckGL,
   deckGLToBackendCoords,
@@ -198,7 +199,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     // ========================================================================
 
     /** Начать создание нового объекта */
-    startDraftObject() {
+    startDraftObject(markerType?: StopMarkerType) {
       const type = this.ChosenObjectType[0] as ObjTypes;
       if (type === "Edit") return;
 
@@ -208,6 +209,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
         style: {
           ...DeckGLMapConfig.defaultStyles[type as Exclude<ObjTypes, "Edit">],
         } as DeckGLObject["style"],
+        // Для StopMarker сохраняем тип маркера
+        ...(type === 'StopMarker' && { markerType: markerType || 'bus' }),
       };
     },
 

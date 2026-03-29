@@ -1,6 +1,7 @@
 import { ref, readonly, computed } from "vue";
 import { useMapObjectStore } from "@/store/useMapObjectStore";
 import type { LngLatTuple } from "@/types";
+import type { StopMarkerType } from "@/config/stopMarkers";
 
 /**
  * Composable для управления Deck.gl объектами на карте
@@ -107,12 +108,39 @@ export const useDeckGL = () => {
   // Обработка клика по карте (создание объекта)
   const handleMapClick = (lngLat: LngLatTuple) => {
     const draft = mapObjectStore.getDraftObject;
+    const chosenType = mapObjectStore.getChosenObjectType[0];
+
+    // Для StopMarker - создаём и сразу завершаем объект
+    if (chosenType === 'StopMarker') {
+      if (!draft) {
+        // Получаем выбранный тип маркера из BrushTable
+        // @ts-ignore - selectedMarkerType хранится в компоненте BrushTable
+        const selectedMarkerType = (window as any).__selectedMarkerType || 'bus';
+        
+        // Начинаем создание StopMarker с одной точкой и markerType
+        mapObjectStore.startDraftObject(selectedMarkerType as StopMarkerType);
+        mapObjectStore.addCoordinateToDraft(lngLat);
+        
+        // Сохраняем в историю
+        pushToHistory({
+          draftId: "draft",
+          coordinates: [lngLat],
+          type: "draft",
+        });
+        
+        // Сразу завершаем создание StopMarker
+        setTimeout(() => {
+          finalizeObject();
+        }, 100);
+      }
+      return;
+    }
 
     if (!draft) {
       // Начинаем создание нового объекта
       mapObjectStore.startDraftObject();
       mapObjectStore.addCoordinateToDraft(lngLat);
-      
+
       // Сохраняем в историю для undo
       pushToHistory({
         draftId: "draft",
@@ -122,7 +150,7 @@ export const useDeckGL = () => {
     } else {
       // Добавляем точку к существующему draft
       mapObjectStore.addCoordinateToDraft(lngLat);
-      
+
       // Сохраняем в историю
       pushToHistory({
         draftId: "draft",
