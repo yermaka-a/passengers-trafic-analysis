@@ -8,7 +8,7 @@ Storage для оптимизированной схемы БД
 """
 from pydantic import UUID6
 from sqlalchemy import delete
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker, Session, joinedload
 
 from ..schemas import ObjectCreate
 from ..logger import log
@@ -26,20 +26,31 @@ class Objects:
         """Получить все объекты с связанными данными"""
         try:
             with self.localSession() as ls:
-                objects = ls.query(MapObject).all()
+                # Загружаем связанные данные через joinedload
+                objects = ls.query(MapObject)\
+                    .options(
+                        joinedload(MapObject.stop_metadata),
+                        joinedload(MapObject.object_styles)
+                    )\
+                    .all()
                 log.info("get_all_objects", extra={"count": len(objects)})
                 return objects
         except Exception as e:
             op_method = "get_all_objects"
             log.error(OP_CLASS_MSG + op_method, extra={"error": e})
-            return None
+            return []
 
     def get(self, Id: UUID6):
         """Получить объект по ID с связанными данными"""
         try:
             with self.localSession() as ls:
                 log.info("get_object", extra={"Id": str(Id)})
-                obj = ls.get(MapObject, str(Id))
+                obj = ls.query(MapObject)\
+                    .options(
+                        joinedload(MapObject.stop_metadata),
+                        joinedload(MapObject.object_styles)
+                    )\
+                    .get(str(Id))
                 return obj
         except Exception as e:
             op_method = "get"
