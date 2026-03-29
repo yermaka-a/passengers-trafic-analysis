@@ -117,22 +117,20 @@ class StopImportController:
         
         for stop in stops:
             map_obj = MapObject(
-                Id=str(uuid4()),
+                id=str(uuid4()),
                 name=stop.name[:255] if stop.name else f"Остановка {stop.osm_id}",
-                description=f"OSM {stop.osm_id}",
-                custom_name=None,
-                color="#FF0000",  # Красный цвет по умолчанию
-                stroke=None,
-                weight=None,
-                fill=None,
-                fill_opacity=None,
+                obj_type="StopMarker",
                 latitude=stop.lat,
                 longitude=stop.lon,
                 latlng=[{"lat": stop.lat, "lng": stop.lon}],
-                obj_type="StopMarker",
-                dash_array=None,
-                marker_type="pin",  # Маркер по умолчанию
-                radius=30
+            )
+            # Создаём связанные метаданные
+            map_obj.stop_metadata = StopMetadata(
+                object_id=map_obj.id,
+                osm_id=stop.osm_id,
+                marker_type="pin",
+                radius=30,
+                color="#FF0000",
             )
             map_objects.append(map_obj)
         
@@ -141,72 +139,51 @@ class StopImportController:
     
     def _bulk_insert(self, objects: List[MapObject]) -> int:
         """
-        Массовая вставка через bulk_insert_mappings
-        
+        Массовая вставка объектов
+
         Args:
             objects: Список MapObject для вставки
-        
+
         Returns:
             Количество вставленных объектов
         """
         if not objects:
             return 0
-        
+
         with self.storage.localSession() as session:
-            # 1. Проверка на дубликаты в БД (по координатам)
+            # 1. Проверка на дубликаты по osm_id
             log.info("stop_import_check_duplicates", extra={"count": len(objects)})
-            
-            # Собрать координаты для проверки
-            coords_set = {(obj.latitude, obj.longitude) for obj in objects if obj.latitude and obj.longitude}
-            
-            if coords_set:
-                # Найти существующие объекты с такими координатами
-                existing = session.query(MapObject.latitude, MapObject.longitude).filter(
-                    MapObject.obj_type == "StopMarker",
-                    MapObject.latitude.in_([lat for lat, lon in coords_set]),
-                    MapObject.longitude.in_([lon for lat, lon in coords_set])
+
+            # Собрать osm_id для проверки
+            osm_ids = [obj.stop_metadata.osm_id for obj in objects if obj.stop_metadata and obj.stop_metadata.osm_id]
+
+            if osm_ids:
+                # Найти существующие объекты с такими osm_id
+                existing = session.query(StopMetadata.osm_id).filter(
+                    StopMetadata.osm_id.in_(osm_ids)
                 ).all()
-                
-                existing_coords = {(row.latitude, row.longitude) for row in existing}
-                log.info("stop_import_existing", extra={"count": len(existing_coords)})
-                
+
+                existing_osm_ids = {row.osm_id for row in existing}
+                log.info("stop_import_existing", extra={"count": len(existing_osm_ids)})
+
                 # Фильтровать новые объекты
                 new_objects = [
                     obj for obj in objects
-                    if (obj.latitude, obj.longitude) not in existing_coords
+                    if not (obj.stop_metadata and obj.stop_metadata.osm_id in existing_osm_ids)
                 ]
             else:
                 new_objects = objects
-            
+
             log.info("stop_import_new", extra={"count": len(new_objects)})
-            
+
             if not new_objects:
                 return 0
-            
-            # 2. Bulk insert
-            mappings = [
-                {
-                    'Id': obj.Id,
-                    'name': obj.name,
-                    'description': obj.description,
-                    'custom_name': obj.custom_name,
-                    'color': obj.color,
-                    'stroke': obj.stroke,
-                    'weight': obj.weight,
-                    'fill': obj.fill,
-                    'fill_opacity': obj.fill_opacity,
-                    'latitude': obj.latitude,
-                    'longitude': obj.longitude,
-                    'latlng': obj.latlng,
-                    'obj_type': obj.obj_type,
-                    'dash_array': obj.dash_array,
-                    'marker_type': obj.marker_type,
-                    'radius': obj.radius
-                } for obj in new_objects
-            ]
-            
-            session.bulk_insert_mappings(MapObject, mappings)
+
+            # 2. Вставка объектов
+            for obj in new_objects:
+                session.add(obj)
+
             session.commit()
-            
+
             log.info("stop_import_inserted", extra={"count": len(new_objects)})
             return len(new_objects)

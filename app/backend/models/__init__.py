@@ -1,5 +1,5 @@
-__all__ = ["MapObject", "TileLayerSetting", "Base"]
+__all__ = ["MapObject", "StopMetadata", "ObjectStyles", "TileLayerSetting", "Base", "uuid_to_binary", "binary_to_uuid"]
 
-from .object import MapObject
+from .object import MapObject, StopMetadata, ObjectStyles, uuid_to_binary, binary_to_uuid
 from .tile_layer import TileLayerSetting
 from .base import Base

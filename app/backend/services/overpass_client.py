@@ -58,6 +58,10 @@ class OverpassClient:
         """Получить остановки для одного города"""
         query = self._build_query(city, stop_types)
         
+        log.info("overpass_sending_query", extra={"city": city, "query_length": len(query)})
+        print(f'[Overpass] Отправка запроса для города: {city}')
+        print(f'[Overpass] Query: {query[:200]}...')  # Первые 200 символов
+        
         async with httpx.AsyncClient(timeout=self.TIMEOUT) as client:
             response = await client.post(
                 self.OVERPASS_URL,
@@ -67,6 +71,7 @@ class OverpassClient:
             response.raise_for_status()
             data = response.json()
         
+        print(f'[Overpass] Получено элементов: {len(data.get("elements", []))}')
         return self._parse_response(data, city)
     
     def _build_query(self, city: str, stop_types: List[str]) -> str:

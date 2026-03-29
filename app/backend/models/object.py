@@ -1,8 +1,19 @@
-from typing import List
-from sqlalchemy import Integer, String, Text, Boolean, Float, JSON, Index
+"""
+Оптимизированные модели SQLAlchemy
+
+Разделение на 3 таблицы:
+1. map_objects - базовая информация для всех объектов
+2. stop_metadata - специфичные данные для StopMarker
+3. object_styles - стили для Polygon/Polyline/CircleMarker
+
+Все ID в binary(16) для экономии места
+"""
+from typing import List, Optional
+from sqlalchemy import Integer, String, Text, Boolean, Float, JSON, ForeignKey, Index, DateTime
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
+from datetime import datetime
 import uuid
 
 
@@ -21,61 +32,95 @@ def binary_to_uuid(binary: bytes) -> str:
 
 
 class MapObject(Base):
+    """Базовая таблица для всех гео-объектов"""
+
     __tablename__ = "map_objects"
-    
-    # Индексы для оптимизации производительности
+
+    # Индексы для оптимизации
     __table_args__ = (
-        # Индексы для фильтрации
         Index('ix_obj_type', 'obj_type'),
-        Index('ix_marker_type', 'marker_type'),
-        Index('ix_obj_type_marker', 'obj_type', 'marker_type'),
-        
-        # Индексы для поиска
-        Index('ix_custom_name', 'custom_name'),
-        Index('ix_name', 'name'),
-        
-        # Индексы для координат
         Index('ix_latitude', 'latitude'),
         Index('ix_longitude', 'longitude'),
+        Index('ix_name', 'name'),
     )
 
-    Id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    # Поля БЕЗ default (обязательные) - должны идти первыми для dataclasses
+    id: Mapped[bytes] = mapped_column("id", String(16).with_variant(String(16), 'sqlite'), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     obj_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
-    
-    # Координаты (извлечённые из JSON для производительности)
-    latitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True, default=None)
-    longitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True, default=None)
-    latlng: Mapped[List[dict[str, float]]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=False, default=list
+    latlng: Mapped[List[dict]] = mapped_column(MutableList.as_mutable(JSON), nullable=False)
+
+    # Поля С default (необязательные) - должны идти после
+    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
+    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship должны идти последними с init=False (не участвуют в dataclass __init__)
+    stop_metadata: Mapped[Optional["StopMetadata"]] = relationship(
+        "StopMetadata", back_populates="object", uselist=False, cascade="all, delete-orphan", init=False
     )
-    
-    description: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
-    custom_name: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, default=None, index=True
+    object_styles: Mapped[Optional["ObjectStyles"]] = relationship(
+        "ObjectStyles", back_populates="object", uselist=False, cascade="all, delete-orphan", init=False
     )
-    color: Mapped[str | None] = mapped_column(String(10), nullable=True, default=None)
-    stroke: Mapped[bool | None] = mapped_column(Boolean, default=True)
-    weight: Mapped[int | None] = mapped_column(Integer, default=3)
-    fill: Mapped[bool | None] = mapped_column(Boolean, default=None)
-    fill_opacity: Mapped[float | None] = mapped_column(Float, default=None)
-    dash_array: Mapped[List[float] | None] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=True, default=None
-    )
-    marker_type: Mapped[str | None] = mapped_column(
-        String(50), nullable=True, default=None, index=True
-    )
-    radius: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, default=30
-    )
-    
+
     # Методы для конвертации UUID
     @property
     def uuid(self) -> str:
         """Получить UUID как строку"""
-        return binary_to_uuid(self.Id)
-    
+        return binary_to_uuid(self.id)
+
     @uuid.setter
     def uuid(self, value: str):
         """Установить UUID из строки"""
-        self.Id = uuid_to_binary(value)
+        self.id = uuid_to_binary(value)
+
+
+class StopMetadata(Base):
+    """Метаданные для StopMarker (основанные на OSM)"""
+    
+    __tablename__ = "stop_metadata"
+    
+    __table_args__ = (
+        Index('ix_stop_osm_id', 'osm_id'),
+        Index('ix_stop_marker_type', 'marker_type'),
+    )
+
+    object_id: Mapped[bytes] = mapped_column(
+        ForeignKey("map_objects.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+    osm_id: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    marker_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    radius: Mapped[Optional[int]] = mapped_column(Integer, default=30)
+    color: Mapped[Optional[str]] = mapped_column(String(10), default='#FF0000')
+    
+    # Связь с родительским объектом (init=False чтобы не ломать dataclass порядок)
+    object: Mapped[MapObject] = relationship("MapObject", back_populates="stop_metadata", init=False)
+
+
+class ObjectStyles(Base):
+    """Стили для Polygon/Polyline/CircleMarker"""
+
+    __tablename__ = "object_styles"
+
+    __table_args__ = (
+        Index('ix_object_styles_object_id', 'object_id'),
+    )
+
+    # Поля БЕЗ default (обязательные)
+    object_id: Mapped[bytes] = mapped_column(
+        ForeignKey("map_objects.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    # Поля С default (необязательные)
+    stroke: Mapped[Optional[bool]] = mapped_column(Boolean, default=True)
+    weight: Mapped[Optional[int]] = mapped_column(Integer, default=3)
+    fill: Mapped[Optional[bool]] = mapped_column(Boolean, default=None)
+    fill_opacity: Mapped[Optional[float]] = mapped_column(Float, default=None)
+    dash_array: Mapped[Optional[List[float]]] = mapped_column(MutableList.as_mutable(JSON), nullable=True, default=None)
+    color: Mapped[Optional[str]] = mapped_column(String(10), nullable=True, default=None)
+
+    # Связь с родительским объектом (init=False)
+    object: Mapped[MapObject] = relationship("MapObject", back_populates="object_styles", init=False)

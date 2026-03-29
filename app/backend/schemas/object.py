@@ -60,6 +60,12 @@ class Options(RootObjBaseModel):
         alias="radius",
         serialization_alias="radius",
     )
+    osm_id: Optional[str] | None = Field(
+        None,
+        alias="osmId",
+        serialization_alias="osmId",
+        max_length=50,
+    )
 
     @field_validator("dash_array", mode="before")
     @classmethod
@@ -79,9 +85,36 @@ class ObjectCreate(RootObjBaseModel):
     @classmethod
     def from_db(cls, obj: MapObject) -> "ObjectCreate":
         """Валидация и трансформация одного объекта из БД"""
+        # Получаем связанные данные
+        options_data = {
+            "Id": obj.uuid,
+            "name": obj.name,
+            "objType": obj.obj_type,
+        }
+        
+        # Добавляем данные из stop_metadata если есть
+        if obj.stop_metadata:
+            options_data.update({
+                "markerType": obj.stop_metadata.marker_type,
+                "radius": obj.stop_metadata.radius,
+                "color": obj.stop_metadata.color,
+                "osmId": obj.stop_metadata.osm_id,
+            })
+        
+        # Добавляем данные из object_styles если есть
+        if obj.object_styles:
+            options_data.update({
+                "color": obj.object_styles.color,
+                "stroke": obj.object_styles.stroke,
+                "weight": obj.object_styles.weight,
+                "fill": obj.object_styles.fill,
+                "fillOpacity": obj.object_styles.fill_opacity,
+                "dashArray": obj.object_styles.dash_array,
+            })
+        
         return cls(
             latlng=[LatLng(**p) for p in obj.latlng],
-            options=Options.model_validate(obj),
+            options=Options.model_validate(options_data),
         )
 
 

@@ -1,10 +1,18 @@
+"""
+Storage для оптимизированной схемы БД
+
+Работа с разделёнными таблицами:
+- map_objects (базовая информация)
+- stop_metadata (данные для StopMarker)
+- object_styles (стили для Polygon/Polyline/CircleMarker)
+"""
 from pydantic import UUID6
 from sqlalchemy import delete
+from sqlalchemy.orm import sessionmaker, Session
 
 from ..schemas import ObjectCreate
-from sqlalchemy.orm import sessionmaker, Session
 from ..logger import log
-from ..models import MapObject
+from ..models import MapObject, StopMetadata, ObjectStyles
 
 OP_CLASS_MSG = f"{__name__} class Objects "
 
@@ -15,6 +23,7 @@ class Objects:
         self.localSession = localSession
 
     def get_all_objects(self):
+        """Получить все объекты с связанными данными"""
         try:
             with self.localSession() as ls:
                 objects = ls.query(MapObject).all()
@@ -26,6 +35,7 @@ class Objects:
             return None
 
     def get(self, Id: UUID6):
+        """Получить объект по ID с связанными данными"""
         try:
             with self.localSession() as ls:
                 log.info("get_object", extra={"Id": str(Id)})
@@ -37,17 +47,16 @@ class Objects:
             return None
 
     def create(self, obj: ObjectCreate):
+        """Создать объект с связанными данными"""
         try:
             with self.localSession() as ls:
-
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
-                
+
                 # Извлечь первую координату для latitude/longitude
                 latitude = latlng[0]['lat'] if latlng else None
                 longitude = latlng[0]['lng'] if latlng else None
 
-                # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
                 is_circle_marker = options.obj_type == 'CircleMarker'
 
@@ -57,33 +66,45 @@ class Objects:
                         "Id": options.Id,
                         "name": options.name,
                         "obj_type": options.obj_type,
-                        "dash_array": options.dash_array,
-                        "marker_type": options.marker_type,
-                        "radius": options.radius,
                         "latitude": latitude,
                         "longitude": longitude,
                     },
                 )
+
+                # Создаём базовый объект
                 new_obj = MapObject(
-                    Id=options.Id,
-                    color=options.color,
-                    custom_name=options.custom_name,
-                    description=options.description,
-                    fill=options.fill if not is_stop_marker else None,
-                    fill_opacity=options.fill_opacity if not is_stop_marker else None,
+                    id=str(options.Id),
                     name=options.name,
-                    stroke=options.stroke if not is_stop_marker else None,
-                    weight=options.weight if not is_stop_marker else None,
+                    obj_type=options.obj_type,
                     latitude=latitude,
                     longitude=longitude,
                     latlng=latlng,
-                    obj_type=options.obj_type,
-                    dash_array=options.dash_array if not is_stop_marker else None,
-                    marker_type=options.marker_type,
-                    radius=options.radius if (is_stop_marker or is_circle_marker) else None,  # Для StopMarker/CircleMarker
                 )
-
                 ls.add(new_obj)
+                ls.flush()  # Получаем ID
+
+                # Создаём связанные данные
+                if is_stop_marker:
+                    stop_meta = StopMetadata(
+                        object_id=new_obj.id,
+                        osm_id=getattr(options, 'osm_id', None),
+                        marker_type=options.marker_type,
+                        radius=options.radius,
+                        color=options.color,
+                    )
+                    ls.add(stop_meta)
+                elif is_circle_marker or options.obj_type in ('Polygon', 'Polyline'):
+                    styles = ObjectStyles(
+                        object_id=new_obj.id,
+                        stroke=options.stroke,
+                        weight=options.weight,
+                        fill=options.fill,
+                        fill_opacity=options.fill_opacity,
+                        dash_array=options.dash_array,
+                        color=options.color,
+                    )
+                    ls.add(styles)
+
                 ls.commit()
                 log.info("create_object_success", extra={"Id": options.Id})
             return True
@@ -93,10 +114,11 @@ class Objects:
             return False
 
     def delete(self, Id: UUID6):
+        """Удалить объект (CASCADE удалит связанные данные)"""
         try:
             with self.localSession() as ls:
                 log.info("delete_object", extra={"Id": str(Id)})
-                ls.execute(delete(MapObject).where(MapObject.Id == str(Id)))
+                ls.execute(delete(MapObject).where(MapObject.id == str(Id)))
                 ls.commit()
                 log.info("delete_object_success", extra={"Id": str(Id)})
             return True
@@ -106,17 +128,16 @@ class Objects:
             return False
 
     def update(self, obj: ObjectCreate):
+        """Обновить объект и связанные данные"""
         try:
             with self.localSession() as ls:
-
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
-                
-                # Извлечь первую координату для latitude/longitude
+
+                # Извлечь первую координату
                 latitude = latlng[0]['lat'] if latlng else None
                 longitude = latlng[0]['lng'] if latlng else None
 
-                # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
                 is_circle_marker = options.obj_type == 'CircleMarker'
 
@@ -125,38 +146,49 @@ class Objects:
                     extra={
                         "Id": options.Id,
                         "name": options.name,
-                        "color": options.color,
-                        "weight": options.weight,
-                        "fill": options.fill,
-                        "fill_opacity": options.fill_opacity,
-                        "dash_array": options.dash_array,
-                        "marker_type": options.marker_type,
                         "obj_type": options.obj_type,
-                        "radius": options.radius,
                         "latitude": latitude,
                         "longitude": longitude,
                     },
                 )
+
+                # Обновляем базовый объект
                 updated_obj = MapObject(
-                    Id=options.Id,
-                    color=options.color,
-                    custom_name=options.custom_name,
-                    description=options.description,
-                    fill=options.fill if not is_stop_marker else None,
-                    fill_opacity=options.fill_opacity if not is_stop_marker else None,
+                    id=str(options.Id),
                     name=options.name,
-                    stroke=options.stroke if not is_stop_marker else None,
-                    weight=options.weight if not is_stop_marker else None,
+                    obj_type=options.obj_type,
                     latitude=latitude,
                     longitude=longitude,
                     latlng=latlng,
-                    obj_type=options.obj_type,
-                    dash_array=options.dash_array if not is_stop_marker else None,
-                    marker_type=options.marker_type,
-                    radius=options.radius if (is_stop_marker or is_circle_marker) else None,  # Для StopMarker/CircleMarker
                 )
-
                 ls.merge(updated_obj)
+
+                # Удаляем старые связанные данные
+                ls.execute(delete(StopMetadata).where(StopMetadata.object_id == str(options.Id)))
+                ls.execute(delete(ObjectStyles).where(ObjectStyles.object_id == str(options.Id)))
+
+                # Создаём новые связанные данные
+                if is_stop_marker:
+                    stop_meta = StopMetadata(
+                        object_id=updated_obj.id,
+                        osm_id=getattr(options, 'osm_id', None),
+                        marker_type=options.marker_type,
+                        radius=options.radius,
+                        color=options.color,
+                    )
+                    ls.add(stop_meta)
+                elif is_circle_marker or options.obj_type in ('Polygon', 'Polyline'):
+                    styles = ObjectStyles(
+                        object_id=updated_obj.id,
+                        stroke=options.stroke,
+                        weight=options.weight,
+                        fill=options.fill,
+                        fill_opacity=options.fill_opacity,
+                        dash_array=options.dash_array,
+                        color=options.color,
+                    )
+                    ls.add(styles)
+
                 ls.commit()
                 log.info("update_object_success", extra={"Id": options.Id})
             return True
