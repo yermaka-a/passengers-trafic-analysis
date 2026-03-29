@@ -242,7 +242,7 @@ const getColorBadge = (obj: DeckGLObject) => {
                     if (value) changeRadius(value, obj[0]);
                   }
                 "
-                :model-value="[obj[1].style.radius ?? 10]"
+                :model-value="[obj[1].style.radius ?? 30]"
                 :max="100"
                 :step="1"
                 :min="5"

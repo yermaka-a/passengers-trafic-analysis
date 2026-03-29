@@ -104,22 +104,24 @@ export const useObjectActions = () => {
    * Изменить размер маркера
    */
   const changeRadius = async (value: number[], id: string) => {
+    console.log('[useObjectActions] changeRadius вызван:', { id, value });
+    
     const obj = mapObjectStore.Objects.get(id);
+    console.log('[useObjectActions] changeRadius obj:', obj ? { type: obj.type, radius: obj.style.radius, getSizeScale: obj.style.getSizeScale } : 'null');
+    
     if (obj && value && value[0]) {
       if (obj.type === 'StopMarker') {
         // Для StopMarker используем getSizeScale (1.0 - 3.0)
         // Слайдер: 5-100 → getSizeScale: 0.5-3.0
         const getSizeScale = Math.max(0.5, Math.min(3.0, value[0] / 30));
+        console.log('[useObjectActions] changeRadius StopMarker updateObjectStyle:', { radius: value[0], getSizeScale });
         mapObjectStore.updateObjectStyle(id, { radius: value[0], getSizeScale });
-        console.log('[useObjectActions] changeRadius для StopMarker:', { 
-          radius: value[0], 
-          getSizeScale,
-          style: mapObjectStore.Objects.get(id)?.style 
-        });
       } else {
+        console.log('[useObjectActions] changeRadius CircleMarker updateObjectStyle:', { radius: value[0] });
         mapObjectStore.updateObjectStyle(id, { radius: value[0] });
       }
       const updatedObj = mapObjectStore.getObjectById(id);
+      console.log('[useObjectActions] changeRadius updatedObj:', updatedObj ? { radius: updatedObj.style.radius, getSizeScale: updatedObj.style.getSizeScale } : 'null');
       if (updatedObj) await updateObjectInBackend(updatedObj);
     }
   };
