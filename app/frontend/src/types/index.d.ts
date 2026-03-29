@@ -26,6 +26,7 @@ export interface BackendObjectOptions {
   objType: Exclude<ObjTypes, "Edit"> | "StopMarker";
   dashArray?: number[] | null;
   markerType?: string | null; // Для StopMarker
+  radius?: number | null; // Для StopMarker/CircleMarker
 }
 
 /** Объект для отправки на бэкенд */

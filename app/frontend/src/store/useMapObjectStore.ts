@@ -88,10 +88,10 @@ const backendToDeckGL = (
       strokeDasharray: options.dashArray as [number, number] | undefined,
       filled: options.fill ?? false,
       fillOpacity: options.fillOpacity ?? 0.5,
-      // Для StopMarker восстанавливаем getSizeScale из radius (5-100 → 0.5-3.0)
+      // Для StopMarker/CircleMarker восстанавливаем radius и вычисляем getSizeScale
       ...(options.objType === 'StopMarker' && {
-        radius: 30, // default
-        getSizeScale: 1.5, // default
+        radius: (options as any).radius ?? 30,
+        getSizeScale: Math.max(0.5, Math.min(3.0, ((options as any).radius ?? 30) / 30)),
       }),
     },
     coordinates,
@@ -136,6 +136,7 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       fillOpacity: isStopMarker ? undefined : (obj.style.fillOpacity ?? 0.5),
       dashArray: dashArray ? Array.from(dashArray) : undefined,
       markerType: obj.markerType ?? null, // Для StopMarker
+      radius: isStopMarker ? (obj.style.radius ?? 30) : undefined, // Для StopMarker/CircleMarker
     },
   };
 };

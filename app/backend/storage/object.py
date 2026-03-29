@@ -70,6 +70,7 @@ class Objects:
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,
                     marker_type=options.marker_type,
+                    radius=options.radius if is_stop_marker else None,  # Только для StopMarker
                 )
 
                 ls.add(new_obj)
@@ -132,6 +133,7 @@ class Objects:
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,
                     marker_type=options.marker_type,
+                    radius=options.radius if is_stop_marker else None,  # Только для StopMarker
                 )
 
                 ls.merge(updated_obj)

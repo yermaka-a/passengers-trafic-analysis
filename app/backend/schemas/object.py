@@ -55,6 +55,11 @@ class Options(RootObjBaseModel):
         serialization_alias="markerType",
         max_length=50,
     )
+    radius: Optional[int] | None = Field(
+        None,
+        alias="radius",
+        serialization_alias="radius",
+    )
 
     @field_validator("dash_array", mode="before")
     @classmethod

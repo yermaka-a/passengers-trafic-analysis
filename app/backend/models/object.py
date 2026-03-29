@@ -29,3 +29,6 @@ class MapObject(Base):
     marker_type: Mapped[str | None] = mapped_column(
         String(50), nullable=True, default=None
     )
+    radius: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, default=30
+    )
