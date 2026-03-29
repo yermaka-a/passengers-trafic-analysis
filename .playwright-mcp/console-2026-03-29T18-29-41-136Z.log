@@ -1,0 +1,34 @@
+[     902ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[  141734ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:297:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4634:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4321:40)
+    at finalizeObject (http://localhost:5173/src/composables/useDeckGL.ts:142:25)
+    at Proxy.finalizeObject (http://localhost:5173/src/components/Map/Map.vue:64:10)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:53:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:105:58) @ http://localhost:5173/src/api/object.ts:20
+[  141759ms] [ERROR] API Error: Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:297:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4634:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4321:40)
+    at finalizeObject (http://localhost:5173/src/composables/useDeckGL.ts:142:25)
+    at Proxy.finalizeObject (http://localhost:5173/src/components/Map/Map.vue:64:10)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:53:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:105:58) @ http://localhost:5173/src/composables/useApi.ts:13
+[  141808ms] Error: pywebview is not registered
+    at createObject (http://localhost:5173/src/api/object.ts:19:10)
+    at callApi (http://localhost:5173/src/composables/useApi.ts:10:25)
+    at createObject (http://localhost:5173/src/composables/useApi.ts:21:44)
+    at Proxy.saveObjectToDB (http://localhost:5173/src/store/useMapObjectStore.ts:297:17)
+    at Proxy.wrappedAction (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4634:14)
+    at store.<computed> (http://localhost:5173/node_modules/.vite/deps/pinia.js?v=5d2bd303:4321:40)
+    at finalizeObject (http://localhost:5173/src/composables/useDeckGL.ts:142:25)
+    at Proxy.finalizeObject (http://localhost:5173/src/components/Map/Map.vue:64:10)
+    at Proxy.handleSubmit (http://localhost:5173/src/components/Map/MapOptions.vue:53:10)
+    at _createVNode.onClick._cache.<computed>._cache.<computed> (http://localhost:5173/src/components/Map/MapOptions.vue:105:58)

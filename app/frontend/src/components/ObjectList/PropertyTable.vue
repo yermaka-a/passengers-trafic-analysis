@@ -237,12 +237,12 @@ const getColorBadge = (obj: DeckGLObject) => {
             <TableCell>
               <Slider
                 v-if="obj[1].type === 'CircleMarker' || obj[1].type === 'StopMarker'"
-                @update:model-value="
+                @update:modelValue="
                   (value) => {
                     if (value) changeRadius(value, obj[0]);
                   }
                 "
-                :model-value="[obj[1].style.radius ?? 30]"
+                :modelValue="[obj[1].style.radius ?? 30]"
                 :max="100"
                 :step="1"
                 :min="5"
