@@ -124,6 +124,7 @@ const openObjectPopup = (id: string) => {
               <SelectItem value="Polygon">Полигоны</SelectItem>
               <SelectItem value="Polyline">Полилинии</SelectItem>
               <SelectItem value="CircleMarker">Маркеры</SelectItem>
+              <SelectItem value="StopMarker">Маркеры остановок</SelectItem>
             </SelectContent>
           </Select>
           

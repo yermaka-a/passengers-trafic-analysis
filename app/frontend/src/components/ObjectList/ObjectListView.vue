@@ -264,7 +264,7 @@ const onCloseModal = () => {
                 >На карте</Toggle
               >
               <Separator class="my-2 w-full" />
-              <div v-if="obj[1].type !== 'CircleMarker'">
+              <div v-if="obj[1].type !== 'CircleMarker' && obj[1].type !== 'StopMarker'">
                 <small className="text-sm leading-none font-medium"
                   >Пунктир</small
                 >
@@ -328,7 +328,7 @@ const onCloseModal = () => {
                     class="mx-auto w-full max-w-xs"
                   />
                 </div>
-                <div class="flex gap-3 flex-wrap" v-if="obj[1].type !== 'CircleMarker'">
+                <div class="flex gap-3 flex-wrap" v-if="obj[1].type !== 'CircleMarker' && obj[1].type !== 'StopMarker'">
                   <small class="text-sm leading-none font-medium"
                     >Жирность обводки</small
                   >

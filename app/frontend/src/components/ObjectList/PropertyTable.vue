@@ -172,7 +172,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Checkbox
-                v-if="obj[1].type !== 'CircleMarker'"
+                v-if="obj[1].type !== 'CircleMarker' && obj[1].type !== 'StopMarker'"
                 :model-value="(obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="toggleStroke(obj[0])"
               />
@@ -180,7 +180,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Slider
-                v-if="(obj[1].type !== 'CircleMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
+                v-if="(obj[1].type !== 'CircleMarker' && obj[1].type !== 'StopMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="
                   (value) => {
                     if (value) changeWeight(value, obj[0]);
@@ -196,7 +196,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Slider
-                v-if="(obj[1].type !== 'CircleMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
+                v-if="(obj[1].type !== 'CircleMarker' && obj[1].type !== 'StopMarker') && (obj[1].style.strokeWidth ?? 0) > 0"
                 @update:model-value="
                   (value) => {
                     if (value) changeDash(value, obj[0]);
