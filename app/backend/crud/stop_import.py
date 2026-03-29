@@ -96,17 +96,27 @@ class StopImportController:
     def _deduplicate_stops(self, stops: List[OverpassStop]) -> List[OverpassStop]:
         """
         Удалить дубликаты по osm_id
-        
+
         Args:
             stops: Список остановок
-        
+
         Returns:
             Список уникальных остановок
         """
         seen = {}
+        duplicates = 0
         for stop in stops:
             if stop.osm_id not in seen:
                 seen[stop.osm_id] = stop
+            else:
+                duplicates += 1
+                log.warning("stop_import_duplicate_osm_id", extra={"osm_id": stop.osm_id, "name": stop.name})
+        
+        log.info("stop_import_dedup", extra={
+            "total": len(stops),
+            "unique": len(seen),
+            "duplicates": duplicates
+        })
         return list(seen.values())
     
     def _convert_to_map_objects(self, stops: List[OverpassStop]) -> List[MapObject]:
@@ -162,6 +172,7 @@ class StopImportController:
 
             # Собрать osm_id для проверки
             osm_ids = [obj.stop_metadata.osm_id for obj in objects if obj.stop_metadata and obj.stop_metadata.osm_id]
+            log.info("stop_import_osm_ids", extra={"count": len(osm_ids), "sample": osm_ids[:5] if len(osm_ids) > 5 else osm_ids})
 
             if osm_ids:
                 # Найти существующие объекты с такими osm_id
@@ -170,6 +181,8 @@ class StopImportController:
                 ).all()
 
                 existing_osm_ids = {row.osm_id for row in existing}
+                log.info("stop_import_existing_osm_ids", extra={"count": len(existing_osm_ids), "sample": list(existing_osm_ids)[:5]})
+                
                 duplicate_count = len(objects) - len([
                     obj for obj in objects
                     if not (obj.stop_metadata and obj.stop_metadata.osm_id in existing_osm_ids)
