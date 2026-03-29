@@ -47,6 +47,15 @@ const useApi = () => {
   const setCurrentTileLayer = async (layer: string): Promise<{ status: string; layer: string }> =>
     await callApi(api.tile_layers.setCurrentLayer, layer);
 
+  // Импорт остановок из Overpass API
+  const importStopsFromOverpass = async (cities: string, types: string[]) => {
+    const result = await callApi((api as any).import_stops, {
+      cities,
+      stop_types: types
+    });
+    return result;
+  };
+
   return {
     // Состояние
     loading: readonly(loading),
@@ -59,6 +68,7 @@ const useApi = () => {
     deleteObject,
     getCurrentTileLayer,
     setCurrentTileLayer,
+    importStopsFromOverpass,
   };
 };
 

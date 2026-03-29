@@ -43,10 +43,14 @@ class Objects:
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
                 
+                # Извлечь первую координату для latitude/longitude
+                latitude = latlng[0]['lat'] if latlng else None
+                longitude = latlng[0]['lng'] if latlng else None
+
                 # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
                 is_circle_marker = options.obj_type == 'CircleMarker'
-                
+
                 log.info(
                     "create_object",
                     extra={
@@ -56,6 +60,8 @@ class Objects:
                         "dash_array": options.dash_array,
                         "marker_type": options.marker_type,
                         "radius": options.radius,
+                        "latitude": latitude,
+                        "longitude": longitude,
                     },
                 )
                 new_obj = MapObject(
@@ -68,6 +74,8 @@ class Objects:
                     name=options.name,
                     stroke=options.stroke if not is_stop_marker else None,
                     weight=options.weight if not is_stop_marker else None,
+                    latitude=latitude,
+                    longitude=longitude,
                     latlng=latlng,
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,
@@ -104,10 +112,14 @@ class Objects:
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
                 
+                # Извлечь первую координату для latitude/longitude
+                latitude = latlng[0]['lat'] if latlng else None
+                longitude = latlng[0]['lng'] if latlng else None
+
                 # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
                 is_circle_marker = options.obj_type == 'CircleMarker'
-                
+
                 log.info(
                     "update_object",
                     extra={
@@ -121,6 +133,8 @@ class Objects:
                         "marker_type": options.marker_type,
                         "obj_type": options.obj_type,
                         "radius": options.radius,
+                        "latitude": latitude,
+                        "longitude": longitude,
                     },
                 )
                 updated_obj = MapObject(
@@ -133,6 +147,8 @@ class Objects:
                     name=options.name,
                     stroke=options.stroke if not is_stop_marker else None,
                     weight=options.weight if not is_stop_marker else None,
+                    latitude=latitude,
+                    longitude=longitude,
                     latlng=latlng,
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,

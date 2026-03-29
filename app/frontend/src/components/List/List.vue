@@ -13,9 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutGrid, Table as TableIcon, ChevronDown, Search } from "lucide-vue-next";
+import { LayoutGrid, Table as TableIcon, ChevronDown, Search, Download } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
+import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
 
 type ViewType = "cards" | "table";
 
@@ -27,6 +28,14 @@ const tilesStore = useTilesStore();
 const view = ref<ViewType>("cards");
 const showTilesMenu = ref(false);
 const tilesMenuRef = ref<HTMLElement | null>(null);
+
+// Импорт остановок
+const showImportDialog = ref(false);
+
+const handleImported = async () => {
+  console.log("[List] Остановки импортированы, обновляем...");
+  await mapObjectStore.loadAllObjectsFromDB();
+};
 
 // Фильтры
 const filterType = ref<string>("all");
@@ -149,7 +158,7 @@ const openObjectPopup = (id: string) => {
             <ChevronDown class="w-4 h-4" :class="{ 'rotate-180': showTilesMenu }" />
             Слои карты
           </Button>
-          
+
           <!-- Выпадающее меню -->
           <div
             v-if="showTilesMenu"
@@ -168,6 +177,17 @@ const openObjectPopup = (id: string) => {
             </button>
           </div>
         </div>
+
+        <!-- Импорт остановок -->
+        <Button
+          variant="outline"
+          size="sm"
+          @click="showImportDialog = true"
+          class="flex items-center gap-2"
+        >
+          <Download class="w-4 h-4" />
+          Импорт остановок
+        </Button>
         
         <!-- Переключатель вида -->
         <Button
@@ -200,12 +220,18 @@ const openObjectPopup = (id: string) => {
         :objects="filteredObjects"
         @open-popup="openObjectPopup"
       />
-      <PropertyTable 
-        v-else 
+      <PropertyTable
+        v-else
         :objects="filteredObjects"
         @open-popup="openObjectPopup"
       />
     </div>
+    
+    <!-- Dialog импорта остановок -->
+    <OverpassImport
+      v-model:open="showImportDialog"
+      @imported="handleImported"
+    />
   </div>
 </template>
 

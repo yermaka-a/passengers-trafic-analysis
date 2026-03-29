@@ -1,6 +1,8 @@
 import webview
-from .crud import ObjectController, LogsController, TileLayerController
+from .crud import ObjectController, LogsController, TileLayerController, StopImportController
 from .storage import Storage
+from .schemas.stop_import import StopImportRequest
+from .logger import log
 import uuid
 import json
 from typing import TYPE_CHECKING
@@ -20,6 +22,7 @@ class Api:
         self.objects = ObjectController(storage)
         self.logs = LogsController()
         self.tile_layers = TileLayerController(storage)
+        self.stop_import = StopImportController(storage)
         self._windows = {}  # Храним окна по ID для синхронизации
         self._main_window = None  # Главное окно
         self.storage = storage
@@ -269,3 +272,38 @@ class Api:
                     except Exception as e:
                         print(f'[API] Error syncing tile layer to window {window_id}: {e}')
         return result
+    
+    def import_stops(self, data: dict):
+        """
+        Импортировать остановки из Overpass API
+        
+        Args:
+            data: {"cities": "Ангарск,Москва", "stop_types": ["bus_stop", "platform"]}
+        
+        Returns:
+            {"status": "success", "imported_count": 1234, "duplicate_count": 0, "cities": ["Ангарск"]}
+        """
+        try:
+            # Валидация запроса
+            request = StopImportRequest(**data)
+            
+            # Разделить города по запятой
+            cities = [city.strip() for city in request.cities.split(',') if city.strip()]
+            
+            if not cities:
+                return {
+                    "status": "failed",
+                    "message": "Города не указаны"
+                }
+            
+            # Импорт через контроллер
+            result = self.stop_import.import_stops(cities, request.stop_types)
+            
+            return result.model_dump()
+            
+        except Exception as e:
+            log.error("api_import_stops", extra={"error": str(e)})
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
