@@ -64,6 +64,7 @@ class Objects:
                     latlng=latlng,
                     obj_type=options.obj_type,
                     dash_array=options.dash_array,
+                    marker_type=options.marker_type,  # ← Добавлено!
                 )
 
                 ls.add(new_obj)
@@ -119,6 +120,7 @@ class Objects:
                     latlng=latlng,
                     obj_type=options.obj_type,
                     dash_array=options.dash_array,
+                    marker_type=options.marker_type,  # ← Добавлено!
                 )
 
                 ls.merge(updated_obj)
