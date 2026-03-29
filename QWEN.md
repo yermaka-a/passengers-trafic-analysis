@@ -2,7 +2,7 @@
 
 ## 📋 Обзор проекта
 
-Приложение для визуального анализа пассажиропотока на карте. Позволяет создавать, редактировать и сохранять гео-объекты (полигоны, полилинии, круговые маркеры) с последующим хранением в SQLite базе данных.
+Приложение для визуального анализа пассажиропотока на карте. Позволяет создавать, редактировать и сохранять гео-объекты (полигоны, полилинии, круговые маркеры, маркеры остановок) с последующим хранением в SQLite базе данных.
 
 ## 🏗️ Архитектура
 
@@ -11,17 +11,17 @@
 **Frontend:**
 - Vue 3 + Vite + TypeScript
 - MapLibre GL JS (карта)
-- Deck.gl (визуализация гео-объектов)
+- Deck.gl (визуализация гео-объектов: IconLayer, ScatterplotLayer, PolygonLayer, PathLayer)
 - Pinia (state management)
 - Tailwind CSS + shadcn-vue (UI компоненты)
 - VueUse (composables утилиты)
 
 **Backend:**
 - Python 3.12+
-- pywebview (гибридное desktop приложение)
-- SQLAlchemy (ORM)
-- Pydantic (валидация данных)
-- Structlog (логирование)
+- pywebview>=6.1 (гибридное desktop приложение)
+- SQLAlchemy>=2.0.46 (ORM)
+- Pydantic>=2.12.5 (валидация данных)
+- Structlog>=25.5.0 (логирование)
 
 ### Структура проекта
 
@@ -33,20 +33,20 @@ first/
 │   ├── backend/            # Python backend
 │   │   ├── app.py         # Инициализация pywebview окна
 │   │   ├── api.py         # API контроллер
-│   │   ├── crud/          # Бизнес-логика (ObjectController, LogsController)
-│   │   ├── models/        # SQLAlchemy модели
+│   │   ├── crud/          # Бизнес-логика (ObjectController, LogsController, TileLayerController)
+│   │   ├── models/        # SQLAlchemy модели (MapObject, TileLayerSetting)
 │   │   ├── schemas/       # Pydantic схемы валидации
 │   │   ├── storage/       # Storage класс (работа с БД)
 │   │   ├── config/        # Конфигурация
 │   │   └── logger/        # Настройки логирования
 │   └── frontend/           # Vue 3 приложение
 │       ├── src/
-│       │   ├── components/ # Vue компоненты (Map, List, BrushTable)
-│       │   ├── store/      # Pinia store (useMapStore, useMapObjectStore)
-│       │   ├── composables/# Композаблы (useApi, useL7)
-│       │   ├── types/      # TypeScript типы
+│       │   ├── components/ # Vue компоненты (Map, List, BrushTable, ObjectList)
+│       │   ├── store/      # Pinia store (useMapObjectStore, useTilesStore)
+│       │   ├── composables/# Композаблы (useApi, useDeckGL, useObjectActions)
+│       │   ├── types/      # TypeScript типы (DeckGLObject, BackendObjectCreate)
 │       │   ├── utils/      # Утилиты (конвертация координат, цветов)
-│       │   ├── config/     # Конфигурация (DeckGLMapConfig, MaplibreMapConfig)
+│       │   ├── config/     # Конфигурация (DeckGLMapConfig, MaplibreMapConfig, stopMarkers.ts)
 │       │   ├── api/        # API клиенты
 │       │   └── assets/     # Статические файлы (cursor SVG)
 │       ├── package.json    # Frontend зависимости
@@ -97,12 +97,13 @@ python main.py
 
 ## 🗺️ Карта и визуализация
 
-### Текущая реализация (MapLibre + Deck.gl)
+### Слои Deck.gl
 
-**Слои Deck.gl:**
+**Слои:**
 - `PolygonLayer` — заливка полигонов
 - `PathLayer` — контуры полигонов и полилинии
-- `ScatterplotLayer` — круговые маркеры
+- `ScatterplotLayer` — круговые маркеры (CircleMarker)
+- `IconLayer` — иконки остановок (StopMarker) с Lucide иконками
 
 **Формат координат:**
 - Backend: `[{lat, lng}, ...]`
@@ -117,6 +118,58 @@ python main.py
 - Deck.gl: RGBA массив `[r, g, b, a]` (0-255)
 - Конвертеры: `hexToRGBA()`, `rgbaToHex()`
 
+### Типы маркеров
+
+| Тип | Описание | Свойства |
+|-----|----------|----------|
+| **CircleMarker** | Круглый маркер | `radius`, `color`, `strokeWidth`, `strokeDasharray`, `fill`, `fillOpacity` |
+| **StopMarker** | Иконка остановки (Lucide) | `radius` → `getSizeScale`, `markerType` (bus/train/tram/taxi/car/bike/default), `color` |
+
+**StopMarker иконки:**
+- Используются Lucide Icons из `lucide-vue-next`
+- Sprite atlas генерируется через `generateIconAtlas()` в `config/stopMarkers.ts`
+- 7 типов: bus, train, tram, taxi, car, bike, default
+- Размер: `getSizeScale = radius / 30` (0.5 - 3.0)
+
+## 🗄️ База данных
+
+### Таблицы
+
+**map_objects:**
+- `Id` (VARCHAR(36), primary key)
+- `name`, `description`, `custom_name`
+- `color`, `stroke`, `weight`, `fill`, `fill_opacity`
+- `latlng` (JSON), `obj_type`, `dash_array`
+- `marker_type` (для StopMarker), `radius` (для StopMarker/CircleMarker)
+
+**tile_layer_settings:**
+- `id` (INTEGER, primary key)
+- `key`, `value` (для сохранения текущего слоя карты)
+
+### Миграции
+
+```bash
+# Добавить колонку marker_type
+python migrate_add_marker_type.py
+
+# Добавить колонку radius
+python migrate_add_radius.py
+```
+
+## 🎨 UI Компоненты
+
+### Основные компоненты
+- **Map.vue** — карта с MapLibre + Deck.gl overlay
+- **List.vue** — список объектов с настройками стилей (cards/table view)
+- **BrushTable.vue** — выбор типа объекта (Polygon, Polyline, CircleMarker, StopMarker)
+- **MapOptions.vue** — кнопки управления (добавить, отменить, undo/redo)
+- **TilesSwitcher** — переключатель слоёв карты (OSM, Satellite, Hybrid, OpenFreeMap)
+
+### Курсоры
+- `plus-cursor.svg` — крест для режима рисования
+- `grab-cursor.svg` — рука для перетаскивания
+- Применяются через CSS с `!important` к `.maplibre-gl-canvas`
+
 ## 📦 Зависимости
 
 ### Python (pyproject.toml)
@@ -127,50 +180,12 @@ python main.py
 - `colorama>=0.4.6` — цвета в консоли
 
 ### Frontend (package.json)
-- `@deck.gl/*@9.2.11` — визуализация
+- `@deck.gl/*@9.2.11` — визуализация (IconLayer, ScatterplotLayer, PolygonLayer, PathLayer)
 - `maplibre-gl@3.6.2` — карта
 - `vue@3.5.24` — фреймворк
 - `pinia@3.0.4` — state management
 - `shadcn-vue@2.4.3` — UI компоненты
-- `@turf/turf@7.3.3` — гео-утилиты
-
-## 🎨 UI Компоненты
-
-### Основные компоненты
-- **Map.vue** — карта с MapLibre + Deck.gl overlay
-- **List.vue** — список объектов с настройками стилей
-- **BrushTable.vue** — выбор типа объекта (Polygon, Polyline, CircleMarker)
-- **MapOptions.vue** — кнопки управления (добавить, отменить, undo/redo)
-- **TilesSwitcher.vue** — переключение слоёв карты (OSM, Satellite, Hybrid)
-
-### Курсоры
-- `plus-cursor.svg` — крест для режима рисования
-- `grab-cursor.svg` — рука для перетаскивания
-- Применяются через CSS с `!important` к `.maplibregl-canvas`
-
-## 🧪 Тестирование
-
-### Ручное тестирование
-
-1. **Создание полигона:**
-   - Выбрать "Полигон" в BrushTable
-   - Кликнуть несколько раз по карте
-   - Нажать "Добавить" (объект сохранится в БД)
-
-2. **Редактирование стиля:**
-   - В List.vue выбрать объект
-   - Изменить цвет, прозрачность, пунктир
-   - Изменения сохраняются автоматически
-
-3. **Редактирование координат:**
-   - Нажать "На карте" в списке объектов
-   - В popup нажать ✏️ возле координаты
-   - Изменить значение, нажать ✓
-   - Полигон перерисуется с новой формой
-
-4. **Навигация:**
-   - Кнопка "На карте" в List.vue приближает к объекту
-   - Drag карты работает с grabCursor
+- `lucide-vue-next@0.563.0` — иконки для StopMarker
 
 ## 🔧 Разработка
 
@@ -178,11 +193,13 @@ python main.py
 
 1. Создать слой в `Map.vue`:
 ```typescript
-new PolygonLayer({
+new IconLayer({
   id: "my-layer",
   data: objects,
-  getPolygon: (obj) => obj.coordinates,
-  getFillColor: (obj) => obj.style.color,
+  getIcon: (obj) => obj.iconData?.svg,
+  getPosition: (obj) => obj.coordinates[0],
+  getSize: 24,
+  getSizeScale: (obj) => obj.style.getSizeScale || 1.5,
   pickable: true,
 })
 ```
@@ -224,3 +241,5 @@ const backendCoords = deckGLToBackendCoords([[30, 50]])
 - [Vue 3 Guide](https://vuejs.org/guide/introduction.html)
 - [Pinia Documentation](https://pinia.vuejs.org/)
 - [pywebview Docs](https://pywebview.flowrl.com/)
+- [Lucide Icons](https://lucide.dev/icons/)
+- [shadcn-vue](https://shadcn-vue.com/)

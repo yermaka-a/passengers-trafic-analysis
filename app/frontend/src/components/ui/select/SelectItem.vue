@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { cn } from "@/lib/utils";
-import { SelectItem, type SelectItemProps, SelectItemIndicator, useForwardProps } from "reka-ui";
+import { SelectItem, type SelectItemProps, SelectItemIndicator, SelectItemText, useForwardProps } from "reka-ui";
 import { Check } from "lucide-vue-next";
 import { computed, type HTMLAttributes } from "vue";
 
@@ -29,6 +29,8 @@ const forwardedProps = useForwardProps(delegatedProps);
         <Check class="w-4 h-4" />
       </SelectItemIndicator>
     </span>
-    <SelectItemIndicator />
+    <SelectItemText>
+      <slot />
+    </SelectItemText>
   </SelectItem>
 </template>
