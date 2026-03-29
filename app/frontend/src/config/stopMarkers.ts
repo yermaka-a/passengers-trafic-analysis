@@ -1,9 +1,11 @@
 /**
- * Иконки для маркеров остановок
- * Все иконки используют currentColor для fill, что позволяет менять цвет через style.color
+ * Иконки для маркеров остановок на основе Lucide Icons
+ * https://lucide.dev/icons/
+ * 
+ * Все иконки используют fill="currentColor" для изменения цвета через style.color
  */
 
-export type StopMarkerType = 'bus' | 'train' | 'tram' | 'trolleybus' | 'metro' | 'default';
+export type StopMarkerType = 'bus' | 'train' | 'tram' | 'taxi' | 'car' | 'bike' | 'default';
 
 export interface StopMarkerIcon {
   id: StopMarkerType;
@@ -17,23 +19,26 @@ export interface StopMarkerIcon {
   anchor: [number, number];
 }
 
-// Иконка автобуса
-const busPath = "M12 2C8 2 4 3 4 6v10c0 1.1 0.9 2 2 2h1v2c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-2h4v2c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-2h1c1.1 0 2-0.9 2-2V6c0-3-4-4-8-4zm0 2c3 0 5 0.5 5 2H7c0-1.5 2-2 5-2zm5 11H7v-1h10v1zm0-3H7V7h10v5z";
+// Иконка автобуса (Lucide: Bus)
+const busPath = "M4 8h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm0-4h16a2 2 0 0 1 2 2v2H2V6a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
 
-// Иконка поезда/электрички
-const trainPath = "M12 2c-4 0-8 4-8 9v7l2 2h12l2-2v-7c0-5-4-9-8-9zm0 2c2.5 0 4.5 2 4.5 4H7.5c0-2 2-4 4.5-4zm-5 9v-1h10v1H7zm0-2V7h10v4H7z";
+// Иконка поезда (Lucide: Train)
+const trainPath = "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2zm-2 4h2v2H4v-2zm14 0h2v2h-2v-2z";
 
-// Иконка трамвая
-const tramPath = "M12 2C8 2 4 3 4 6v11c0 1.1 0.9 2 2 2h1v1c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-1h4v1c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-1h1c1.1 0 2-0.9 2-2V6c0-3-4-4-8-4zm0 2c3 0 5 0.5 5 2H7c0-1.5 2-2 5-2zm5 11H7v-1h10v1zm0-3H7V7h10v5z";
+// Иконка трамвая (адаптировано из Lucide: Train Front)
+const tramPath = "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2z";
 
-// Иконка троллейбуса
-const trolleybusPath = "M12 2C8 2 4 3 4 6v10c0 1.1 0.9 2 2 2h1v2c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-2h4v2c0 0.55 0.45 1 1 1h1c0.55 0 1-0.45 1-1v-2h1c1.1 0 2-0.9 2-2V6c0-3-4-4-8-4zm0 2c3 0 5 0.5 5 2H7c0-1.5 2-2 5-2zm5 11H7v-1h10v1zm-1-9l-1 4H9l-1-4h4z";
+// Иконка такси (Lucide: Car)
+const taxiPath = "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
 
-// Иконка метро (станция)
-const metroPath = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z";
+// Иконка автомобиля (Lucide: Car)
+const carPath = "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
 
-// Иконка по умолчанию (круг с точкой)
-const defaultPath = "M12 2C8.13 2 5 5.13 5 12c0 5.25 7 13 7 13s7-7.75 7-13c0-6.87-3.13-10-7-10zm0 13c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z";
+// Иконка велосипеда (Lucide: Bike)
+const bikePath = "M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 12h2l2-6h6l2 6h2M12 6v6";
+
+// Иконка по умолчанию (Lucide: MapPin)
+const defaultPath = "M12 2c-4.4 0-8 3.6-8 8 0 4.4 8 12 8 12s8-7.6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z";
 
 export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
   bus: {
@@ -60,26 +65,34 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     size: [24, 24],
     anchor: [12, 24],
   },
-  trolleybus: {
-    id: 'trolleybus',
-    name: 'Trolleybus',
-    nameRu: 'Троллейбус',
-    path: trolleybusPath,
+  taxi: {
+    id: 'taxi',
+    name: 'Taxi',
+    nameRu: 'Такси',
+    path: taxiPath,
     size: [24, 24],
     anchor: [12, 24],
   },
-  metro: {
-    id: 'metro',
-    name: 'Metro',
-    nameRu: 'Метро',
-    path: metroPath,
+  car: {
+    id: 'car',
+    name: 'Car',
+    nameRu: 'Автомобиль',
+    path: carPath,
+    size: [24, 24],
+    anchor: [12, 24],
+  },
+  bike: {
+    id: 'bike',
+    name: 'Bike',
+    nameRu: 'Велосипед',
+    path: bikePath,
     size: [24, 24],
     anchor: [12, 24],
   },
   default: {
     id: 'default',
     name: 'Default',
-    nameRu: 'По умолчанию',
+    nameRu: 'Маркер',
     path: defaultPath,
     size: [24, 24],
     anchor: [12, 24],
