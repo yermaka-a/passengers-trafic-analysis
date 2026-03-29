@@ -40,7 +40,16 @@ class MapObject(Base):
     )
 
     Id: Mapped[str] = mapped_column(String(36), primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, default=None, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    obj_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    
+    # Координаты (извлечённые из JSON для производительности)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True, default=None)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True, default=None)
+    latlng: Mapped[List[dict[str, float]]] = mapped_column(
+        MutableList.as_mutable(JSON), nullable=False, default=list
+    )
+    
     description: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     custom_name: Mapped[str | None] = mapped_column(
         String(255), nullable=True, default=None, index=True
@@ -50,17 +59,8 @@ class MapObject(Base):
     weight: Mapped[int | None] = mapped_column(Integer, default=3)
     fill: Mapped[bool | None] = mapped_column(Boolean, default=None)
     fill_opacity: Mapped[float | None] = mapped_column(Float, default=None)
-    
-    # Координаты (извлечённые из JSON для производительности)
-    latitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
-    longitude: Mapped[float | None] = mapped_column(Float, nullable=True, index=True)
-    
-    latlng: Mapped[List[dict[str, float]]] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=False, default=list
-    )
-    obj_type: Mapped[str] = mapped_column(String(30), nullable=False, default=None, index=True)
     dash_array: Mapped[List[float] | None] = mapped_column(
-        MutableList.as_mutable(JSON), nullable=False, default=None
+        MutableList.as_mutable(JSON), nullable=True, default=None
     )
     marker_type: Mapped[str | None] = mapped_column(
         String(50), nullable=True, default=None, index=True
