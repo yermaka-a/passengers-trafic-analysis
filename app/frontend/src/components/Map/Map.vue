@@ -527,13 +527,15 @@ const createDeckLayers = () => {
           return iconMapping[type] ? type : 'bus';
         },
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getSize: 24,
-        // @ts-ignore - getSizeScale может быть функцией
-        getSizeScale: (obj: DeckGLObject) => {
+        // getSize - это accessor который возвращает размер для каждой иконки
+        getSize: (obj: DeckGLObject) => {
           const scale = obj.style.getSizeScale || 1.5;
-          console.log("[Map] getSizeScale для", obj.id, ":", scale);
-          return scale;
+          console.log("[Map] getSize для", obj.id, ":", scale, '(radius:', obj.style.radius, ')');
+          return 24 * scale; // Базовый размер 24 * scale
         },
+        sizeScale: 1, // Глобальный множитель
+        sizeMinPixels: 10, // Минимальный размер
+        sizeMaxPixels: 100, // Максимальный размер
         getColor: (obj: DeckGLObject) => {
           // Используем цвет из style (для tint через mask)
           return obj.style.color;
@@ -549,7 +551,7 @@ const createDeckLayers = () => {
           getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
           getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
           getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
-          getSizeScale: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale })),
+          getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
         },
       })
     );

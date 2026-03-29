@@ -316,12 +316,8 @@ const onCloseModal = () => {
                     >Размер маркера</small
                   >
                   <Slider
-                    @update:modelValue="
-                      (value) => {
-                        if (value) changeRadius(value, obj[0]);
-                      }
-                    "
                     :modelValue="[obj[1].style.radius ?? 30]"
+                    @update:modelValue="(value) => { if (value) changeRadius(value, obj[0]); }"
                     :max="100"
                     :step="1"
                     :min="5"

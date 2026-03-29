@@ -45,6 +45,7 @@ class Objects:
                 
                 # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
+                is_circle_marker = options.obj_type == 'CircleMarker'
                 
                 log.info(
                     "create_object",
@@ -54,6 +55,7 @@ class Objects:
                         "obj_type": options.obj_type,
                         "dash_array": options.dash_array,
                         "marker_type": options.marker_type,
+                        "radius": options.radius,
                     },
                 )
                 new_obj = MapObject(
@@ -70,7 +72,7 @@ class Objects:
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,
                     marker_type=options.marker_type,
-                    radius=options.radius if is_stop_marker else None,  # Только для StopMarker
+                    radius=options.radius if (is_stop_marker or is_circle_marker) else None,  # Для StopMarker/CircleMarker
                 )
 
                 ls.add(new_obj)
@@ -104,6 +106,7 @@ class Objects:
                 
                 # Для StopMarker не сохраняем ненужные свойства
                 is_stop_marker = options.obj_type == 'StopMarker'
+                is_circle_marker = options.obj_type == 'CircleMarker'
                 
                 log.info(
                     "update_object",
@@ -117,6 +120,7 @@ class Objects:
                         "dash_array": options.dash_array,
                         "marker_type": options.marker_type,
                         "obj_type": options.obj_type,
+                        "radius": options.radius,
                     },
                 )
                 updated_obj = MapObject(
@@ -133,7 +137,7 @@ class Objects:
                     obj_type=options.obj_type,
                     dash_array=options.dash_array if not is_stop_marker else None,
                     marker_type=options.marker_type,
-                    radius=options.radius if is_stop_marker else None,  # Только для StopMarker
+                    radius=options.radius if (is_stop_marker or is_circle_marker) else None,  # Для StopMarker/CircleMarker
                 )
 
                 ls.merge(updated_obj)

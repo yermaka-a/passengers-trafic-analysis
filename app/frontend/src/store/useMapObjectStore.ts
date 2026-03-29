@@ -89,9 +89,11 @@ const backendToDeckGL = (
       filled: options.fill ?? false,
       fillOpacity: options.fillOpacity ?? 0.5,
       // Для StopMarker/CircleMarker восстанавливаем radius и вычисляем getSizeScale
-      ...(options.objType === 'StopMarker' && {
+      ...((options.objType === 'StopMarker' || options.objType === 'CircleMarker') && {
         radius: (options as any).radius ?? 30,
-        getSizeScale: Math.max(0.5, Math.min(3.0, ((options as any).radius ?? 30) / 30)),
+        ...(options.objType === 'StopMarker' && {
+          getSizeScale: Math.max(0.5, Math.min(3.0, ((options as any).radius ?? 30) / 30)),
+        }),
       }),
     },
     coordinates,
@@ -116,6 +118,7 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
 
   // Для StopMarker не используем stroke/fill свойства
   const isStopMarker = obj.type === 'StopMarker';
+  const isCircleMarker = obj.type === 'CircleMarker';
 
   // Используем значения из strokeState (кроме StopMarker)
   const weight = isStopMarker ? undefined : (state?.strokeWidth ?? obj.style.strokeWidth);
@@ -136,7 +139,7 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       fillOpacity: isStopMarker ? undefined : (obj.style.fillOpacity ?? 0.5),
       dashArray: dashArray ? Array.from(dashArray) : undefined,
       markerType: obj.markerType ?? null, // Для StopMarker
-      radius: isStopMarker ? (obj.style.radius ?? 30) : undefined, // Для StopMarker/CircleMarker
+      radius: (isStopMarker || isCircleMarker) ? (obj.style.radius ?? 30) : undefined, // Для StopMarker/CircleMarker
     },
   };
 };
@@ -344,7 +347,19 @@ export const useMapObjectStore = defineStore("mapobjects", {
           ...obj,
           style: { ...obj.style, ...style },
         };
+        
+        console.log('[useMapObjectStore] updateObjectStyle:', { 
+          id, 
+          style, 
+          newStyle: updatedObj.style,
+          radius: updatedObj.style.radius,
+          getSizeScale: updatedObj.style.getSizeScale 
+        });
+        
         this.Objects.set(id, updatedObj);
+        
+        // Принудительно триггерим реактивность
+        this.Objects = new Map(this.Objects);
       }
     },
 
