@@ -1,18 +1,9 @@
 /**
- * Иконки для маркеров остановок из lucide-vue-next
+ * Иконки для маркеров остановок
+ * Lucide SVG paths: https://lucide.dev/icons/
  * 
  * Все иконки используют stroke для изменения цвета через mask в Deck.gl IconLayer
  */
-
-import {
-  Bus,
-  BusFront,
-  TrainFront,
-  CarTaxiFront,
-  CarFront,
-  Bike,
-  MapPin,
-} from "lucide-vue-next";
 
 export type StopMarkerType = 'bus' | 'train' | 'tram' | 'taxi' | 'car' | 'bike' | 'default';
 
@@ -28,32 +19,28 @@ export interface StopMarkerIcon {
   anchor: [number, number];
 }
 
-// Извлекаем path из Lucide компонента
-const getPathFromLucideComponent = (component: any): string => {
-  if (!component || !component.render) {
-    console.error('[stopMarkers] Component or render is undefined:', component);
-    return '';
-  }
+// SVG paths из Lucide Icons
+const LUCIDE_PATHS = {
+  // Bus: https://lucide.dev/icons/bus
+  bus: "M8 16h8m-8 4h8m-9-12h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2-4h8a2 2 0 0 1 2 2v2H6V6a2 2 0 0 1 2-2z",
   
-  // Для lucide-vue-next компоненты хранят template с SVG
-  const template = component.render.toString();
-  const match = template.match(/d="([^"]*)"/g);
-  if (!match) {
-    console.error('[stopMarkers] No path found in component');
-    return '';
-  }
+  // Train Front: https://lucide.dev/icons/train-front
+  train: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2zm-2 4h2v2H4v-2zm14 0h2v2h-2v-2z",
   
-  console.log('[stopMarkers] Found paths:', match.length);
+  // Bus Front (для трамвая): https://lucide.dev/icons/bus-front
+  tram: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2z",
   
-  // Берём все path и объединяем
-  const paths = match.map((m: string) => {
-    const pathMatch = m.match(/d="([^"]*)"/);
-    return pathMatch ? pathMatch[1] : '';
-  }).filter(Boolean);
+  // Car Taxi Front: https://lucide.dev/icons/car-taxi-front
+  taxi: "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
   
-  const result = paths.join(' ');
-  console.log('[stopMarkers] Extracted path:', result.substring(0, 50) + '...');
-  return result;
+  // Car Front: https://lucide.dev/icons/car-front
+  car: "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+  
+  // Bike: https://lucide.dev/icons/bike
+  bike: "M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 12h2l2-6h6l2 6h2M12 6v6",
+  
+  // Map Pin: https://lucide.dev/icons/map-pin
+  default: "M12 2c-4.4 0-8 3.6-8 8 0 4.4 8 12 8 12s8-7.6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
 };
 
 export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
@@ -61,7 +48,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'bus',
     name: 'Bus',
     nameRu: 'Автобус',
-    path: getPathFromLucideComponent(Bus),
+    path: LUCIDE_PATHS.bus,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -69,7 +56,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'train',
     name: 'Train',
     nameRu: 'Поезд',
-    path: getPathFromLucideComponent(TrainFront),
+    path: LUCIDE_PATHS.train,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -77,7 +64,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'tram',
     name: 'Tram',
     nameRu: 'Трамвай',
-    path: getPathFromLucideComponent(BusFront), // Используем BusFront как заглушку
+    path: LUCIDE_PATHS.tram,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -85,7 +72,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'taxi',
     name: 'Taxi',
     nameRu: 'Такси',
-    path: getPathFromLucideComponent(CarTaxiFront),
+    path: LUCIDE_PATHS.taxi,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -93,7 +80,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'car',
     name: 'Car',
     nameRu: 'Автомобиль',
-    path: getPathFromLucideComponent(CarFront),
+    path: LUCIDE_PATHS.car,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -101,7 +88,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'bike',
     name: 'Bike',
     nameRu: 'Велосипед',
-    path: getPathFromLucideComponent(Bike),
+    path: LUCIDE_PATHS.bike,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -109,7 +96,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'default',
     name: 'Default',
     nameRu: 'Маркер',
-    path: getPathFromLucideComponent(MapPin),
+    path: LUCIDE_PATHS.default,
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -167,6 +154,12 @@ export function generateIconAtlas(): {
   });
   
   svgContent += `</svg>`;
+  
+  console.log('[stopMarkers] IconAtlas сгенерирован:', {
+    width: atlasWidth,
+    height: atlasHeight,
+    иконок: icons.length,
+  });
   
   return {
     atlas: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`,
