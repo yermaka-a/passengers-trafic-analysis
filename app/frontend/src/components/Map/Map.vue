@@ -13,7 +13,7 @@ import { useTilesStore } from "@/store/useTilesStore";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { PolygonLayer, PathLayer, ScatterplotLayer } from "@deck.gl/layers";
+import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
@@ -483,6 +483,49 @@ const createDeckLayers = () => {
       })
     );
     console.log("[Map] CircleMarker слой добавлен");
+  }
+
+  // 4. StopMarker layer - иконки для остановок
+  const stopMarkers = objectsArray.filter(
+    (obj) => obj.type === "StopMarker"
+  );
+
+  if (stopMarkers.length > 0) {
+    console.log("[Map] StopMarker объекты:", stopMarkers.map(o => ({
+      id: o.id,
+      markerType: o.markerType,
+      coordinates: o.coordinates[0]
+    })));
+
+    layers.push(
+      new IconLayer({
+        id: "stop-markers",
+        data: stopMarkers,
+        // @ts-ignore - IconLayer поддерживает object accessor для iconAtlas
+        iconAtlas: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJibGFjayIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTEuNjYgMC0zLTEuMzQtMy0zczEuMzQtMyAzLTMgMyAxLjM0IDMgMy0xLjM0IDMtMyAzeiIvPjwvc3ZnPg==",
+        // @ts-ignore - используем функцию для возврата bounding box
+        iconMapping: {
+          bus: { x: 0, y: 0, width: 24, height: 24, anchorX: 12, anchorY: 24, mask: true },
+        },
+        getIcon: () => "bus",
+        getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
+        getSize: 32,
+        getColor: (obj: DeckGLObject) => obj.style.color,
+        getSizeScale: 1.5, // Масштаб иконки
+        pickable: true,
+        autoHighlight: true,
+        onClick: (info: any) => {
+          if (info.object) {
+            selectObject((info.object as DeckGLObject).id);
+          }
+        },
+        updateTriggers: {
+          getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
+          getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
+        },
+      })
+    );
+    console.log("[Map] StopMarker слой добавлен");
   }
 
   // ========================================================================
