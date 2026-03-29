@@ -1,11 +1,11 @@
 /**
- * Иконки для маркеров остановок
+ * Иконки для гео-маркеров (pin, flag, balloon)
  * Lucide SVG paths: https://lucide.dev/icons/
- * 
+ *
  * Все иконки используют stroke для изменения цвета через mask в Deck.gl IconLayer
  */
 
-export type StopMarkerType = 'bus' | 'train' | 'tram' | 'taxi' | 'car' | 'bike' | 'default';
+export type StopMarkerType = 'pin' | 'pinned' | 'flag' | 'flag-check' | 'pin-check' | 'pin-plus' | 'balloon';
 
 export interface StopMarkerIcon {
   id: StopMarkerType;
@@ -21,82 +21,82 @@ export interface StopMarkerIcon {
 
 // SVG paths из Lucide Icons
 const LUCIDE_PATHS = {
-  // Bus: https://lucide.dev/icons/bus
-  bus: "M8 16h8m-8 4h8m-9-12h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm2-4h8a2 2 0 0 1 2 2v2H6V6a2 2 0 0 1 2-2z",
-  
-  // Train Front: https://lucide.dev/icons/train-front
-  train: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2zm-2 4h2v2H4v-2zm14 0h2v2h-2v-2z",
-  
-  // Bus Front (для трамвая): https://lucide.dev/icons/bus-front
-  tram: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2z",
-  
-  // Car Taxi Front: https://lucide.dev/icons/car-taxi-front
-  taxi: "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
-  
-  // Car Front: https://lucide.dev/icons/car-front
-  car: "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
-  
-  // Bike: https://lucide.dev/icons/bike
-  bike: "M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 12h2l2-6h6l2 6h2M12 6v6",
-  
-  // Map Pin: https://lucide.dev/icons/map-pin
-  default: "M12 2c-4.4 0-8 3.6-8 8 0 4.4 8 12 8 12s8-7.6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
+  // MapPin: https://lucide.dev/icons/map-pin
+  pin: "M20 10c0 4.993-8 13-8 13s-8-8.007-8-13a8 8 0 1 1 16 0Z",
+
+  // MapPinned: https://lucide.dev/icons/map-pinned
+  pinned: "M12 2C8.13 2 5 5.13 5 12c0 5.25 7 13 7 13s7-7.75 7-13c0-6.87-3.13-10-7-10zm0 18c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z",
+
+  // Flag: https://lucide.dev/icons/flag
+  flag: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7",
+
+  // FlagCheck: https://lucide.dev/icons/flag-check
+  'flag-check': "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7m-2 4 4 4 6-6",
+
+  // MapPinCheck: https://lucide.dev/icons/map-pin-check
+  'pin-check': "M20 10c0 4.993-8 13-8 13s-8-8.007-8-13a8 8 0 1 1 16 0Zm-2 2-4 4-2-2",
+
+  // MapPinPlus: https://lucide.dev/icons/map-pin-plus
+  'pin-plus': "M20 10c0 4.993-8 13-8 13s-8-8.007-8-13a8 8 0 1 1 16 0Zm-2 2h-2m-1-1v-2m0 6v-2",
+
+  // Balloon: https://lucide.dev/icons/balloon
+  balloon: "M6 9a8 8 0 1 1 12 0c0 4.993-6 13-6 13S6 13.993 6 9zm6 13v-4",
 };
 
 export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
-  bus: {
-    id: 'bus',
-    name: 'Bus',
-    nameRu: 'Автобус',
-    path: LUCIDE_PATHS.bus,
+  pin: {
+    id: 'pin',
+    name: 'MapPin',
+    nameRu: 'Маркер',
+    path: LUCIDE_PATHS.pin,
     size: [24, 24],
     anchor: [12, 24],
   },
-  train: {
-    id: 'train',
-    name: 'Train',
-    nameRu: 'Поезд',
-    path: LUCIDE_PATHS.train,
+  pinned: {
+    id: 'pinned',
+    name: 'MapPinned',
+    nameRu: 'Закреплён',
+    path: LUCIDE_PATHS.pinned,
     size: [24, 24],
     anchor: [12, 24],
   },
-  tram: {
-    id: 'tram',
-    name: 'Tram',
-    nameRu: 'Трамвай',
-    path: LUCIDE_PATHS.tram,
+  flag: {
+    id: 'flag',
+    name: 'Flag',
+    nameRu: 'Флаг',
+    path: LUCIDE_PATHS.flag,
     size: [24, 24],
     anchor: [12, 24],
   },
-  taxi: {
-    id: 'taxi',
-    name: 'Taxi',
-    nameRu: 'Такси',
-    path: LUCIDE_PATHS.taxi,
+  'flag-check': {
+    id: 'flag-check',
+    name: 'FlagCheck',
+    nameRu: 'Флаг (отмечен)',
+    path: LUCIDE_PATHS['flag-check'],
     size: [24, 24],
     anchor: [12, 24],
   },
-  car: {
-    id: 'car',
-    name: 'Car',
-    nameRu: 'Легковое авто',
-    path: LUCIDE_PATHS.car,
+  'pin-check': {
+    id: 'pin-check',
+    name: 'MapPinCheck',
+    nameRu: 'Маркер (отмечен)',
+    path: LUCIDE_PATHS['pin-check'],
     size: [24, 24],
     anchor: [12, 24],
   },
-  bike: {
-    id: 'bike',
-    name: 'Bike',
-    nameRu: 'Велосипед',
-    path: LUCIDE_PATHS.bike,
+  'pin-plus': {
+    id: 'pin-plus',
+    name: 'MapPinPlus',
+    nameRu: 'Маркер (+)',
+    path: LUCIDE_PATHS['pin-plus'],
     size: [24, 24],
     anchor: [12, 24],
   },
-  default: {
-    id: 'default',
-    name: 'Default',
-    nameRu: 'Стандартный',
-    path: LUCIDE_PATHS.default,
+  balloon: {
+    id: 'balloon',
+    name: 'Balloon',
+    nameRu: 'Шарик',
+    path: LUCIDE_PATHS.balloon,
     size: [24, 24],
     anchor: [12, 24],
   },

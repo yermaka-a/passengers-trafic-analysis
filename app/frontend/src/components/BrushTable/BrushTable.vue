@@ -16,7 +16,7 @@ import { ref, computed, watch } from "vue";
 
 const mapObjectStore = useMapObjectStore();
 
-const selectedMarkerType = ref<StopMarkerType>('bus');
+const selectedMarkerType = ref<StopMarkerType>('pin');
 
 // Сохраняем выбранный тип маркера глобально для доступа из useDeckGL
 watch(selectedMarkerType, (newValue) => {
