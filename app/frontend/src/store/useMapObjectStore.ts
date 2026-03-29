@@ -18,6 +18,7 @@ const ObjectsTypes = [
   ["Polygon", "Полигон"],
   ["Polyline", "Полилайн"],
   ["CircleMarker", "Маркер"],
+  ["StopMarker", "Маркер остановки"],
   ["Edit", "Редактировать объект"],
 ] as const;
 
@@ -260,6 +261,10 @@ export const useMapObjectStore = defineStore("mapobjects", {
         name: ObjectsTypes.find(([key]) => key === this.DraftObject?.type)?.[1] ?? (this.DraftObject?.type as ObjNames),
         style: finalStyle,
         coordinates,
+        // Для StopMarker
+        ...(this.DraftObject.type === 'StopMarker' && {
+          markerType: (this.DraftObject as any).markerType || 'bus',
+        }),
       };
 
       this.Objects.set(newObject.id, newObject);

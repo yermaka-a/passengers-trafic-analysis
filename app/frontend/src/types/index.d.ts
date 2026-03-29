@@ -1,4 +1,5 @@
 import type { ObjTypes, ObjNames } from "@/store/useMapObjectStore";
+import type { StopMarkerType } from "@/config/stopMarkers";
 import type { Map } from "maplibre-gl";
 
 // ============================================================================
@@ -60,12 +61,20 @@ export interface DeckGLStyle {
 /** Объект Deck.gl для отображения на карте */
 export interface DeckGLObject {
   id: string;
-  type: Exclude<ObjTypes, "Edit">;
+  type: Exclude<ObjTypes, "Edit"> | "StopMarker";
   name: string;
   customName?: string | null;
   description?: string | null;
   style: DeckGLStyle;
   coordinates: LngLatTuple[]; // [lng, lat]
+  // Для StopMarker
+  markerType?: StopMarkerType;
+  iconData?: {
+    id: StopMarkerType;
+    svg: string;
+    width: number;
+    height: number;
+  };
 }
 
 // ============================================================================
