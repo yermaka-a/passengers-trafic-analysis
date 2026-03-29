@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 
-export type TileLayer = "osm" | "satellite" | "hybrid";
+export type TileLayer = "osm" | "satellite" | "hybrid" | "openfreemap";
 
 export interface TileLayerConfig {
   name: string;
-  tiles: string[];
-  attribution: string;
+  tiles?: string[];
+  style?: string; // Для векторных стилей
+  attribution?: string;
+  type?: "raster" | "vector";
 }
 
 export const useTilesStore = defineStore("tiles", {
@@ -21,6 +23,7 @@ export const useTilesStore = defineStore("tiles", {
         ],
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        type: "raster" as const,
       },
       satellite: {
         name: "Satellite",
@@ -28,6 +31,7 @@ export const useTilesStore = defineStore("tiles", {
           "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         ],
         attribution: "&copy; Esri",
+        type: "raster" as const,
       },
       hybrid: {
         name: "Hybrid",
@@ -36,6 +40,13 @@ export const useTilesStore = defineStore("tiles", {
           "https://stamen-tiles.a.ssl.fastly.net/toner-labels/{z}/{x}/{y}.png",
         ],
         attribution: "&copy; Esri, &copy; Stamen Design",
+        type: "raster" as const,
+      },
+      openfreemap: {
+        name: "OpenFreeMap",
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        attribution: "© OpenFreeMap © OpenStreetMap",
+        type: "vector" as const,
       },
     } as Record<TileLayer, TileLayerConfig>,
   }),
@@ -50,7 +61,7 @@ export const useTilesStore = defineStore("tiles", {
     },
     loadFromStorage() {
       const saved = localStorage.getItem('currentTileLayer');
-      if (saved && ['osm', 'satellite', 'hybrid'].includes(saved)) {
+      if (saved && ['osm', 'satellite', 'hybrid', 'openfreemap'].includes(saved)) {
         this.currentLayer = saved as TileLayer;
       }
     },

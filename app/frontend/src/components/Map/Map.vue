@@ -593,8 +593,18 @@ onMounted(() => {
     window.addEventListener('map-tiles-change', (event: any) => {
       if (!mapInstance.value) return;
       const config = event.detail;
+      
+      console.log('[Map] map-tiles-change:', config);
+      
+      // Для векторных стилей (OpenFreeMap)
+      if (config.type === 'vector' && config.style) {
+        console.log('[Map] Switching to vector style:', config.style);
+        mapInstance.value.setStyle(config.style as any);
+        return;
+      }
+      
+      // Для растровых тайлов
       const style = mapInstance.value.getStyle();
-
       if (style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
         (style.sources["osm"] as any).tiles = config.tiles;
         (style.sources["osm"] as any).attribution = config.attribution;

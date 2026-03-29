@@ -82,8 +82,8 @@ const switchLayer = async (layer: TileLayer) => {
   tilesStore.setLayer(layer);
   showTilesMenu.value = false;
   
-  console.log('[List] Switching to layer:', layer);
-  console.log('[List] Layer config:', tilesStore.getCurrentLayerConfig());
+  const config = tilesStore.getCurrentLayerConfig();
+  console.log('[List] Switching to layer:', layer, config);
   
   // Сохраняем через useApi для синхронизации между окнами
   const useApiModule = await import('@/composables/useApi');
@@ -95,9 +95,7 @@ const switchLayer = async (layer: TileLayer) => {
     console.error('[List] Error saving tile layer:', e);
   }
   
-  // Сообщаем карте что нужно обновить тайлы
-  const config = tilesStore.getCurrentLayerConfig();
-  console.log('[List] Dispatching map-tiles-change with:', config);
+  // Отправляем событие для переключения тайлов
   window.dispatchEvent(new CustomEvent('map-tiles-change', {
     detail: config
   }));
