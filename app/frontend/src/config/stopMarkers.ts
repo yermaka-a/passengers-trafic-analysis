@@ -106,8 +106,19 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
  * @returns SVG строка
  */
 export function getIconSvg(icon: StopMarkerIcon, color: [number, number, number, number]): string {
-  const colorStr = `rgba(${color[0]}, ${color[1]}, ${color[2]}, ${color[3] / 255})`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${icon.size[0]} ${icon.size[1]}" width="${icon.size[0]}" height="${icon.size[1]}"><path fill="${colorStr}" d="${icon.path}"/></svg>`;
+  const colorStr = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${colorStr}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${icon.path}"/></svg>`;
+}
+
+/**
+ * Получить base64 SVG для использования в iconAtlas
+ * @param icon - иконка
+ * @param color - цвет в формате [r, g, b, a] (0-255)
+ * @returns base64 encoded SVG
+ */
+export function getIconBase64(icon: StopMarkerIcon, color: [number, number, number, number] = [0, 0, 0, 255]): string {
+  const svg = getIconSvg(icon, color);
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
 /**

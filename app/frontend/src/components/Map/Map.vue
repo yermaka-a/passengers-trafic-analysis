@@ -10,6 +10,7 @@ import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple, DeckGLObject } from "@/types";
 import { useTilesStore } from "@/store/useTilesStore";
+import { STOP_MARKER_ICONS, getIconBase64 } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -497,19 +498,40 @@ const createDeckLayers = () => {
       coordinates: o.coordinates[0]
     })));
 
+    // Генерируем iconMapping для всех типов маркеров
+    const iconMapping: Record<string, any> = {};
+    let xOffset = 0;
+    const iconSize = 24;
+    
+    // Создаём mapping для каждого типа маркера
+    Object.entries(STOP_MARKER_ICONS).forEach(([key, _icon]) => {
+      iconMapping[key] = {
+        x: xOffset,
+        y: 0,
+        width: iconSize,
+        height: iconSize,
+        anchorX: iconSize / 2,
+        anchorY: iconSize,
+        mask: true,
+      };
+      xOffset += iconSize;
+    });
+
+    // Генерируем composite iconAtlas (все иконки в одном изображении)
+    // Для простоты используем bus как base64, в будущем можно сделать sprite
+    const busIconBase64 = getIconBase64(STOP_MARKER_ICONS.bus, [0, 0, 0, 255]);
+
     layers.push(
       new IconLayer({
         id: "stop-markers",
         data: stopMarkers,
-        // @ts-ignore - IconLayer поддерживает object accessor для iconAtlas
-        iconAtlas: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSJibGFjayIgZD0iTTEyIDJDNi40OCAyIDIgNi40OCAyIDEyczQuNDggMTAgMTAgMTAgMTAtNC40OCAxMC0xMFMxNy41MiAyIDEyIDJ6bTAgMThjLTEuNjYgMC0zLTEuMzQtMy0zczEuMzQtMyAzLTMgMyAxLjM0IDMgMy0xLjM0IDMtMyAzeiIvPjwvc3ZnPg==",
-        // @ts-ignore - используем функцию для возврата bounding box
-        iconMapping: {
-          bus: { x: 0, y: 0, width: 24, height: 24, anchorX: 12, anchorY: 24, mask: true },
-        },
-        getIcon: () => "bus",
+        // @ts-ignore - используем iconAtlas с mask: true
+        iconAtlas: busIconBase64,
+        // @ts-ignore - iconMapping для всех типов
+        iconMapping,
+        getIcon: (obj: DeckGLObject) => obj.markerType || 'bus',
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getSize: 32,
+        getSize: iconSize,
         getColor: (obj: DeckGLObject) => obj.style.color,
         getSizeScale: 1.5, // Масштаб иконки
         pickable: true,
@@ -520,6 +542,7 @@ const createDeckLayers = () => {
           }
         },
         updateTriggers: {
+          getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
           getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
           getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
         },
