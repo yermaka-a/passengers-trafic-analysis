@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-export type TileLayer = "osm" | "satellite" | "hybrid" | "openfreemap";
+export type TileLayer = "osm" | "satellite" | "hybrid" | "openfreemap" | "cartodb_positron" | "cartodb_dark";
 
 export interface TileLayerConfig {
   name: string;
@@ -43,10 +43,25 @@ export const useTilesStore = defineStore("tiles", {
         type: "raster" as const,
       },
       openfreemap: {
-        name: "OpenFreeMap",
+        name: "OpenFreeMap (мультиязычный)",
         style: "https://tiles.openfreemap.org/styles/liberty",
         attribution: "© OpenFreeMap © OpenStreetMap",
         type: "vector" as const,
+        note: "Названия на нескольких языках",
+      },
+      cartodb_positron: {
+        name: "CartoDB Positron",
+        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        attribution: "© OpenStreetMap © CartoDB",
+        type: "vector" as const,
+        note: "Одноязычный (английский)",
+      },
+      cartodb_dark: {
+        name: "CartoDB Dark Matter",
+        style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        attribution: "© OpenStreetMap © CartoDB",
+        type: "vector" as const,
+        note: "Тёмная тема",
       },
     } as Record<TileLayer, TileLayerConfig>,
   }),
@@ -61,7 +76,7 @@ export const useTilesStore = defineStore("tiles", {
     },
     loadFromStorage() {
       const saved = localStorage.getItem('currentTileLayer');
-      if (saved && ['osm', 'satellite', 'hybrid', 'openfreemap'].includes(saved)) {
+      if (saved && ['osm', 'satellite', 'hybrid', 'openfreemap', 'cartodb_positron', 'cartodb_dark'].includes(saved)) {
         this.currentLayer = saved as TileLayer;
       }
     },
