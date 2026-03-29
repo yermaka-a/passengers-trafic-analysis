@@ -527,11 +527,11 @@ const createDeckLayers = () => {
         },
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
         getSize: 24,
+        getSizeScale: (obj: DeckGLObject) => obj.style.getSizeScale || 1.5,
         getColor: (obj: DeckGLObject) => {
           // Используем цвет из style (для tint через mask)
           return obj.style.color;
         },
-        getSizeScale: 1.5, // Масштаб иконки
         pickable: true,
         autoHighlight: true,
         onClick: (info: any) => {

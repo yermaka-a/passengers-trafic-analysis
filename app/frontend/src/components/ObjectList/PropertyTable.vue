@@ -212,13 +212,15 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Checkbox
+                v-if="obj[1].type !== 'StopMarker'"
                 :model-value="obj[1].style.filled ?? false"
                 @update:model-value="toggleFill(obj[0])"
               />
+              <span v-else class="text-gray-400">-</span>
             </TableCell>
             <TableCell>
               <Slider
-                v-if="obj[1].style.filled"
+                v-if="obj[1].style.filled && obj[1].type !== 'StopMarker'"
                 @update:model-value="
                   (value) => {
                     if (value) changeFillOpacity(value, obj[0]);
@@ -234,7 +236,7 @@ const getColorBadge = (obj: DeckGLObject) => {
             </TableCell>
             <TableCell>
               <Slider
-                v-if="obj[1].type === 'CircleMarker'"
+                v-if="obj[1].type === 'CircleMarker' || obj[1].type === 'StopMarker'"
                 @update:model-value="
                   (value) => {
                     if (value) changeRadius(value, obj[0]);

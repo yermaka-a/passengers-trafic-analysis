@@ -311,7 +311,7 @@ const onCloseModal = () => {
                     class="mx-auto w-full max-w-xs"
                   />
                 </div>
-                <div class="flex gap-3 flex-wrap" v-if="obj[1].type === 'CircleMarker'">
+                <div class="flex gap-3 flex-wrap" v-if="obj[1].type === 'CircleMarker' || obj[1].type === 'StopMarker'">
                   <small class="text-sm leading-none font-medium"
                     >Размер маркера</small
                   >
