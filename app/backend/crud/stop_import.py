@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from ..services.overpass_client import OverpassClient
 from ..schemas.stop_import import OverpassStop, StopImportResponse
-from ..models.object import MapObject
+from ..models.object import MapObject, StopMetadata
 from ..storage import Storage
 from ..logger import log
 
