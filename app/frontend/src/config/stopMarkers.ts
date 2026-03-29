@@ -122,25 +122,44 @@ export function getIconBase64(icon: StopMarkerIcon, color: [number, number, numb
 }
 
 /**
- * Получить данные иконки для Deck.gl IconLayer
- * @param icon - иконка
- * @param color - цвет в формате [r, g, b, a] (0-255)
- * @returns объект для IconLayer
+ * Сгенерировать sprite atlas из всех иконок
+ * Возвращает base64 изображение и iconMapping
  */
-export function getIconData(icon: StopMarkerIcon, color: [number, number, number, number]) {
+export function generateIconAtlas(): {
+  atlas: string;
+  mapping: Record<string, { x: number; y: number; width: number; height: number; anchorX: number; anchorY: number; mask: boolean }>;
+} {
+  const iconSize = 24;
+  const icons = Object.entries(STOP_MARKER_ICONS);
+  const atlasWidth = icons.length * iconSize;
+  const atlasHeight = iconSize;
+  
+  // Генерируем SVG sprite
+  let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${atlasWidth}" height="${atlasHeight}" viewBox="0 0 ${atlasWidth} ${atlasHeight}">`;
+  
+  const mapping: Record<string, any> = {};
+  
+  icons.forEach(([key, icon], index) => {
+    const x = index * iconSize;
+    mapping[key] = {
+      x,
+      y: 0,
+      width: iconSize,
+      height: iconSize,
+      anchorX: iconSize / 2,
+      anchorY: iconSize,
+      mask: true,
+    };
+    
+    // Добавляем path с правильным offset
+    svgContent += `<g transform="translate(${x}, 0)"><path d="${icon.path}" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+  });
+  
+  svgContent += `</svg>`;
+  
   return {
-    id: icon.id,
-    name: icon.name,
-    nameRu: icon.nameRu,
-    width: icon.size[0],
-    height: icon.size[1],
-    anchorX: icon.anchor[0],
-    anchorY: icon.anchor[1],
-    // Масштабирование иконки (можно настроить)
-    sx: 1,
-    sy: 1,
-    // SVG маска для цвета
-    svg: getIconSvg(icon, color),
+    atlas: `data:image/svg+xml;base64,${btoa(svgContent)}`,
+    mapping,
   };
 }
 

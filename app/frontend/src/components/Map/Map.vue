@@ -10,7 +10,7 @@ import PlusCursor from "@/assets/plus-cursor.svg";
 import GrabCursor from "@/assets/grab-cursor.svg";
 import type { LngLatTuple, DeckGLObject } from "@/types";
 import { useTilesStore } from "@/store/useTilesStore";
-import { STOP_MARKER_ICONS, getIconBase64 } from "@/config/stopMarkers";
+import { generateIconAtlas } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
@@ -498,41 +498,28 @@ const createDeckLayers = () => {
       coordinates: o.coordinates[0]
     })));
 
-    // Генерируем iconMapping для всех типов маркеров
-    const iconMapping: Record<string, any> = {};
-    let xOffset = 0;
-    const iconSize = 24;
-    
-    // Создаём mapping для каждого типа маркера
-    Object.entries(STOP_MARKER_ICONS).forEach(([key, _icon]) => {
-      iconMapping[key] = {
-        x: xOffset,
-        y: 0,
-        width: iconSize,
-        height: iconSize,
-        anchorX: iconSize / 2,
-        anchorY: iconSize,
-        mask: true,
-      };
-      xOffset += iconSize;
-    });
-
-    // Генерируем composite iconAtlas (все иконки в одном изображении)
-    // Для простоты используем bus как base64, в будущем можно сделать sprite
-    const busIconBase64 = getIconBase64(STOP_MARKER_ICONS.bus, [0, 0, 0, 255]);
+    // Генерируем sprite atlas из всех Lucide иконок
+    const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
 
     layers.push(
       new IconLayer({
         id: "stop-markers",
         data: stopMarkers,
         // @ts-ignore - используем iconAtlas с mask: true
-        iconAtlas: busIconBase64,
+        iconAtlas,
         // @ts-ignore - iconMapping для всех типов
         iconMapping,
-        getIcon: (obj: DeckGLObject) => obj.markerType || 'bus',
+        getIcon: (obj: DeckGLObject) => {
+          const type = obj.markerType || 'bus';
+          // Проверяем что тип существует в mapping
+          return iconMapping[type] ? type : 'bus';
+        },
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getSize: iconSize,
-        getColor: (obj: DeckGLObject) => obj.style.color,
+        getSize: 24,
+        getColor: (obj: DeckGLObject) => {
+          // Используем цвет из style (для tint через mask)
+          return obj.style.color;
+        },
         getSizeScale: 1.5, // Масштаб иконки
         pickable: true,
         autoHighlight: true,
@@ -548,7 +535,7 @@ const createDeckLayers = () => {
         },
       })
     );
-    console.log("[Map] StopMarker слой добавлен");
+    console.log("[Map] StopMarker слой добавлен с iconAtlas:", Object.keys(iconMapping).length, "иконок");
   }
 
   // ========================================================================
