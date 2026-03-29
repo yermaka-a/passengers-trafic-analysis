@@ -4,7 +4,9 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -55,13 +57,16 @@ const isStopMarkerSelected = computed(() => {
         <SelectValue placeholder="Выберите тип маркера" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem
-          v-for="(icon, key) in STOP_MARKER_ICONS"
-          :key="key"
-          :value="key"
-        >
-          {{ icon.nameRu }}
-        </SelectItem>
+        <SelectGroup>
+          <SelectLabel>Тип транспорта</SelectLabel>
+          <SelectItem
+            v-for="(icon, key) in STOP_MARKER_ICONS"
+            :key="key"
+            :value="key"
+          >
+            {{ icon.nameRu }}
+          </SelectItem>
+        </SelectGroup>
       </SelectContent>
     </Select>
   </div>
