@@ -50,12 +50,8 @@ const isStopMarkerSelected = computed(() => {
     </ButtonGroup>
 
     <!-- Выбор типа маркера для StopMarker -->
-    <Select
-      v-if="isStopMarkerSelected"
-      :model-value="selectedMarkerType"
-      @update:model-value="(value) => selectedMarkerType = value as StopMarkerType"
-    >
-      <SelectTrigger>
+    <Select v-if="isStopMarkerSelected" v-model="selectedMarkerType">
+      <SelectTrigger class="w-[180px]">
         <SelectValue placeholder="Выберите тип маркера" />
       </SelectTrigger>
       <SelectContent>
