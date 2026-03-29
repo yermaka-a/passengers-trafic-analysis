@@ -53,8 +53,8 @@ class MapObject(Base):
     # Поля С default (необязательные) - должны идти после
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship должны идти последними с init=False (не участвуют в dataclass __init__)
     stop_metadata: Mapped[Optional["StopMetadata"]] = relationship(
