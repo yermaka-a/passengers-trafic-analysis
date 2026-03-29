@@ -622,6 +622,16 @@ onMounted(() => {
           // Применяем слой
           const config = tilesStore.getCurrentLayerConfig();
           console.log('[Map] Applying config:', config);
+          
+          // Для векторных стилей - применяем style напрямую
+          if (config.type === 'vector' && config.style) {
+            console.log('[Map] Switching to vector style:', config.style);
+            mapInstance.value?.setStyle(config.style as any);
+            console.log('[Map] Vector style applied successfully!');
+            return;
+          }
+          
+          // Для растровых тайлов
           const style = mapInstance.value?.getStyle();
           if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
             (style.sources["osm"] as any).tiles = config.tiles;
@@ -681,9 +691,21 @@ onMounted(() => {
     // Watch для переключения слоёв карты
     watch(
       () => tilesStore.currentLayer,
-      (newLayer) => {
+      (newLayer, oldLayer) => {
+        if (newLayer === oldLayer) return; // Пропускаем одинаковые изменения
+        
         console.log('[Map] Tile layer changed to:', newLayer);
         const config = tilesStore.getCurrentLayerConfig();
+        
+        // Для векторных стилей - применяем style напрямую
+        if (config.type === 'vector' && config.style) {
+          console.log('[Map] Switching to vector style via watch:', config.style);
+          mapInstance.value?.setStyle(config.style as any);
+          console.log('[Map] Vector style applied via watch!');
+          return;
+        }
+        
+        // Для растровых тайлов
         const style = mapInstance.value?.getStyle();
         if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
           (style.sources["osm"] as any).tiles = config.tiles;

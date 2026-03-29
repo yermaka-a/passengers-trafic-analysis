@@ -27,7 +27,7 @@ const handlePanelSync = async (event: CustomEvent) => {
     if (tilesStore.currentLayer !== data.layer) {
       tilesStore.setLayer(data.layer as typeof tilesStore.currentLayer);
       console.log('[MapOnly] Tile layer changed to:', data.layer);
-      // Применяем слой - карта обновится через watch
+      // Карта обновится через watch в Map.vue
     }
   }
 };
