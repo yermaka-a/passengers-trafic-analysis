@@ -500,6 +500,12 @@ const createDeckLayers = () => {
 
     // Генерируем sprite atlas из всех Lucide иконок
     const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+    
+    console.log("[Map] IconAtlas сгенерирован:", {
+      иконок: Object.keys(iconMapping).length,
+      типы: Object.keys(iconMapping),
+      mapping: iconMapping
+    });
 
     layers.push(
       new IconLayer({

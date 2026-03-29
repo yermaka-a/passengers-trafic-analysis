@@ -118,7 +118,8 @@ export function getIconSvg(icon: StopMarkerIcon, color: [number, number, number,
  */
 export function getIconBase64(icon: StopMarkerIcon, color: [number, number, number, number] = [0, 0, 0, 255]): string {
   const svg = getIconSvg(icon, color);
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  // Используем encodeURIComponent для корректной работы с Unicode
+  return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }
 
 /**
@@ -157,8 +158,9 @@ export function generateIconAtlas(): {
   
   svgContent += `</svg>`;
   
+  // Используем encodeURIComponent для корректной работы с Unicode
   return {
-    atlas: `data:image/svg+xml;base64,${btoa(svgContent)}`,
+    atlas: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`,
     mapping,
   };
 }
