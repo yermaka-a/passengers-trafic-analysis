@@ -128,7 +128,7 @@ const onCloseModal = () => {
 </script>
 
 <template>
-  <div class="px-8 h-dvh overflow-scroll pb-60">
+  <div class="px-8 h-full overflow-y-auto pb-60">
     <div v-if="props.objects && props.objects.length > 0" class="flex gap-3 flex-wrap">
       <Card
         v-for="(obj, idx) in props.objects"
