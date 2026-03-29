@@ -110,16 +110,28 @@ export const useDeckGL = () => {
     const draft = mapObjectStore.getDraftObject;
     const chosenType = mapObjectStore.getChosenObjectType[0];
 
-    // Для StopMarker - создаём и сразу завершаем объект
+    // Для StopMarker - добавляем точку как обычный маркер (CircleMarker)
+    // StopMarker создаётся через кнопку "Добавить" как обычный объект
     if (chosenType === 'StopMarker') {
+      // Если нет draft - начинаем создание
       if (!draft) {
         // Получаем выбранный тип маркера из BrushTable
         // @ts-ignore - selectedMarkerType хранится в компоненте BrushTable
         const selectedMarkerType = (window as any).__selectedMarkerType || 'bus';
-        
+
         // Начинаем создание StopMarker с одной точкой и markerType
         mapObjectStore.startDraftObject(selectedMarkerType as StopMarkerType);
         mapObjectStore.addCoordinateToDraft(lngLat);
+
+        // Сохраняем в историю
+        pushToHistory({
+          draftId: "draft",
+          coordinates: [lngLat],
+          type: "draft",
+        });
+      } else if (draft.type === 'StopMarker') {
+        // Обновляем координату существующего StopMarker (только одна точка)
+        mapObjectStore.setDraftCoordinates([lngLat]);
         
         // Сохраняем в историю
         pushToHistory({
@@ -127,11 +139,6 @@ export const useDeckGL = () => {
           coordinates: [lngLat],
           type: "draft",
         });
-        
-        // Сразу завершаем создание StopMarker
-        setTimeout(() => {
-          finalizeObject();
-        }, 100);
       }
       return;
     }

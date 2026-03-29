@@ -554,8 +554,32 @@ const createDeckLayers = () => {
     const draftColorRGBA = hexToRGBA(draftColor.value, 255);
     const draftColorRGBATransparent = hexToRGBA(draftColor.value, 100);
 
+    // StopMarker - 1 точка с иконкой
+    if (draft.type === "StopMarker" && draft.coordinates.length > 0) {
+      const markerType = (draft as any).markerType || 'bus';
+      const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+      
+      layers.push(
+        new IconLayer({
+          id: "draft-stop-marker",
+          data: [draft],
+          // @ts-ignore - используем iconAtlas с mask: true
+          iconAtlas,
+          // @ts-ignore - iconMapping для всех типов
+          iconMapping,
+          getIcon: () => markerType,
+          getPosition: (d: typeof draft) => d.coordinates[0] ?? [0, 0],
+          getSize: 24,
+          getColor: draftColorRGBA,
+          getSizeScale: 1.5,
+          pickable: false,
+        })
+      );
+      console.log("[Map] Draft StopMarker слой добавлен, тип:", markerType);
+    }
+    
     // CircleMarker - даже с 1 точкой
-    if (draft.type === "CircleMarker" && draft.coordinates.length > 0) {
+    else if (draft.type === "CircleMarker" && draft.coordinates.length > 0) {
       layers.push(
         new ScatterplotLayer({
           id: "draft-circle",

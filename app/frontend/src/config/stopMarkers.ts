@@ -1,9 +1,18 @@
 /**
- * Иконки для маркеров остановок на основе Lucide Icons
- * https://lucide.dev/icons/
+ * Иконки для маркеров остановок из lucide-vue-next
  * 
- * Все иконки используют fill="currentColor" для изменения цвета через style.color
+ * Все иконки используют stroke для изменения цвета через mask в Deck.gl IconLayer
  */
+
+import {
+  Bus,
+  BusFront,
+  TrainFront,
+  CarTaxiFront,
+  CarFront,
+  Bike,
+  MapPin,
+} from "lucide-vue-next";
 
 export type StopMarkerType = 'bus' | 'train' | 'tram' | 'taxi' | 'car' | 'bike' | 'default';
 
@@ -11,7 +20,7 @@ export interface StopMarkerIcon {
   id: StopMarkerType;
   name: string;
   nameRu: string;
-  // SVG path data (без SVG обёртки, только path данные)
+  // SVG path data
   path: string;
   // Размер иконки [width, height]
   size: [number, number];
@@ -19,33 +28,30 @@ export interface StopMarkerIcon {
   anchor: [number, number];
 }
 
-// Иконка автобуса (Lucide: Bus)
-const busPath = "M4 8h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2zm0-4h16a2 2 0 0 1 2 2v2H2V6a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
-
-// Иконка поезда (Lucide: Train)
-const trainPath = "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2zm-2 4h2v2H4v-2zm14 0h2v2h-2v-2z";
-
-// Иконка трамвая (адаптировано из Lucide: Train Front)
-const tramPath = "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm2 4h12V6H6v2zm0 4h12v-2H6v2zm0 4h12v-2H6v2z";
-
-// Иконка такси (Lucide: Car)
-const taxiPath = "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
-
-// Иконка автомобиля (Lucide: Car)
-const carPath = "M4 10h16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2zm2-4h12a2 2 0 0 1 2 2v2H4V8a2 2 0 0 1 2-2zm2 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm12 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z";
-
-// Иконка велосипеда (Lucide: Bike)
-const bikePath = "M5 18a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm14 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM5 12h2l2-6h6l2 6h2M12 6v6";
-
-// Иконка по умолчанию (Lucide: MapPin)
-const defaultPath = "M12 2c-4.4 0-8 3.6-8 8 0 4.4 8 12 8 12s8-7.6 8-12c0-4.4-3.6-8-8-8zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z";
+// Извлекаем path из Lucide компонента
+const getPathFromLucideComponent = (component: any): string => {
+  if (!component || !component.render) return '';
+  
+  // Для lucide-vue-next компоненты хранят template с SVG
+  const template = component.render.toString();
+  const match = template.match(/d="([^"]*)"/g);
+  if (!match) return '';
+  
+  // Берём все path и объединяем
+  const paths = match.map((m: string) => {
+    const pathMatch = m.match(/d="([^"]*)"/);
+    return pathMatch ? pathMatch[1] : '';
+  }).filter(Boolean);
+  
+  return paths.join(' ');
+};
 
 export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
   bus: {
     id: 'bus',
     name: 'Bus',
     nameRu: 'Автобус',
-    path: busPath,
+    path: getPathFromLucideComponent(Bus),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -53,7 +59,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'train',
     name: 'Train',
     nameRu: 'Поезд',
-    path: trainPath,
+    path: getPathFromLucideComponent(TrainFront),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -61,7 +67,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'tram',
     name: 'Tram',
     nameRu: 'Трамвай',
-    path: tramPath,
+    path: getPathFromLucideComponent(BusFront), // Используем BusFront как заглушку
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -69,7 +75,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'taxi',
     name: 'Taxi',
     nameRu: 'Такси',
-    path: taxiPath,
+    path: getPathFromLucideComponent(CarTaxiFront),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -77,7 +83,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'car',
     name: 'Car',
     nameRu: 'Автомобиль',
-    path: carPath,
+    path: getPathFromLucideComponent(CarFront),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -85,7 +91,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'bike',
     name: 'Bike',
     nameRu: 'Велосипед',
-    path: bikePath,
+    path: getPathFromLucideComponent(Bike),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -93,7 +99,7 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
     id: 'default',
     name: 'Default',
     nameRu: 'Маркер',
-    path: defaultPath,
+    path: getPathFromLucideComponent(MapPin),
     size: [24, 24],
     anchor: [12, 24],
   },
@@ -101,9 +107,6 @@ export const STOP_MARKER_ICONS: Record<StopMarkerType, StopMarkerIcon> = {
 
 /**
  * Получить SVG строку для иконки с указанным цветом
- * @param icon - иконка
- * @param color - цвет в формате [r, g, b, a] (0-255)
- * @returns SVG строка
  */
 export function getIconSvg(icon: StopMarkerIcon, color: [number, number, number, number]): string {
   const colorStr = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
@@ -112,19 +115,14 @@ export function getIconSvg(icon: StopMarkerIcon, color: [number, number, number,
 
 /**
  * Получить base64 SVG для использования в iconAtlas
- * @param icon - иконка
- * @param color - цвет в формате [r, g, b, a] (0-255)
- * @returns base64 encoded SVG
  */
 export function getIconBase64(icon: StopMarkerIcon, color: [number, number, number, number] = [0, 0, 0, 255]): string {
   const svg = getIconSvg(icon, color);
-  // Используем encodeURIComponent для корректной работы с Unicode
   return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
 }
 
 /**
  * Сгенерировать sprite atlas из всех иконок
- * Возвращает base64 изображение и iconMapping
  */
 export function generateIconAtlas(): {
   atlas: string;
@@ -158,7 +156,6 @@ export function generateIconAtlas(): {
   
   svgContent += `</svg>`;
   
-  // Используем encodeURIComponent для корректной работы с Unicode
   return {
     atlas: `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgContent)))}`,
     mapping,
