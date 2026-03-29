@@ -123,8 +123,8 @@ const openObjectPopup = (id: string) => {
               <SelectItem value="all">Все типы</SelectItem>
               <SelectItem value="Polygon">Полигоны</SelectItem>
               <SelectItem value="Polyline">Полилинии</SelectItem>
-              <SelectItem value="CircleMarker">Маркеры</SelectItem>
-              <SelectItem value="StopMarker">Маркеры остановок</SelectItem>
+              <SelectItem value="CircleMarker">Маркеры-круг</SelectItem>
+              <SelectItem value="StopMarker">Маркеры</SelectItem>
             </SelectContent>
           </Select>
           

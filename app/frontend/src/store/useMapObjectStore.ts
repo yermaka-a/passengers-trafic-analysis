@@ -18,8 +18,8 @@ import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 const ObjectsTypes = [
   ["Polygon", "Полигон"],
   ["Polyline", "Полилайн"],
-  ["CircleMarker", "Маркер"],
-  ["StopMarker", "Маркер остановки"],
+  ["CircleMarker", "Маркер-круг"],
+  ["StopMarker", "Маркер"],
   ["Edit", "Редактировать объект"],
 ] as const;
 
