@@ -109,9 +109,12 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
   // Конвертируем цвет из RGBA в hex (используем color)
   const color = rgbaToHex(obj.style.color ?? [0, 128, 255, 255]);
 
-  // Используем значения из strokeState
-  const weight = state?.strokeWidth ?? obj.style.strokeWidth;
-  const dashArray = state?.strokeDasharray ?? obj.style.strokeDasharray;
+  // Для StopMarker не используем stroke/fill свойства
+  const isStopMarker = obj.type === 'StopMarker';
+
+  // Используем значения из strokeState (кроме StopMarker)
+  const weight = isStopMarker ? undefined : (state?.strokeWidth ?? obj.style.strokeWidth);
+  const dashArray = isStopMarker ? undefined : (state?.strokeDasharray ?? obj.style.strokeDasharray);
 
   return {
     latlng,
@@ -122,11 +125,11 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       customName: obj.customName ?? null,
       description: obj.description ?? null,
       color,
-      stroke: (obj.style.strokeWidth ?? 0) > 0, // Флаг включённости обводки
-      weight: weight, // Фактическая жирность из strokeState
-      fill: obj.style.filled,
-      fillOpacity: obj.style.fillOpacity,
-      dashArray: dashArray ? Array.from(dashArray) : null, // Фактический пунктир из strokeState
+      stroke: isStopMarker ? undefined : ((obj.style.strokeWidth ?? 0) > 0),
+      weight: weight,
+      fill: isStopMarker ? undefined : (obj.style.filled ?? false),
+      fillOpacity: isStopMarker ? undefined : (obj.style.fillOpacity ?? 0.5),
+      dashArray: dashArray ? Array.from(dashArray) : undefined,
       markerType: obj.markerType ?? null, // Для StopMarker
     },
   };

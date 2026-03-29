@@ -520,14 +520,20 @@ const createDeckLayers = () => {
           console.log("[Map] getIcon для", obj.id, ":", {
             markerType: obj.markerType,
             type,
-            exists: iconMapping[type] ? true : false
+            exists: iconMapping[type] ? true : false,
+            getSizeScale: obj.style.getSizeScale
           });
           // Проверяем что тип существует в mapping
           return iconMapping[type] ? type : 'bus';
         },
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
         getSize: 24,
-        getSizeScale: (obj: DeckGLObject) => obj.style.getSizeScale || 1.5,
+        // @ts-ignore - getSizeScale может быть функцией
+        getSizeScale: (obj: DeckGLObject) => {
+          const scale = obj.style.getSizeScale || 1.5;
+          console.log("[Map] getSizeScale для", obj.id, ":", scale);
+          return scale;
+        },
         getColor: (obj: DeckGLObject) => {
           // Используем цвет из style (для tint через mask)
           return obj.style.color;
@@ -543,6 +549,7 @@ const createDeckLayers = () => {
           getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
           getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
           getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
+          getSizeScale: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale })),
         },
       })
     );

@@ -42,6 +42,10 @@ class Objects:
 
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
+                
+                # Для StopMarker не сохраняем ненужные свойства
+                is_stop_marker = options.obj_type == 'StopMarker'
+                
                 log.info(
                     "create_object",
                     extra={
@@ -49,6 +53,7 @@ class Objects:
                         "name": options.name,
                         "obj_type": options.obj_type,
                         "dash_array": options.dash_array,
+                        "marker_type": options.marker_type,
                     },
                 )
                 new_obj = MapObject(
@@ -56,15 +61,15 @@ class Objects:
                     color=options.color,
                     custom_name=options.custom_name,
                     description=options.description,
-                    fill=options.fill,
-                    fill_opacity=options.fill_opacity,
+                    fill=options.fill if not is_stop_marker else None,
+                    fill_opacity=options.fill_opacity if not is_stop_marker else None,
                     name=options.name,
-                    stroke=options.stroke,
-                    weight=options.weight,
+                    stroke=options.stroke if not is_stop_marker else None,
+                    weight=options.weight if not is_stop_marker else None,
                     latlng=latlng,
                     obj_type=options.obj_type,
-                    dash_array=options.dash_array,
-                    marker_type=options.marker_type,  # ← Добавлено!
+                    dash_array=options.dash_array if not is_stop_marker else None,
+                    marker_type=options.marker_type,
                 )
 
                 ls.add(new_obj)
@@ -95,6 +100,10 @@ class Objects:
 
                 options = obj.options
                 latlng = [p.model_dump() for p in obj.latlng]
+                
+                # Для StopMarker не сохраняем ненужные свойства
+                is_stop_marker = options.obj_type == 'StopMarker'
+                
                 log.info(
                     "update_object",
                     extra={
@@ -114,15 +123,15 @@ class Objects:
                     color=options.color,
                     custom_name=options.custom_name,
                     description=options.description,
-                    fill=options.fill,
-                    fill_opacity=options.fill_opacity,
+                    fill=options.fill if not is_stop_marker else None,
+                    fill_opacity=options.fill_opacity if not is_stop_marker else None,
                     name=options.name,
-                    stroke=options.stroke,
-                    weight=options.weight,
+                    stroke=options.stroke if not is_stop_marker else None,
+                    weight=options.weight if not is_stop_marker else None,
                     latlng=latlng,
                     obj_type=options.obj_type,
-                    dash_array=options.dash_array,
-                    marker_type=options.marker_type,  # ← Добавлено!
+                    dash_array=options.dash_array if not is_stop_marker else None,
+                    marker_type=options.marker_type,
                 )
 
                 ls.merge(updated_obj)
