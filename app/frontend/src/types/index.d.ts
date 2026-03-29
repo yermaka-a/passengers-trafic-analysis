@@ -57,6 +57,7 @@ export interface DeckGLStyle {
   filled?: boolean;
   fillOpacity?: number;
   radius?: number; // для CircleMarker
+  getSizeScale?: number; // для StopMarker (IconLayer)
 }
 
 /** Объект Deck.gl для отображения на карте */

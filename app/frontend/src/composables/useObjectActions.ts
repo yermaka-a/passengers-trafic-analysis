@@ -48,10 +48,11 @@ export const useObjectActions = () => {
    */
   const changeDash = async (value: number[], id: string) => {
     const obj = mapObjectStore.Objects.get(id);
-    if (obj && value) {
+    // Не применяем пунктир к StopMarker и CircleMarker
+    if (obj && value && obj.type !== 'StopMarker' && obj.type !== 'CircleMarker') {
       const dashValue =
         value[0] === 0 ? [0, 0] : ([value[0], value[0]! / 2] as [number, number]);
-      
+
       mapObjectStore.updateObjectStyle(id, {
         strokeDasharray: dashValue as [number, number],
       });
@@ -65,7 +66,8 @@ export const useObjectActions = () => {
    */
   const changeFillOpacity = async (value: number[], id: string) => {
     const obj = mapObjectStore.Objects.get(id);
-    if (obj && value) {
+    // Не применяем прозрачность к StopMarker
+    if (obj && value && obj.type !== 'StopMarker') {
       mapObjectStore.updateObjectStyle(id, { fillOpacity: value[0] });
       const updatedObj = mapObjectStore.getObjectById(id);
       if (updatedObj) await updateObjectInBackend(updatedObj);
@@ -77,7 +79,8 @@ export const useObjectActions = () => {
    */
   const changeWeight = async (value: number[], id: string) => {
     const obj = mapObjectStore.Objects.get(id);
-    if (obj && value) {
+    // Не применяем обводку к StopMarker
+    if (obj && value && obj.type !== 'StopMarker') {
       mapObjectStore.updateObjectStyle(id, { strokeWidth: value[0] });
       const updatedObj = mapObjectStore.getObjectById(id);
       if (updatedObj) await updateObjectInBackend(updatedObj);
@@ -89,7 +92,8 @@ export const useObjectActions = () => {
    */
   const toggleFill = async (id: string) => {
     const obj = mapObjectStore.Objects.get(id);
-    if (obj) {
+    // Не применяем заливку к StopMarker
+    if (obj && obj.type !== 'StopMarker') {
       mapObjectStore.updateObjectStyle(id, { filled: !obj.style.filled });
       const updatedObj = mapObjectStore.getObjectById(id);
       if (updatedObj) await updateObjectInBackend(updatedObj);
@@ -101,8 +105,13 @@ export const useObjectActions = () => {
    */
   const changeRadius = async (value: number[], id: string) => {
     const obj = mapObjectStore.Objects.get(id);
-    if (obj && value) {
-      mapObjectStore.updateObjectStyle(id, { radius: value[0] });
+    if (obj && value && value[0]) {
+      if (obj.type === 'StopMarker') {
+        // Для StopMarker используем getSizeScale (1.0 - 3.0)
+        mapObjectStore.updateObjectStyle(id, { radius: value[0], getSizeScale: value[0] / 10 });
+      } else {
+        mapObjectStore.updateObjectStyle(id, { radius: value[0] });
+      }
       const updatedObj = mapObjectStore.getObjectById(id);
       if (updatedObj) await updateObjectInBackend(updatedObj);
     }

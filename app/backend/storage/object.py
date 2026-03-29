@@ -105,6 +105,8 @@ class Objects:
                         "fill": options.fill,
                         "fill_opacity": options.fill_opacity,
                         "dash_array": options.dash_array,
+                        "marker_type": options.marker_type,
+                        "obj_type": options.obj_type,
                     },
                 )
                 updated_obj = MapObject(
