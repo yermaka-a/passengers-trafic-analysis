@@ -3,6 +3,8 @@ Overpass API клиент для получения остановок обще�
 
 Использует асинхронные запросы с rate limiting (2 запроса/сек)
 """
+# -*- coding: utf-8 -*-
+
 import httpx
 import asyncio
 from typing import List, Dict, Optional

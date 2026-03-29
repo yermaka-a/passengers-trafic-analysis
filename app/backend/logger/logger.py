@@ -1,6 +1,17 @@
+"""
+Настройка логирования с UTF-8 кодировкой
+"""
+# -*- coding: utf-8 -*-
+
 import logging
 import structlog
 import sys
+
+# Настраиваем UTF-8 кодировку для stdout/stderr
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
 
 from structlog.stdlib import BoundLogger
 
@@ -41,7 +52,7 @@ console_formatter = structlog.stdlib.ProcessorFormatter(
     foreign_pre_chain=shared_processors,
 )
 
-file_handler = logging.FileHandler(LogConfig.LOG_FILE_PATH)
+file_handler = logging.FileHandler(LogConfig.LOG_FILE_PATH, encoding='utf-8')
 file_handler.setFormatter(file_formatter)
 
 console_handler = logging.StreamHandler(sys.stdout)
