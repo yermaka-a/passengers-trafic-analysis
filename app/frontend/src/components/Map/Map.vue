@@ -486,117 +486,14 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - кластеризация через MapLibre GL JS (нативная)
+  // 4. StopMarker layer - показываем все маркеры через Deck.gl IconLayer
+  // MapLibre кластеризация нестабильна (NaN координаты при зуме), поэтому не используем
   const stopMarkers = objectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
-  const currentZoom = mapInstance.value?.getZoom() ?? 0;
-
-  // На зумах < 7 показываем кластеры через MapLibre, на 7+ показываем Deck.gl иконки
-  // ВАЖНО: создаём кластеры только один раз при загрузке, не обновляем динамически
-  if (stopMarkers.length > 0 && mapInstance.value && !mapInstance.value.getSource('stop-markers-cluster')) {
-    // Конвертируем в GeoJSON
-    const geojson: GeoJSON.FeatureCollection = {
-      type: 'FeatureCollection',
-      features: stopMarkers.map(obj => ({
-        type: 'Feature' as const,
-        properties: {
-          id: obj.id,
-          name: obj.name,
-          markerType: obj.markerType || 'pin',
-          color: obj.style.color,
-          radius: obj.style.radius,
-          getSizeScale: obj.style.getSizeScale
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0]
-        }
-      }))
-    };
-
-    // Создаём источник только один раз при первой загрузке
-    mapInstance.value.addSource('stop-markers-cluster', {
-      type: 'geojson',
-      data: geojson,
-      cluster: true,
-      clusterMaxZoom: 6, // Кластеризация на зумах 0-6
-      clusterRadius: 50
-    });
-
-    // Слой кластеров (круги)
-    mapInstance.value.addLayer({
-      id: 'stop-markers-clusters',
-      type: 'circle',
-      source: 'stop-markers-cluster',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#51bbd6',  // < 100: голубой
-          100,
-          '#f1f075',  // 100-750: жёлтый
-          750,
-          '#f28cb1'   // >= 750: розовый
-        ],
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          20,  // < 100: 20px
-          100,
-          30,  // 100-750: 30px
-          750,
-          40   // >= 750: 40px
-        ]
-      }
-    });
-
-    // Примечание: text-field требует glyphs в стиле карты
-    // demotiles не предоставляет glyphs, поэтому цифры не показываем
-
-    // Клик на кластер - зум
-    mapInstance.value.on('click', 'stop-markers-clusters', (e: any) => {
-      const features = mapInstance.value!.queryRenderedFeatures(e.point, {
-        layers: ['stop-markers-clusters']
-      });
-      if (features.length > 0 && features[0]) {
-        const clusterId = (features[0].properties as any).cluster_id;
-        const source = mapInstance.value!.getSource('stop-markers-cluster') as any;
-        if (source && clusterId) {
-          // getClusterExpansionZoom возвращает число, не Promise
-          const zoom = source.getClusterExpansionZoom(clusterId);
-          const coords = (features[0].geometry as any)?.coordinates;
-          if (coords && Array.isArray(coords) && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
-            mapInstance.value!.easeTo({
-              center: [coords[0], coords[1]] as [number, number],
-              zoom: Math.min(zoom, 16)
-            });
-          }
-        }
-      }
-    });
-
-    // Курсор при наведении
-    mapInstance.value.on('mouseenter', 'stop-markers-clusters', () => {
-      mapInstance.value!.getCanvas().style.cursor = 'pointer';
-    });
-    mapInstance.value.on('mouseleave', 'stop-markers-clusters', () => {
-      mapInstance.value!.getCanvas().style.cursor = '';
-    });
-  }
-
-  // Показываем/скрываем слои в зависимости от зума
-  const showClusters = currentZoom < 7;
-  const showIcons = currentZoom >= 7;
-
-  if (mapInstance.value && mapInstance.value.getSource('stop-markers-cluster')) {
-    mapInstance.value.setLayoutProperty('stop-markers-clusters', 'visibility', showClusters ? 'visible' : 'none');
-  }
-
-  // Deck.gl иконки показываем только на зумах 7+
-  if (showIcons) {
+  if (stopMarkers.length > 0) {
+    // Генерируем sprite atlas из всех Lucide иконок
     const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
 
     layers.push(
