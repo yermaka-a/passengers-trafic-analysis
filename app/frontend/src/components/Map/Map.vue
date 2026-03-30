@@ -14,7 +14,7 @@ import { generateIconAtlas } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer, TextLayer } from "@deck.gl/layers";
+import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
@@ -553,13 +553,13 @@ const createDeckLayers = () => {
           getPosition: (d: any) => d.position,
           getFillColor: (d: any) => {
             const count = d.count;
-            if (count < 10) return [0, 188, 212, 200];      // голубой
-            if (count < 50) return [255, 152, 0, 200];      // оранжевый
-            return [244, 67, 54, 200];                       // красный
+            if (count < 10) return [0, 188, 212, 220];      // голубой
+            if (count < 50) return [255, 152, 0, 220];      // оранжевый
+            return [244, 67, 54, 220];                       // красный
           },
-          getRadius: (d: any) => Math.max(20, Math.min(60, 15 + d.count * 0.5)),
+          getRadius: (d: any) => Math.max(30, Math.min(80, 25 + d.count)),
           getLineColor: [255, 255, 255],
-          getLineWidth: 2,
+          getLineWidth: 3,
           pickable: true,
           onClick: (info: any) => {
             if (info.object) {
@@ -571,25 +571,6 @@ const createDeckLayers = () => {
               console.log(`[Map] Cluster: ${info.object.count} остановок`);
             }
           }
-        })
-      );
-
-      // TextLayer для цифр
-      layers.push(
-        new TextLayer({
-          id: "stop-markers-cluster-text",
-          data: clusterData,
-          getPosition: (d: any) => d.position,
-          getText: (d: any) => d.count.toString(),
-          getSize: 18,
-          getAlignmentBaseline: 'center',
-          getAnchorPosition: 'center',
-          getColor: [255, 255, 255],
-          fontWeight: 'bold',
-          fontFamily: 'Arial',
-          // Фон для читаемости
-          getBackgroundColor: [0, 0, 0, 180],
-          getPadding: [4, 2, 4, 2]
         })
       );
     } else {
