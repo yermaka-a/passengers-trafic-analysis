@@ -14,7 +14,7 @@ import { generateIconAtlas } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
+import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer, TextLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
@@ -486,50 +486,148 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - показываем все маркеры через Deck.gl IconLayer
-  // MapLibre кластеризация нестабильна (NaN координаты при зуме), поэтому не используем
+  // 4. StopMarker layer - кластеризация через Deck.gl
+  // На зумах < 5 показываем кластеры (круги с количеством)
+  // На зумах 5+ показываем все иконки
   const stopMarkers = objectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
-  if (stopMarkers.length > 0) {
-    // Генерируем sprite atlas из всех Lucide иконок
-    const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+  const currentZoom = mapInstance.value?.getZoom() ?? 0;
+  const showClusters = currentZoom < 5;
 
-    layers.push(
-      new IconLayer({
-        id: "stop-markers",
-        data: stopMarkers,
-        iconAtlas,
-        iconMapping,
-        getIcon: (obj: DeckGLObject) => {
-          const type = obj.markerType || 'pin';
-          return iconMapping[type] ? type : 'pin';
-        },
-        getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getSize: (obj: DeckGLObject) => {
-          const scale = obj.style.getSizeScale || 1.5;
-          return 24 * scale;
-        },
-        sizeScale: 1,
-        sizeMinPixels: 10,
-        sizeMaxPixels: 100,
-        getColor: (obj: DeckGLObject) => obj.style.color,
-        pickable: true,
-        autoHighlight: true,
-        onClick: (info: any) => {
-          if (info.object) {
-            selectObject((info.object as DeckGLObject).id);
-          }
-        },
-        updateTriggers: {
-          getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
-          getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
-          getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
-          getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
+  if (stopMarkers.length > 0) {
+    if (showClusters) {
+      // Группируем маркеры по клеткам 10x10 пикселей
+      const clusterSize = 10;
+      const clusters = new Map<string, {
+        count: number;
+        centerLat: number;
+        centerLng: number;
+        lats: number[];
+        lngs: number[];
+      }>();
+
+      stopMarkers.forEach(obj => {
+        const coord = obj.coordinates[0];
+        if (!coord) return;
+
+        const [lng, lat] = coord;
+        // Округляем до клетки
+        const cellLat = Math.round(lat * clusterSize) / clusterSize;
+        const cellLng = Math.round(lng * clusterSize) / clusterSize;
+        const key = `${cellLat.toFixed(4)}-${cellLng.toFixed(4)}`;
+
+        if (!clusters.has(key)) {
+          clusters.set(key, {
+            count: 0,
+            centerLat: 0,
+            centerLng: 0,
+            lats: [],
+            lngs: []
+          });
         }
-      })
-    );
+
+        const cluster = clusters.get(key)!;
+        cluster.count++;
+        cluster.lats.push(lat);
+        cluster.lngs.push(lng);
+      });
+
+      // Вычисляем центры кластеров
+      const clusterData = Array.from(clusters.entries()).map(([key, data]) => {
+        const centerLat = data.lats.reduce((a, b) => a + b, 0) / data.lats.length;
+        const centerLng = data.lngs.reduce((a, b) => a + b, 0) / data.lngs.length;
+        return {
+          position: [centerLng, centerLat],
+          count: data.count,
+          key
+        };
+      });
+
+      // ScatterplotLayer для кругов кластеров
+      layers.push(
+        new ScatterplotLayer({
+          id: "stop-markers-clusters",
+          data: clusterData,
+          getPosition: (d: any) => d.position,
+          getFillColor: (d: any) => {
+            const count = d.count;
+            if (count < 10) return [0, 188, 212, 200];      // голубой
+            if (count < 50) return [255, 152, 0, 200];      // оранжевый
+            return [244, 67, 54, 200];                       // красный
+          },
+          getRadius: (d: any) => Math.max(20, Math.min(60, 15 + d.count * 0.5)),
+          getLineColor: [255, 255, 255],
+          getLineWidth: 2,
+          pickable: true,
+          onClick: (info: any) => {
+            if (info.object) {
+              // Зум на кластер
+              mapInstance.value?.flyTo({
+                center: [info.object.position[0], info.object.position[1]],
+                zoom: Math.min(currentZoom + 2, 16)
+              });
+              console.log(`[Map] Cluster: ${info.object.count} остановок`);
+            }
+          }
+        })
+      );
+
+      // TextLayer для цифр
+      layers.push(
+        new TextLayer({
+          id: "stop-markers-cluster-text",
+          data: clusterData,
+          getPosition: (d: any) => d.position,
+          getText: (d: any) => d.count.toString(),
+          getSize: 16,
+          getAlignmentBaseline: 'center',
+          getAnchorPosition: 'center',
+          getColor: [255, 255, 255],
+          fontWeight: 'bold',
+          fontFamily: 'Arial'
+        })
+      );
+    } else {
+      // Показываем все иконки на зумах 5+
+      const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+
+      layers.push(
+        new IconLayer({
+          id: "stop-markers",
+          data: stopMarkers,
+          iconAtlas,
+          iconMapping,
+          getIcon: (obj: DeckGLObject) => {
+            const type = obj.markerType || 'pin';
+            return iconMapping[type] ? type : 'pin';
+          },
+          getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
+          getSize: (obj: DeckGLObject) => {
+            const scale = obj.style.getSizeScale || 1.5;
+            return 24 * scale;
+          },
+          sizeScale: 1,
+          sizeMinPixels: 10,
+          sizeMaxPixels: 100,
+          getColor: (obj: DeckGLObject) => obj.style.color,
+          pickable: true,
+          autoHighlight: true,
+          onClick: (info: any) => {
+            if (info.object) {
+              selectObject((info.object as DeckGLObject).id);
+            }
+          },
+          updateTriggers: {
+            getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
+            getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
+            getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
+            getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
+          }
+        })
+      );
+    }
   }
 
   // ========================================================================
