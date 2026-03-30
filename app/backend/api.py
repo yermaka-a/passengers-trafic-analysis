@@ -316,7 +316,7 @@ class Api:
 
     def export_stops(self, data: dict):
         """
-        Экспортировать остановки в Excel файл
+        Экспортировать остановки в Excel файл через Polars
         
         Args:
             data: {}
@@ -326,7 +326,7 @@ class Api:
         """
         try:
             from .models.object import MapObject, StopMetadata
-            import pandas as pd
+            import polars as pl
             import webview
             from webview import FileDialog
             from pathlib import Path
@@ -349,17 +349,15 @@ class Api:
                         "message": "Нет остановок для экспорта"
                     }
                 
-                # Создаём DataFrame с основными данными
-                data = []
-                for map_obj, stop_meta in objects:
-                    data.append({
-                        'name': map_obj.name,
-                        'description': map_obj.description or '',
-                        'latitude': map_obj.latitude,
-                        'longitude': map_obj.longitude
-                    })
+                # Создаём DataFrame через Polars
+                data = {
+                    'name': [obj.name for obj, _ in objects],
+                    'description': [obj.description or '' for obj, _ in objects],
+                    'latitude': [obj.latitude for obj, _ in objects],
+                    'longitude': [obj.longitude for obj, _ in objects]
+                }
                 
-                df = pd.DataFrame(data)
+                df = pl.DataFrame(data)
                 
                 # Диалог выбора папки
                 window = webview.active_window()
@@ -385,8 +383,18 @@ class Api:
                 filename = f'stops_export_{timestamp}.xlsx'
                 file_path = Path(folder) / filename
                 
-                # Сохраняем Excel файл
-                df.to_excel(file_path, index=False, engine='openpyxl')
+                # Сохраняем Excel файл через xlsxwriter
+                df.write_excel(
+                    file_path,
+                    worksheet='Stops',
+                    engine='xlsxwriter',
+                    column_formats={
+                        'name': {'font_color': 'black'},
+                        'description': {'font_color': 'black'},
+                        'latitude': {'num_format': '0.000000'},
+                        'longitude': {'num_format': '0.000000'},
+                    }
+                )
                 
                 log.info("export_stops", extra={"count": len(objects), "file": str(file_path)})
                 return {
