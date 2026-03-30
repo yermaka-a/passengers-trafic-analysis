@@ -683,78 +683,150 @@ class Api:
     # Пассажиропоток (Passenger Flow)
     # ========================================================================
 
-    def update_stop_flow(self, data: dict):
+    def create_passenger_flow(self, data: dict):
         """
-        Обновить пассажиропоток остановки
+        Создать пассажиропоток
         
         Args:
-            data: {"stop_id": "...", "date": "YYYY-MM-DD", "hour": 0-23, "incoming": N, "outgoing": N}
+            data: {
+                "name": "...",
+                "date": "YYYY-MM-DD",
+                "time_period": "morning_peak",
+                "direction": "forward",
+                "description": "...",
+                "route_id": "...",
+                "stops": [{"stop_id": "...", "order": 1, "passengers_on_board": 10, "passengers_off_board": 5}, ...]
+            }
+            
+        Returns:
+            {"status": "success", "flow_id": "..."}
+        """
+        try:
+            flow_id = self.passenger_flow.create_flow(
+                name=data.get("name"),
+                date=data.get("date"),
+                time_period=data.get("time_period", "off_peak"),
+                direction=data.get("direction", "forward"),
+                description=data.get("description"),
+                route_id=data.get("route_id"),
+                stops_list=data.get("stops")
+            )
+            if flow_id:
+                return {"status": "success", "flow_id": flow_id}
+            else:
+                return {"status": "failed", "message": "Не удалось создать поток"}
+        except Exception as e:
+            log.error("api_create_passenger_flow", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_passenger_flow(self, data: dict):
+        """
+        Получить пассажиропоток
+        
+        Args:
+            data: {"flow_id": "..."}
+            
+        Returns:
+            {"status": "success", "flow": {...}}
+        """
+        try:
+            flow = self.passenger_flow.get_flow(data.get("flow_id"))
+            if flow:
+                return {"status": "success", "flow": flow}
+            else:
+                return {"status": "failed", "message": "Поток не найден"}
+        except Exception as e:
+            log.error("api_get_passenger_flow", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def update_passenger_flow(self, data: dict):
+        """
+        Обновить пассажиропоток
+        
+        Args:
+            data: {
+                "flow_id": "...",
+                "name": "...",
+                "date": "...",
+                "time_period": "...",
+                "direction": "...",
+                "description": "...",
+                "stops": [...]
+            }
             
         Returns:
             {"status": "success" | "failed"}
         """
         try:
-            result = self.passenger_flow.create_or_update(
-                data.get("stop_id"),
-                data.get("date"),
-                data.get("hour"),
-                data.get("incoming", 0),
-                data.get("outgoing", 0)
+            result = self.passenger_flow.update_flow(
+                flow_id=data.get("flow_id"),
+                name=data.get("name"),
+                date=data.get("date"),
+                time_period=data.get("time_period"),
+                direction=data.get("direction"),
+                description=data.get("description"),
+                stops_list=data.get("stops")
             )
             return {"status": "success" if result else "failed"}
         except Exception as e:
-            log.error("api_update_stop_flow", extra={"error": str(e)})
+            log.error("api_update_passenger_flow", extra={"error": str(e)})
             return {"status": "failed", "message": str(e)}
 
-    def get_stop_flow(self, data: dict):
+    def delete_passenger_flow(self, data: dict):
         """
-        Получить пассажиропоток остановки за период
+        Удалить пассажиропоток
         
         Args:
-            data: {"stop_id": "...", "date_from": "YYYY-MM-DD", "date_to": "YYYY-MM-DD"}
+            data: {"flow_id": "..."}
             
         Returns:
-            {"status": "success", "flow": [...]}
+            {"status": "success" | "failed"}
         """
         try:
-            flows = self.passenger_flow.get_by_stop(
-                data.get("stop_id"),
-                data.get("date_from"),
-                data.get("date_to")
-            )
-            
-            flow_data = []
-            for flow in flows:
-                flow_data.append({
-                    "date": flow.date,
-                    "hour": flow.hour,
-                    "incoming": flow.incoming,
-                    "outgoing": flow.outgoing
-                })
-            
-            return {"status": "success", "flow": flow_data}
+            result = self.passenger_flow.delete_flow(data.get("flow_id"))
+            return {"status": "success" if result else "failed"}
         except Exception as e:
-            log.error("api_get_stop_flow", extra={"error": str(e)})
+            log.error("api_delete_passenger_flow", extra={"error": str(e)})
             return {"status": "failed", "message": str(e)}
 
-    def get_polygon_flow_summary(self, data: dict):
+    def get_all_passenger_flows(self, data: dict):
         """
-        Получить сводку пассажиропотока по полигону
+        Получить все пассажиропотоки
         
         Args:
-            data: {"polygon_id": "...", "date": "YYYY-MM-DD"}
+            data: {"date_from": "YYYY-MM-DD", "date_to": "YYYY-MM-DD"}
             
         Returns:
-            {"status": "success", "summary": {...}}
+            {"status": "success", "flows": [...]}
         """
         try:
-            summary = self.passenger_flow.aggregate_by_polygon(
-                data.get("polygon_id"),
-                data.get("date")
+            flows = self.passenger_flow.get_all_flows(
+                date_from=data.get("date_from"),
+                date_to=data.get("date_to")
             )
-            return {"status": "success", "summary": summary}
+            return {"status": "success", "flows": flows}
         except Exception as e:
-            log.error("api_get_polygon_flow_summary", extra={"error": str(e)})
+            log.error("api_get_all_passenger_flows", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_flows_by_route(self, data: dict):
+        """
+        Получить все потоки для маршрута
+        
+        Args:
+            data: {"route_id": "...", "date": "YYYY-MM-DD"}
+            
+        Returns:
+            {"status": "success", "flows": [...]}
+        """
+        try:
+            flows = self.passenger_flow.get_flows_by_route(
+                route_id=data.get("route_id"),
+                date=data.get("date")
+            )
+            return {"status": "success", "flows": flows}
+        except Exception as e:
+            log.error("api_get_flows_by_route", extra={"error": str(e)})
             return {"status": "failed", "message": str(e)}
 
     # ========================================================================
