@@ -390,15 +390,11 @@ class Api:
                     column_formats={
                         'Название': {'font_color': 'black', 'bold': True},
                         'Описание': {'font_color': 'black'},
-                        'Широта': {'num_format': '0.000000', 'font_color': 'blue'},
-                        'Долгота': {'num_format': '0.000000', 'font_color': 'blue'},
+                        'Широта': {'num_format': '0.000000'},
+                        'Долгота': {'num_format': '0.000000'},
                     },
-                    column_widths={
-                        'Название': 30,
-                        'Описание': 50,
-                        'Широта': 15,
-                        'Долгота': 15,
-                    }
+                    # Авто-ширина колонок по содержимому
+                    column_widths=20  # Базовая ширина
                 )
                 
                 log.info("export_stops", extra={"count": len(objects), "file": str(file_path)})
