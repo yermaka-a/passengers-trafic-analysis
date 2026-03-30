@@ -340,7 +340,7 @@ class Api:
             # Диалог сохранения файла
             window = webview.active_window()
             result = window.create_file_dialog(
-                webview.FOLDER,
+                dialog_type=webview.FOLDER_DIALOG,
                 directory=str(Path.home())
             )
             
@@ -393,7 +393,7 @@ class Api:
             # Диалог выбора файла
             window = webview.active_window()
             result = window.create_file_dialog(
-                webview.OPEN_FILE,
+                dialog_type=webview.OPEN_FILE_DIALOG,
                 file_types=('JSON files (*.json)', 'All files (*.*)'),
                 directory=str(Path.home())
             )
