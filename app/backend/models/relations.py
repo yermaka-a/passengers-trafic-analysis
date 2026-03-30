@@ -236,8 +236,18 @@ class RouteStop(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
     # Связи
-    route: Mapped["Route"] = relationship("Route", back_populates="route_stops", init=False)
-    stop: Mapped[Optional["MapObject"]] = relationship("MapObject", back_populates="route_stops", init=False)
+    route: Mapped["Route"] = relationship(
+        "Route", 
+        back_populates="route_stops", 
+        init=False,
+        primaryjoin="foreign(RouteStop.route_id) == Route.id"
+    )
+    stop: Mapped[Optional["MapObject"]] = relationship(
+        "MapObject", 
+        back_populates="route_stops", 
+        init=False,
+        primaryjoin="foreign(RouteStop.stop_id) == MapObject.id"
+    )
 
     @property
     def route_uuid(self) -> str:
