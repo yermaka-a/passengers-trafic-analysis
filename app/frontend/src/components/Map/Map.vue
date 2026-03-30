@@ -486,8 +486,53 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - кластеризация через MapLibre (см. выше после создания карты)
-  // Deck.gl IconLayer больше не нужен для StopMarker
+  // 4. StopMarker layer - показываем только на зумах 14+
+  const stopMarkers = objectsArray.filter(
+    (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
+  );
+
+  if (stopMarkers.length > 0) {
+    // Генерируем sprite atlas из всех Lucide иконок
+    const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+
+    layers.push(
+      new IconLayer({
+        id: "stop-markers",
+        data: stopMarkers,
+        iconAtlas,
+        iconMapping,
+        getIcon: (obj: DeckGLObject) => {
+          const type = obj.markerType || 'pin';
+          return iconMapping[type] ? type : 'pin';
+        },
+        getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
+        getSize: (obj: DeckGLObject) => {
+          const scale = obj.style.getSizeScale || 1.5;
+          return 24 * scale;
+        },
+        sizeScale: 1,
+        sizeMinPixels: 10,
+        sizeMaxPixels: 100,
+        getColor: (obj: DeckGLObject) => obj.style.color,
+        pickable: true,
+        autoHighlight: true,
+        onClick: (info: any) => {
+          if (info.object) {
+            selectObject((info.object as DeckGLObject).id);
+          }
+        },
+        // Скрываем на зумах < 14 чтобы не тормозило
+        visible: (mapInstance.value?.getZoom() ?? 0) >= 14,
+        updateTriggers: {
+          getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
+          getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
+          getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
+          getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
+          visible: [(mapInstance.value?.getZoom() ?? 0)]
+        }
+      })
+    );
+  }
 
   // ========================================================================
   // СЛОЙ ДЛЯ DRAFT ОБЪЕКТА (в процессе создания)
@@ -624,120 +669,9 @@ onMounted(() => {
     mapStore.showObjectPopupRef = showObjectPopup;
     console.log("[Map] MapLibre создана");
 
-    // Ждём загрузки стиля перед добавлением слоёв
-    map.on('load', () => {
-      // === КЛАСТЕРИЗАЦИЯ STOPMARKER через MapLibre ===
-      console.log("[Map] Style loaded, initializing clusters...");
-      
-      // Создаём GeoJSON источник с кластеризацией
-      map.addSource('stop-markers-cluster', {
-        type: 'geojson',
-        data: { type: 'FeatureCollection', features: [] },
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50
-      });
-
-      // Слой кластеров (круги) - добавляем в конец (над всеми слоями)
-      map.addLayer({
-        id: 'clusters',
-        type: 'circle',
-        source: 'stop-markers-cluster',
-        filter: ['has', 'point_count'],
-        paint: {
-          'circle-color': [
-            'step',
-            ['get', 'point_count'],
-            '#51bbd6',    // < 100: голубой
-            100,          // 100-750: жёлтый
-            '#f1f075',
-            750,          // >= 750: розовый
-            '#f28cb1'
-          ],
-          'circle-radius': [
-            'step',
-            ['get', 'point_count'],
-            15,           // < 100: 15px
-            100,          // 100-750: 25px
-            25,
-            750,          // >= 750: 35px
-            35
-          ]
-        }
-      });
-
-      // Текст с количеством убран - требует glyphs в стиле карты
-
-      // Клик на кластер - зум
-      map.on('click', 'clusters', async (e) => {
-        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-        if (features.length > 0 && features[0]) {
-          const clusterId = features[0].properties?.cluster_id;
-          const source = map.getSource('stop-markers-cluster') as any;
-          if (source && clusterId) {
-            const zoom = await source.getClusterExpansionZoom(clusterId);
-            map.easeTo({
-              center: (features[0].geometry as any).coordinates,
-              zoom
-            });
-          }
-        }
-      });
-
-      // Курсор при наведении на кластер
-      map.on('mouseenter', 'clusters', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'clusters', () => {
-        map.getCanvas().style.cursor = '';
-      });
-
-      // Функция обновления кластеров
-      const updateClusters = () => {
-        const stopMarkers = Array.from(Objects.value?.values() ?? [])
-          .filter(obj => obj.type === 'StopMarker');
-
-        console.log("[Map] updateClusters:", stopMarkers.length, "остановок");
-
-        const features = stopMarkers.map(obj => ({
-          type: 'Feature' as const,
-          geometry: {
-            type: 'Point' as const,
-            coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0] // [lng, lat]
-          },
-          properties: {
-            id: obj.id,
-            name: obj.name,
-            markerType: obj.markerType || 'pin',
-            color: obj.style.color,
-            radius: obj.style.radius,
-            getSizeScale: obj.style.getSizeScale
-          }
-        }));
-
-        const source = map.getSource('stop-markers-cluster') as any;
-        if (source) {
-          source.setData({
-            type: 'FeatureCollection',
-            features
-          });
-          console.log("[Map] Cluster source updated");
-        }
-      };
-
-      // Обновляем кластеры при изменении объектов
-      watch(() => Array.from(Objects.value?.values() ?? []), () => {
-        updateClusters();
-      }, { deep: true });
-
-      // Первый вызов для инициализации
-      setTimeout(() => {
-        updateClusters();
-      }, 1000);
-
-      console.log("[Map] Кластеризация инициализирована");
-    });
-    // === КОНЕЦ КЛАСТЕРИЗАЦИИ ===
+    // === КЛАСТЕРИЗАЦИЯ ЧЕРЕЗ DECK.GL (вместо MapLibre) ===
+    // MapLibre кластеризация конфликтует с Deck.gl overlay
+    // Вместо этого скрываем маркеры на зумах < 14
 
     // Слушаем событие переключения тайлов из List.vue
     window.addEventListener('map-tiles-change', (event: any) => {
@@ -806,6 +740,15 @@ onMounted(() => {
     // Добавляем обработчик клика
     map.on("click", onMapClick);
     console.log("[Map] MapLibre click обработчик добавлен");
+
+    // Обработчик изменения зума для обновления видимости слоёв
+    map.on('zoom', () => {
+      if (deckOverlay) {
+        deckOverlay.setProps({
+          layers: createDeckLayers()
+        });
+      }
+    });
 
     // Обработчик движения мыши для отображения координат
     map.on("mousemove", (e: any) => {
