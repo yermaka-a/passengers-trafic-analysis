@@ -47,6 +47,10 @@ interface MapObjectStoreState {
   >;
   // Фильтры видимости для StopMarker
   visibleStopMarkerTypes: Set<string>;
+  
+  // Скрытые объекты (полигоны/полилинии и их маркеры)
+  hiddenObjects: Set<string>;
+  hiddenChildMarkers: Set<string>;
 }
 
 // ============================================================================
@@ -167,6 +171,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
     ClickedObjId: null,
     strokeState: new Map(),
     visibleStopMarkerTypes: new Set(['pin', 'pinned', 'flag', 'flag-check', 'pin-check', 'pin-plus', 'balloon']),
+    hiddenObjects: new Set(),
+    hiddenChildMarkers: new Set(),
   }),
 
   getters: {
@@ -502,6 +508,68 @@ export const useMapObjectStore = defineStore("mapobjects", {
         types.add(type);
       }
       this.$state.visibleStopMarkerTypes = types;
+    },
+
+    /** Скрыть объект и все связанные маркеры */
+    async hideObject(objectId: string) {
+      this.$state.hiddenObjects.add(objectId);
+      
+      // Получаем маркеры для этого объекта через API
+      const { get_polygon_stops } = (window as any).pywebview?.api || {};
+      if (get_polygon_stops) {
+        try {
+          const result = await get_polygon_stops({ polygon_id: objectId });
+          if (result?.status === "success" && result.stops) {
+            result.stops.forEach((stop: any) => {
+              this.$state.hiddenChildMarkers.add(stop.id);
+            });
+          }
+        } catch (e) {
+          console.error("[MapObjectStore] hideObject error:", e);
+        }
+      }
+      
+      // Принудительно вызываем реактивность
+      this.$state.hiddenObjects = new Set(this.$state.hiddenObjects);
+      this.$state.hiddenChildMarkers = new Set(this.$state.hiddenChildMarkers);
+    },
+
+    /** Показать объект и все связанные маркеры */
+    async showObject(objectId: string) {
+      this.$state.hiddenObjects.delete(objectId);
+      
+      // Получаем маркеры для этого объекта через API
+      const { get_polygon_stops } = (window as any).pywebview?.api || {};
+      if (get_polygon_stops) {
+        try {
+          const result = await get_polygon_stops({ polygon_id: objectId });
+          if (result?.status === "success" && result.stops) {
+            result.stops.forEach((stop: any) => {
+              this.$state.hiddenChildMarkers.delete(stop.id);
+            });
+          }
+        } catch (e) {
+          console.error("[MapObjectStore] showObject error:", e);
+        }
+      }
+      
+      // Принудительно вызываем реактивность
+      this.$state.hiddenObjects = new Set(this.$state.hiddenObjects);
+      this.$state.hiddenChildMarkers = new Set(this.$state.hiddenChildMarkers);
+    },
+
+    /** Переключить видимость объекта */
+    async toggleObjectVisibility(objectId: string) {
+      if (this.$state.hiddenObjects.has(objectId)) {
+        await this.showObject(objectId);
+      } else {
+        await this.hideObject(objectId);
+      }
+    },
+
+    /** Проверить: скрыт ли объект */
+    isObjectHidden(objectId: string): boolean {
+      return this.$state.hiddenObjects.has(objectId) || this.$state.hiddenChildMarkers.has(objectId);
     },
   },
 });
