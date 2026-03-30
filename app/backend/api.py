@@ -368,7 +368,7 @@ class Api:
                     webview.SAVE_DIALOG,
                     directory='',
                     save_filename='stops_export.csv',
-                    file_types=('CSV files (*.csv)|*.csv',)
+                    file_types=('*.csv',)
                 )
                 
                 if file_path:
