@@ -1,8 +1,17 @@
 import webview
-from .crud import ObjectController, LogsController, TileLayerController, StopImportController
+from .crud import (
+    ObjectController,
+    LogsController,
+    TileLayerController,
+    StopImportController,
+    ObjectRelationsController,
+    PassengerFlowController,
+    RoutesController,
+)
 from .storage import Storage
 from .schemas.stop_import import StopImportRequest
 from .logger import log
+from .services import SpatialService
 import uuid
 import json
 from typing import TYPE_CHECKING
@@ -23,6 +32,10 @@ class Api:
         self.logs = LogsController()
         self.tile_layers = TileLayerController(storage)
         self.stop_import = StopImportController(storage)
+        self.relations = ObjectRelationsController(storage)
+        self.passenger_flow = PassengerFlowController(storage)
+        self.routes = RoutesController(storage)
+        self.spatial = SpatialService()
         self._windows = {}  # Храним окна по ID для синхронизации
         self._main_window = None  # Главное окно
         self.storage = storage
@@ -537,6 +550,351 @@ class Api:
                 "status": "failed",
                 "message": str(e)
             }
+
+    # ========================================================================
+    # Связи между объектами (Object Relations)
+    # ========================================================================
+
+    def add_object_relation(self, data: dict):
+        """
+        Добавить связь между объектами
+        
+        Args:
+            data: {"parent_id": "...", "child_id": "...", "relation_type": "CONTAINS"}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.relations.add_relation(
+                data.get("parent_id"),
+                data.get("child_id"),
+                data.get("relation_type", "CONTAINS")
+            )
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_add_object_relation", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def remove_object_relation(self, data: dict):
+        """
+        Удалить связь между объектами
+        
+        Args:
+            data: {"parent_id": "...", "child_id": "..."}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.relations.remove_relation(
+                data.get("parent_id"),
+                data.get("child_id")
+            )
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_remove_object_relation", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_polygon_stops(self, data: dict):
+        """
+        Получить все остановки в полигоне/полилинии
+        
+        Args:
+            data: {"polygon_id": "..."}
+            
+        Returns:
+            {"status": "success", "stops": [...]}
+        """
+        try:
+            children = self.relations.get_children(data.get("polygon_id"))
+            
+            stops = []
+            for child in children:
+                if child.obj_type == 'StopMarker':
+                    stops.append({
+                        "id": child.uuid,
+                        "name": child.name,
+                        "lat": child.latitude,
+                        "lng": child.longitude,
+                        "obj_type": child.obj_type
+                    })
+            
+            return {"status": "success", "stops": stops}
+        except Exception as e:
+            log.error("api_get_polygon_stops", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def auto_assign_stops(self, data: dict):
+        """
+        Автоматически назначить остановки полигонам/полилиниям
+        
+        Args:
+            data: {"tolerance_meters": 50} (для полилиний)
+            
+        Returns:
+            {"status": "success", "assigned": N}
+        """
+        try:
+            tolerance = data.get("tolerance_meters", 50)
+            
+            # Получаем все объекты
+            all_objects = self.storage.objects.get_all_objects()
+            
+            polygons = [o for o in all_objects if o.obj_type == 'Polygon']
+            polylines = [o for o in all_objects if o.obj_type == 'Polyline']
+            stops = [o for o in all_objects if o.obj_type == 'StopMarker']
+            
+            assigned_count = 0
+            
+            # Для каждого полигона находим остановки внутри
+            for polygon in polygons:
+                coords = polygon.latlng
+                stops_in_polygon = self.spatial.find_stops_in_polygon(
+                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops],
+                    coords
+                )
+                
+                for stop_data in stops_in_polygon:
+                    if self.relations.add_relation(polygon.uuid, stop_data["id"], "CONTAINS"):
+                        assigned_count += 1
+            
+            # Для каждой полилинии находим остановки рядом
+            for polyline in polylines:
+                coords = polyline.latlng
+                stops_near_line = self.spatial.find_stops_near_polyline(
+                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops],
+                    coords,
+                    tolerance
+                )
+                
+                for stop_data in stops_near_line:
+                    if self.relations.add_relation(polyline.uuid, stop_data["id"], "NEAR"):
+                        assigned_count += 1
+            
+            log.info("auto_assign_stops", extra={"assigned": assigned_count})
+            return {"status": "success", "assigned": assigned_count}
+            
+        except Exception as e:
+            log.error("api_auto_assign_stops", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    # ========================================================================
+    # Пассажиропоток (Passenger Flow)
+    # ========================================================================
+
+    def update_stop_flow(self, data: dict):
+        """
+        Обновить пассажиропоток остановки
+        
+        Args:
+            data: {"stop_id": "...", "date": "YYYY-MM-DD", "hour": 0-23, "incoming": N, "outgoing": N}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.passenger_flow.create_or_update(
+                data.get("stop_id"),
+                data.get("date"),
+                data.get("hour"),
+                data.get("incoming", 0),
+                data.get("outgoing", 0)
+            )
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_update_stop_flow", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_stop_flow(self, data: dict):
+        """
+        Получить пассажиропоток остановки за период
+        
+        Args:
+            data: {"stop_id": "...", "date_from": "YYYY-MM-DD", "date_to": "YYYY-MM-DD"}
+            
+        Returns:
+            {"status": "success", "flow": [...]}
+        """
+        try:
+            flows = self.passenger_flow.get_by_stop(
+                data.get("stop_id"),
+                data.get("date_from"),
+                data.get("date_to")
+            )
+            
+            flow_data = []
+            for flow in flows:
+                flow_data.append({
+                    "date": flow.date,
+                    "hour": flow.hour,
+                    "incoming": flow.incoming,
+                    "outgoing": flow.outgoing
+                })
+            
+            return {"status": "success", "flow": flow_data}
+        except Exception as e:
+            log.error("api_get_stop_flow", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_polygon_flow_summary(self, data: dict):
+        """
+        Получить сводку пассажиропотока по полигону
+        
+        Args:
+            data: {"polygon_id": "...", "date": "YYYY-MM-DD"}
+            
+        Returns:
+            {"status": "success", "summary": {...}}
+        """
+        try:
+            summary = self.passenger_flow.aggregate_by_polygon(
+                data.get("polygon_id"),
+                data.get("date")
+            )
+            return {"status": "success", "summary": summary}
+        except Exception as e:
+            log.error("api_get_polygon_flow_summary", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    # ========================================================================
+    # Маршруты (Routes)
+    # ========================================================================
+
+    def create_route(self, data: dict):
+        """
+        Создать маршрут
+        
+        Args:
+            data: {"name": "...", "description": "...", "stops": [{"stop_id": "...", "order": 1}, ...]}
+            
+        Returns:
+            {"status": "success", "route_id": "..."}
+        """
+        try:
+            route_id = self.routes.create_route(
+                data.get("name"),
+                data.get("description"),
+                data.get("stops")
+            )
+            if route_id:
+                return {"status": "success", "route_id": route_id}
+            else:
+                return {"status": "failed", "message": "Не удалось создать маршрут"}
+        except Exception as e:
+            log.error("api_create_route", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_route(self, data: dict):
+        """
+        Получить маршрут
+        
+        Args:
+            data: {"route_id": "..."}
+            
+        Returns:
+            {"status": "success", "route": {...}}
+        """
+        try:
+            route = self.routes.get_route(data.get("route_id"))
+            if route:
+                return {"status": "success", "route": route}
+            else:
+                return {"status": "failed", "message": "Маршрут не найден"}
+        except Exception as e:
+            log.error("api_get_route", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def update_route(self, data: dict):
+        """
+        Обновить маршрут
+        
+        Args:
+            data: {"route_id": "...", "name": "...", "description": "...", "stops": [...]}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.routes.update_route(
+                data.get("route_id"),
+                data.get("name"),
+                data.get("description"),
+                data.get("stops")
+            )
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_update_route", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def delete_route(self, data: dict):
+        """
+        Удалить маршрут
+        
+        Args:
+            data: {"route_id": "..."}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.routes.delete_route(data.get("route_id"))
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_delete_route", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_all_routes(self, data: dict):
+        """
+        Получить все маршруты
+        
+        Returns:
+            {"status": "success", "routes": [...]}
+        """
+        try:
+            routes = self.routes.get_all_routes()
+            return {"status": "success", "routes": routes}
+        except Exception as e:
+            log.error("api_get_all_routes", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def reorder_route_stops(self, data: dict):
+        """
+        Изменить порядок остановок в маршруте
+        
+        Args:
+            data: {"route_id": "...", "stop_id": "...", "new_order": N}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.routes.reorder_stops(
+                data.get("route_id"),
+                data.get("stop_id"),
+                data.get("new_order")
+            )
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_reorder_route_stops", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def toggle_route_direction(self, data: dict):
+        """
+        Переключить направление маршрута
+        
+        Args:
+            data: {"route_id": "..."}
+            
+        Returns:
+            {"status": "success" | "failed"}
+        """
+        try:
+            result = self.routes.toggle_direction(data.get("route_id"))
+            return {"status": "success" if result else "failed"}
+        except Exception as e:
+            log.error("api_toggle_route_direction", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
 
     def import_stops(self, data: dict):
         """
