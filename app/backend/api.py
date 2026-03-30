@@ -325,7 +325,7 @@ class Api:
             {"status": "success", "csv": "name,lat,lon,type\n..."}
         """
         try:
-            from ..models import MapObject, StopMetadata
+            from ..models.object import MapObject, StopMetadata
             import csv
             import io
             
