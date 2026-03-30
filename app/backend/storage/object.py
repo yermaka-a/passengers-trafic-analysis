@@ -99,6 +99,11 @@ class Objects:
                 )
                 ls.add(new_obj)
                 ls.flush()  # Получаем ID
+                
+                log.info("create_object_flushed", extra={
+                    "new_obj_id": new_obj.id,
+                    "session_has_new_obj": new_obj in ls
+                })
 
                 # Создаём связанные данные
                 if is_stop_marker:
@@ -110,6 +115,7 @@ class Objects:
                         color=options.color,
                     )
                     ls.add(stop_meta)
+                    log.info("create_object_stop_metadata", extra={"osm_id": stop_meta.osm_id})
                 elif is_circle_marker or options.obj_type in ('Polygon', 'Polyline'):
                     styles = ObjectStyles(
                         object_id=new_obj.id,
@@ -121,13 +127,21 @@ class Objects:
                         color=options.color,
                     )
                     ls.add(styles)
+                    log.info("create_object_styles", extra={"color": styles.color})
 
+                log.info("create_object_before_commit", extra={"id": options.Id})
                 ls.commit()
+                log.info("create_object_committed", extra={"id": options.Id})
+                
+                # Проверяем что объект сохранился
+                check = ls.query(MapObject).filter(MapObject.id == str(options.Id)).first()
+                log.info("create_object_verified", extra={"id": options.Id, "exists": check is not None})
+                
                 log.info("create_object_success", extra={"Id": options.Id})
             return True
         except Exception as e:
             op_method = "create"
-            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": str(e), "traceback": __import__('traceback').format_exc()})
             return False
 
     def delete(self, Id):

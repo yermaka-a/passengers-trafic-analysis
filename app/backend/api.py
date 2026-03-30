@@ -416,18 +416,56 @@ class Api:
             imported_count = 0
             failed_count = 0
             
-            for obj in export_data["objects"]:
+            # Helper для конвертации RGBA в hex
+            def rgba_to_hex(rgba):
+                if isinstance(rgba, str):
+                    return rgba
+                if isinstance(rgba, list) and len(rgba) >= 3:
+                    return f"#{int(rgba[0]):02x}{int(rgba[1]):02x}{int(rgba[2]):02x}"
+                return "#000000"
+            
+            for idx, obj in enumerate(export_data["objects"]):
                 try:
-                    result = self.objects.create_object(obj)
-                    if result:
+                    # Генерируем новый UUID для объекта
+                    from uuid import uuid4
+                    new_id = str(uuid4())
+                    
+                    # Конвертируем формат экспорта в формат ObjectCreate
+                    obj_type = obj.get("type")
+                    style = obj.get("style", {})
+                    import_obj = {
+                        "latlng": [{"lat": c[1], "lng": c[0]} for c in obj.get("coordinates", [])],
+                        "options": {
+                            "Id": new_id,
+                            "objType": obj_type,
+                            "name": obj.get("name", ""),
+                            "description": obj.get("description", ""),
+                            "color": rgba_to_hex(style.get("color")),
+                            "stroke": style.get("strokeWidth", 0) > 0,
+                            "weight": style.get("strokeWidth", 2),
+                            "fill": style.get("filled", False),
+                            "fillOpacity": style.get("fillOpacity", 0.5),
+                            "dashArray": style.get("strokeDasharray"),
+                            # Для StopMarker/CircleMarker
+                            "markerType": obj.get("markerType"),
+                            "radius": style.get("radius"),
+                        }
+                    }
+                    
+                    log.info("import_geometry_creating", extra={"idx": idx, "old_id": obj.get("id"), "new_id": new_id, "type": obj_type})
+                    result = self.objects.create_object(import_obj)
+                    # create_object возвращает {"status": "success", ...} или {"status": "failed", ...}
+                    if result and result.get("status") == "success":
                         imported_count += 1
+                        log.info("import_geometry_created", extra={"idx": idx, "new_id": new_id})
                         # Синхронизируем окна
                         if self.objects.api:
-                            self.objects.api.sync_windows('OBJECT_CREATED', {'id': obj.get('id')})
+                            self.objects.api.sync_windows('OBJECT_CREATED', {'id': new_id})
                     else:
                         failed_count += 1
+                        log.error("import_geometry_create_failed", extra={"old_id": obj.get("id"), "new_id": new_id, "result": result})
                 except Exception as e:
-                    log.error("import_geometry_object", extra={"error": str(e), "obj_id": obj.get("id")})
+                    log.error("import_geometry_object", extra={"error": str(e), "old_id": obj.get("id"), "traceback": __import__('traceback').format_exc()})
                     failed_count += 1
             
             log.info("import_geometry", extra={"imported": imported_count, "failed": failed_count, "file": file_path})
@@ -479,7 +517,7 @@ class Api:
                 if hasattr(obj, 'obj_type') and obj.obj_type == obj_type:
                     try:
                         obj_id = UUID(obj.uuid)
-                        self.objects.delete(obj_id)
+                        self.storage.objects.delete(obj_id)
                         deleted_count += 1
                         # Синхронизируем окна
                         if self.objects.api:

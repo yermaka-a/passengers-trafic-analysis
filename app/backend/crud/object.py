@@ -35,21 +35,23 @@ class ObjectController:
 
     def create_object(self, data):
         try:
+            log.info("create_object_request", extra={"data_id": data.get("id"), "data_type": data.get("options", {}).get("objType")})
             obj_data = ObjectCreate(**data)
-            log.info("create_object_data", extra={"id": obj_data.options.Id, "type": obj_data.options.obj_type})
+            log.info("create_object_validated", extra={"id": obj_data.options.Id, "type": obj_data.options.obj_type})
             res = self.objects.create(obj_data)
-            log.info("create_object_result", extra={"id": obj_data.options.Id, "result": res})
+            log.info("create_object_storage_result", extra={"id": obj_data.options.Id, "result": res})
             if res:
                 # Синхронизируем ВСЕ окна (включая отправителя)
                 if self.api:
                     self.api.sync_windows('OBJECT_CREATED', {'id': str(obj_data.options.Id)})
                 return {"status": "success", "message": obj_data.options.Id}
-            return {"satus": "failed", "message": "data is not written"}
+            return {"status": "failed", "message": "data is not written"}
         except ValidationError as e:
+            log.error("create_object_validation_error", extra={"error": e.json()})
             return {"status": "failed", "message": e.json()}
         except Exception as e:
             op = "create_object"
-            log.error(op, {"err": str(e), "data": data})
+            log.error(op, extra={"err": str(e), "data": data, "traceback": __import__('traceback').format_exc()})
             return {"status": "failed", "message": str(e)}
 
     def get_all_objects(self):

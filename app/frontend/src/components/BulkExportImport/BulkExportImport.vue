@@ -29,9 +29,12 @@ const geometryObjects = computed(() => {
 // Выбранные объекты для экспорта
 const selectedIds = ref<Set<string>>(new Set());
 
+// Force re-render для реактивности
+const forceUpdate = ref(0);
+
 // Toggle все/ничего
 const allSelected = computed(() => {
-  return geometryObjects.value.length > 0 && 
+  return geometryObjects.value.length > 0 &&
     geometryObjects.value.every(([id]) => selectedIds.value.has(id));
 });
 
@@ -43,15 +46,22 @@ const toggleAll = () => {
       selectedIds.value.add(id);
     });
   }
+  // Создаём новый Set для триггера реактивности
+  selectedIds.value = new Set(selectedIds.value);
+  forceUpdate.value++;
 };
 
 // Toggle отдельного объекта
 const toggleObject = (id: string) => {
-  if (selectedIds.value.has(id)) {
-    selectedIds.value.delete(id);
+  // Создаём новый Set для триггера реактивности
+  const newSet = new Set(selectedIds.value);
+  if (newSet.has(id)) {
+    newSet.delete(id);
   } else {
-    selectedIds.value.add(id);
+    newSet.add(id);
   }
+  selectedIds.value = newSet;
+  forceUpdate.value++;
 };
 
 // Экспорт всех объектов
@@ -264,9 +274,9 @@ const handleDeleteAllPolylines = async () => {
         <div class="border rounded-lg">
           <div class="flex items-center justify-between p-3 border-b bg-muted/50">
             <div class="flex items-center gap-2">
-              <Checkbox 
-                :checked="allSelected" 
-                @update:checked="toggleAll"
+              <Checkbox
+                :model-value="allSelected"
+                @update:model-value="toggleAll"
                 id="toggle-all"
               />
               <label for="toggle-all" class="text-sm font-medium cursor-pointer">
@@ -279,21 +289,21 @@ const handleDeleteAllPolylines = async () => {
           </div>
 
           <div class="divide-y max-h-[400px] overflow-auto">
-            <div 
-              v-for="[id, obj] in geometryObjects" 
+            <div
+              v-for="[id, obj] in geometryObjects"
               :key="id"
               class="flex items-center justify-between p-3 hover:bg-muted/50"
             >
               <div class="flex items-center gap-3">
-                <Checkbox 
-                  :checked="selectedIds.has(id)" 
-                  @update:checked="toggleObject(id)"
+                <Checkbox
+                  :model-value="selectedIds.has(id)"
+                  @update:model-value="toggleObject(id)"
                   :id="id"
                 />
                 <div>
                   <div class="font-medium">{{ obj.name || obj.customName || 'Без названия' }}</div>
                   <div class="text-xs text-muted-foreground">
-                    {{ obj.type === 'Polygon' ? '🔷 Полигон' : '📏 Полилиния' }} • 
+                    {{ obj.type === 'Polygon' ? '🔷 Полигон' : '📏 Полилиния' }} •
                     {{ obj.coordinates?.[0]?.length || 0 }} точек
                   </div>
                 </div>
