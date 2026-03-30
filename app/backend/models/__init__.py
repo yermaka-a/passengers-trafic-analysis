@@ -5,6 +5,7 @@ __all__ = [
     "TileLayerSetting",
     "ObjectRelation",
     "PassengerFlow",
+    "PassengerFlowStop",
     "Route",
     "RouteStop",
     "Base",
@@ -14,5 +15,11 @@ __all__ = [
 
 from .object import MapObject, StopMetadata, ObjectStyles, uuid_to_binary, binary_to_uuid
 from .tile_layer import TileLayerSetting
-from .relations import ObjectRelation, PassengerFlow, Route, RouteStop
+from .relations import (
+    ObjectRelation,
+    PassengerFlow,
+    PassengerFlowStop,
+    Route,
+    RouteStop
+)
 from .base import Base

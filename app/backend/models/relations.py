@@ -68,31 +68,74 @@ class ObjectRelation(Base):
 
 
 class PassengerFlow(Base):
-    """Пассажиропоток остановки"""
+    """Пассажиропоток - маршрут с остановками и количеством пассажиров"""
 
-    __tablename__ = "passenger_flow"
+    __tablename__ = "passenger_flows"
 
     __table_args__ = (
-        Index('ix_flow_stop', 'stop_id'),
-        Index('ix_flow_date', 'date'),
-        Index('ix_flow_stop_date', 'stop_id', 'date'),
-        UniqueConstraint('stop_id', 'date', 'hour', name='uq_stop_date_hour'),
-        CheckConstraint('hour >= 0 AND hour <= 23', name='ck_hour_range'),
+        Index('ix_pf_date', 'date'),
+        Index('ix_pf_direction', 'direction'),
+        Index('ix_pf_time_period', 'time_period'),
     )
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    stop_id: Mapped[bytes] = mapped_column("stop_id", String(16).with_variant(String(16), 'sqlite'), nullable=False, index=True)
+    id: Mapped[bytes] = mapped_column("id", String(16).with_variant(String(16), 'sqlite'), primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    route_id: Mapped[Optional[bytes]] = mapped_column(
+        ForeignKey("routes.id", ondelete="SET NULL"),
+        nullable=True
+    )
+    direction: Mapped[str] = mapped_column(String(30), default='forward')  # forward, backward, northbound, southbound, etc.
     date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
-    hour: Mapped[int] = mapped_column(Integer, nullable=False)  # 0-23
-    incoming: Mapped[int] = mapped_column(Integer, default=0)
-    outgoing: Mapped[int] = mapped_column(Integer, default=0)
+    time_period: Mapped[str] = mapped_column(String(30), default='off_peak')  # morning_peak, evening_peak, off_peak, night
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Связь с остановкой
-    stop: Mapped[Optional["MapObject"]] = relationship(
-        "MapObject", back_populates="passenger_flows", init=False
+    # Остановки в потоке
+    flow_stops: Mapped[List["PassengerFlowStop"]] = relationship(
+        "PassengerFlowStop", back_populates="flow", cascade="all, delete-orphan", init=False
     )
+
+    # Связь с маршрутом
+    route: Mapped[Optional["Route"]] = relationship("Route", back_populates="passenger_flows", init=False)
+
+    @property
+    def uuid(self) -> str:
+        """Получить UUID потока"""
+        return binary_to_uuid(self.id)
+
+    @uuid.setter
+    def uuid(self, value: str):
+        """Установить UUID"""
+        self.id = uuid_to_binary(value)
+
+
+class PassengerFlowStop(Base):
+    """Остановка в пассажиропотоке с данными о пассажирах"""
+
+    __tablename__ = "passenger_flow_stops"
+
+    __table_args__ = (
+        Index('ix_pfs_flow', 'flow_id'),
+        Index('ix_pfs_stop', 'stop_id'),
+    )
+
+    flow_id: Mapped[bytes] = mapped_column("flow_id", String(16).with_variant(String(16), 'sqlite'), primary_key=True)
+    stop_id: Mapped[bytes] = mapped_column("stop_id", String(16).with_variant(String(16), 'sqlite'), primary_key=True)
+    stop_order: Mapped[int] = mapped_column(Integer, primary_key=True)  # Порядковый номер
+    passengers_on_board: Mapped[int] = mapped_column(Integer, default=0)  # Село на этой остановке
+    passengers_off_board: Mapped[int] = mapped_column(Integer, default=0)  # Вышло на этой остановке
+    passengers_remaining: Mapped[int] = mapped_column(Integer, default=0)  # Остаётся в транспорте
+    created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
+
+    # Связи
+    flow: Mapped["PassengerFlow"] = relationship("PassengerFlow", back_populates="flow_stops", init=False)
+    stop: Mapped[Optional["MapObject"]] = relationship("MapObject", back_populates="passenger_flow_stops", init=False)
+
+    @property
+    def flow_uuid(self) -> str:
+        """Получить UUID потока"""
+        return binary_to_uuid(self.flow_id)
 
     @property
     def stop_uuid(self) -> str:
@@ -119,6 +162,11 @@ class Route(Base):
     # Остановки в маршруте
     route_stops: Mapped[List["RouteStop"]] = relationship(
         "RouteStop", back_populates="route", cascade="all, delete-orphan", init=False
+    )
+    
+    # Пассажиропотоки для маршрута
+    passenger_flows: Mapped[List["PassengerFlow"]] = relationship(
+        "PassengerFlow", back_populates="route", cascade="all, delete-orphan", init=False
     )
 
     @property

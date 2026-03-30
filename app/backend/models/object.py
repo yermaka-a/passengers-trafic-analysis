@@ -73,9 +73,9 @@ class MapObject(Base):
         "ObjectRelation", foreign_keys="ObjectRelation.child_id", back_populates="child", init=False
     )
     
-    # Связи для passenger_flow
-    passenger_flows: Mapped[List["PassengerFlow"]] = relationship(
-        "PassengerFlow", back_populates="stop", cascade="all, delete-orphan", init=False
+    # Связи для passenger_flow_stops
+    passenger_flow_stops: Mapped[List["PassengerFlowStop"]] = relationship(
+        "PassengerFlowStop", back_populates="stop", cascade="all, delete-orphan", init=False
     )
     
     # Связи для routes
