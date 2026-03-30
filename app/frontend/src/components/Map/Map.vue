@@ -515,7 +515,7 @@ const createDeckLayers = () => {
       }))
     };
 
-    // Добавляем источник с кластеризацией
+    // Создаём источник только один раз
     if (!mapInstance.value.getSource('stop-markers-cluster')) {
       mapInstance.value.addSource('stop-markers-cluster', {
         type: 'geojson',
