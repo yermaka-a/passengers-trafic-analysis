@@ -383,19 +383,8 @@ class Api:
                 filename = f'остановки_{timestamp}.xlsx'
                 file_path = Path(folder) / filename
                 
-                # Сохраняем Excel файл с форматированием
-                df.write_excel(
-                    file_path,
-                    worksheet='Остановки',
-                    column_formats={
-                        'Название': {'font_color': 'black', 'bold': True},
-                        'Описание': {'font_color': 'black'},
-                        'Широта': {'num_format': '0.000000'},
-                        'Долгота': {'num_format': '0.000000'},
-                    },
-                    # Авто-ширина колонок по содержимому
-                    column_widths=20  # Базовая ширина
-                )
+                # Сохраняем Excel файл через polars
+                df.write_excel(file_path, worksheet='Остановки')
                 
                 log.info("export_stops", extra={"count": len(objects), "file": str(file_path)})
                 return {
