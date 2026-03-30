@@ -51,7 +51,6 @@ class ObjectController:
             objects = self.objects.get_all_objects()
             if objects is not None:
                 validated_objects = [ObjectCreate.from_db(obj) for obj in objects]
-
                 return AllObjectsResponse(
                     status="success", objects=validated_objects
                 ).model_dump(by_alias=True)
@@ -59,10 +58,12 @@ class ObjectController:
             op = "get_all_objects"
             log.error(op, {"err": e})
 
-    def delete_object(self, Id: UUID6):
+    def delete_object(self, Id):
         try:
-            id_validator = TypeAdapter(UUID6)
-            Id = id_validator.validate_python(Id)
+            from uuid import UUID
+            # Конвертируем строку в UUID
+            if isinstance(Id, str):
+                Id = UUID(Id)
             result = self.objects.delete(Id)
             # Синхронизируем ВСЕ окна (включая отправителя)
             if self.api and result:
@@ -70,7 +71,7 @@ class ObjectController:
             return result
         except Exception as e:
             op = "delete_object"
-            log.error(op, {"err": e})
+            log.error(op, {"err": str(e), "Id": str(Id)})
             return False
 
     def update_object(self, data):

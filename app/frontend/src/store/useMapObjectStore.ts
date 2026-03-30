@@ -419,10 +419,6 @@ export const useMapObjectStore = defineStore("mapobjects", {
       if (this.EditingObjectId === id) {
         this.EditingObjectId = null;
       }
-      console.log(`[MapObjectStore] Удалён объект ${id}, осталось: ${this.Objects.size}`);
-      
-      // Принудительно вызываем событие для watch
-      this.$patch({});
     },
 
     // ========================================================================
@@ -446,10 +442,6 @@ export const useMapObjectStore = defineStore("mapobjects", {
           const deckGLObj = backendToDeckGL(backendObj, backendObj.options.Id);
           this.Objects.set(deckGLObj.id, deckGLObj);
         }
-        console.log(
-          "[MapObjectStore] Загружено объектов в store:",
-          this.Objects.size,
-        );
       }
     },
 

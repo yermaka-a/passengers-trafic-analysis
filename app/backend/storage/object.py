@@ -83,6 +83,12 @@ class Objects:
                 )
 
                 # Создаём базовый объект
+                log.info("create_object_before", extra={
+                    "options_Id": options.Id,
+                    "options_osm_id": getattr(options, 'osm_id', None),
+                    "obj_type": options.obj_type
+                })
+                
                 new_obj = MapObject(
                     id=str(options.Id),
                     name=options.name,
@@ -124,18 +130,22 @@ class Objects:
             log.error(OP_CLASS_MSG + op_method, extra={"error": e})
             return False
 
-    def delete(self, Id: UUID6):
+    def delete(self, Id):
         """Удалить объект (CASCADE удалит связанные данные)"""
         try:
+            from uuid import UUID
+            # Конвертируем строку в UUID если нужно
+            if isinstance(Id, str):
+                Id = UUID(Id)
+                
             with self.localSession() as ls:
-                log.info("delete_object", extra={"Id": str(Id)})
                 ls.execute(delete(MapObject).where(MapObject.id == str(Id)))
                 ls.commit()
                 log.info("delete_object_success", extra={"Id": str(Id)})
-            return True
+                return True
         except Exception as e:
             op_method = "delete"
-            log.error(OP_CLASS_MSG + op_method, extra={"error": e})
+            log.error(OP_CLASS_MSG + op_method, extra={"error": str(e)})
             return False
 
     def update(self, obj: ObjectCreate):

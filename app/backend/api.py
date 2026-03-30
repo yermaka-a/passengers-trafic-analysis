@@ -122,17 +122,20 @@ class Api:
             try:
                 js_code = f"""
                 (function() {{
+                    console.log('[Sync] === OBJECT_DELETED received ===');
+                    console.log('[Sync] Data:', {message});
                     try {{
-                        console.log('[Sync] Received in main:', {message});
                         const event = new CustomEvent('panel-sync', {{
                             detail: {message}
                         }});
-                        window.dispatchEvent(event);
+                        const dispatched = window.dispatchEvent(event);
+                        console.log('[Sync] Dispatched:', dispatched);
                     }} catch(e) {{
-                        console.error('[Sync] Error in main:', e);
+                        console.error('[Sync] Error:', e);
                     }}
                 }})();
                 """
+                print(f'[API] Executing JS in main window...')
                 result = self._main_window.evaluate_js(js_code)
                 print(f'[API] Main window sync result: {result}')
             except Exception as e:
@@ -286,24 +289,20 @@ class Api:
             {"status": "success", "id": "..."} или {"status": "failed", "message": "..."}
         """
         try:
-            import uuid
             from uuid import UUID
-            
+
             # Валидация UUID
-            obj_uuid = uuid.UUID(id)
-            
+            obj_uuid = UUID(id)
+
             # Удаление через контроллер
             result = self.objects.delete_object(obj_uuid)
-            
+
             if result:
-                print(f'[API] delete_object: удалён объект {id}')
                 return {"status": "success", "id": id}
             else:
-                print(f'[API] delete_object: объект {id} не найден')
                 return {"status": "failed", "message": "Объект не найден"}
-                
+
         except Exception as e:
-            print(f'[API] delete_object ошибка: {e}')
             log.error("api_delete_object", extra={"error": str(e), "id": id})
             return {"status": "failed", "message": str(e)}
 

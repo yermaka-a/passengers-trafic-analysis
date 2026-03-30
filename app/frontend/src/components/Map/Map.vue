@@ -789,13 +789,8 @@ onMounted(() => {
       const type = event.detail?.type;
       const data = event.detail?.data;
       
-      console.log('[Map] Received panel-sync:', type, data);
-      
       if (type === 'OBJECT_DELETED' && data?.id) {
-        // Объект удалён - удаляем из store
-        console.log('[Map] Deleting object from store:', data.id);
         mapObjectStore.deleteObject(data.id);
-        console.log('[Map] Object deleted, remaining:', mapObjectStore.Objects.size);
       }
       
       if (type === 'TILE_LAYER_CHANGED') {
