@@ -14,4 +14,5 @@ dependencies = [
     "sqlalchemy>=2.0.46",
     "structlog>=25.5.0",
     "xlsxwriter>=3.2.9",
+    "shapely>=2.0.0",
 ]
