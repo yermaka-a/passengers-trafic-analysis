@@ -328,6 +328,7 @@ class Api:
             from .models.object import MapObject, StopMetadata
             import pandas as pd
             import webview
+            from webview import FileDialog
             from pathlib import Path
             from datetime import datetime
             
@@ -366,18 +367,22 @@ class Api:
                 
                 # Диалог выбора папки
                 window = webview.active_window()
-                folder = window.create_file_dialog(
-                    webview.FOLDER_DIALOG,
+                result = window.create_file_dialog(
+                    FileDialog.FOLDER,
                     directory=str(Path.home())
                 )
                 
-                if not folder:
+                # create_file_dialog возвращает кортеж или None
+                if not result:
                     # Пользователь отменил
                     return {
                         "status": "cancelled",
                         "message": "Сохранение отменено",
                         "count": 0
                     }
+                
+                # Берём первый элемент из кортежа
+                folder = result[0] if isinstance(result, tuple) else result
                 
                 # Генерируем имя файла с датой
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
