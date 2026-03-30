@@ -500,13 +500,14 @@ const createDeckLayers = () => {
 
     // Генерируем sprite atlas из всех Lucide иконок
     const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
-    
+
     console.log("[Map] IconAtlas сгенерирован:", {
       иконок: Object.keys(iconMapping).length,
       типы: Object.keys(iconMapping),
       mapping: iconMapping
     });
 
+    // IconLayer для маркеров - показываем только на зумах 14+
     layers.push(
       new IconLayer({
         id: "stop-markers",
@@ -516,30 +517,19 @@ const createDeckLayers = () => {
         // @ts-ignore - iconMapping для всех типов
         iconMapping,
         getIcon: (obj: DeckGLObject) => {
-          const type = obj.markerType || 'bus';
-          console.log("[Map] getIcon для", obj.id, ":", {
-            markerType: obj.markerType,
-            type,
-            exists: iconMapping[type] ? true : false,
-            getSizeScale: obj.style.getSizeScale
-          });
+          const type = obj.markerType || 'pin';
           // Проверяем что тип существует в mapping
-          return iconMapping[type] ? type : 'bus';
+          return iconMapping[type] ? type : 'pin';
         },
         getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        // getSize - это accessor который возвращает размер для каждой иконки
         getSize: (obj: DeckGLObject) => {
           const scale = obj.style.getSizeScale || 1.5;
-          console.log("[Map] getSize для", obj.id, ":", scale, '(radius:', obj.style.radius, ')');
-          return 24 * scale; // Базовый размер 24 * scale
+          return 24 * scale;
         },
-        sizeScale: 1, // Глобальный множитель
-        sizeMinPixels: 10, // Минимальный размер
-        sizeMaxPixels: 100, // Максимальный размер
-        getColor: (obj: DeckGLObject) => {
-          // Используем цвет из style (для tint через mask)
-          return obj.style.color;
-        },
+        sizeScale: 1,
+        sizeMinPixels: 10,
+        sizeMaxPixels: 100,
+        getColor: (obj: DeckGLObject) => obj.style.color,
         pickable: true,
         autoHighlight: true,
         onClick: (info: any) => {
@@ -553,6 +543,8 @@ const createDeckLayers = () => {
           getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
           getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
         },
+        // Скрываем маркеры на зумах меньше 14 (чтобы не тормозило)
+        visible: true
       })
     );
     console.log("[Map] StopMarker слой добавлен с iconAtlas:", Object.keys(iconMapping).length, "иконок");
