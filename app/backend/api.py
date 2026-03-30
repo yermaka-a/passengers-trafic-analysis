@@ -306,6 +306,192 @@ class Api:
             log.error("api_delete_object", extra={"error": str(e), "id": id})
             return {"status": "failed", "message": str(e)}
 
+    def export_geometry(self, data: dict):
+        """
+        Экспортировать полигоны и полилинии в JSON файл
+        
+        Args:
+            data: {"objects": [...], "filename": "export.json"}
+            
+        Returns:
+            {"status": "success", "message": "...", "count": N}
+        """
+        try:
+            import json
+            import webview
+            from pathlib import Path
+            from datetime import datetime
+            
+            objects = data.get("objects", [])
+            if not objects:
+                return {
+                    "status": "failed",
+                    "message": "Нет объектов для экспорта"
+                }
+            
+            # Данные для экспорта
+            export_data = {
+                "version": 1,
+                "exportedAt": datetime.now().isoformat(),
+                "count": len(objects),
+                "objects": objects
+            }
+            
+            # Диалог сохранения файла
+            window = webview.active_window()
+            result = window.create_file_dialog(
+                webview.FOLDER,
+                directory=str(Path.home())
+            )
+            
+            if not result:
+                return {
+                    "status": "cancelled",
+                    "message": "Экспорт отменён пользователем"
+                }
+            
+            # Сохраняем в выбранную папку
+            folder = result[0] if isinstance(result, tuple) else result
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"geometry_export_{timestamp}.json"
+            file_path = Path(folder) / filename
+            
+            # Записываем файл
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, ensure_ascii=False, indent=2)
+            
+            log.info("export_geometry", extra={"count": len(objects), "file": str(file_path)})
+            return {
+                "status": "success",
+                "message": f"Экспортировано {len(objects)} объектов в {file_path}",
+                "count": len(objects),
+                "file_path": str(file_path)
+            }
+            
+        except Exception as e:
+            log.error("api_export_geometry", extra={"error": str(e)})
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
+
+    def import_geometry(self, data: dict):
+        """
+        Импортировать полигоны и полилинии из JSON файла
+        
+        Args:
+            data: {}
+            
+        Returns:
+            {"status": "success", "imported": N, "failed": N}
+        """
+        try:
+            import json
+            import webview
+            from pathlib import Path
+            
+            # Диалог выбора файла
+            window = webview.active_window()
+            result = window.create_file_dialog(
+                webview.OPEN_FILE,
+                file_types=('JSON files (*.json)', 'All files (*.*)'),
+                directory=str(Path.home())
+            )
+            
+            if not result:
+                return {
+                    "status": "cancelled",
+                    "message": "Импорт отменён пользователем"
+                }
+            
+            file_path = result[0] if isinstance(result, tuple) else result
+            
+            # Читаем файл
+            with open(file_path, 'r', encoding='utf-8') as f:
+                export_data = json.load(f)
+            
+            if not export_data.get("objects") or not isinstance(export_data["objects"], list):
+                raise ValueError("Неверный формат файла")
+            
+            # Импорт через контроллер
+            imported_count = 0
+            failed_count = 0
+            
+            for obj in export_data["objects"]:
+                try:
+                    self.objects.create_object(obj)
+                    imported_count += 1
+                except Exception as e:
+                    log.error("import_geometry_object", extra={"error": str(e), "obj_id": obj.get("id")})
+                    failed_count += 1
+            
+            log.info("import_geometry", extra={"imported": imported_count, "failed": failed_count, "file": file_path})
+            return {
+                "status": "success",
+                "imported": imported_count,
+                "failed": failed_count,
+                "total": len(export_data["objects"])
+            }
+            
+        except Exception as e:
+            log.error("api_import_geometry", extra={"error": str(e)})
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
+
+    def delete_all_by_type(self, data: dict):
+        """
+        Удалить все объекты указанного типа
+        
+        Args:
+            data: {"type": "Polygon" | "Polyline"}
+            
+        Returns:
+            {"status": "success", "deleted": N}
+        """
+        try:
+            obj_type = data.get("type")
+            if not obj_type or obj_type not in ["Polygon", "Polyline"]:
+                return {
+                    "status": "failed",
+                    "message": "Неверный тип объекта"
+                }
+            
+            # Получаем все объекты
+            all_objects = self.objects.get_all_objects()
+            if not all_objects:
+                return {
+                    "status": "success",
+                    "deleted": 0
+                }
+            
+            # Фильтруем по типу и удаляем
+            deleted_count = 0
+            from uuid import UUID
+            
+            for obj in all_objects:
+                if obj.obj_type == obj_type:
+                    try:
+                        obj_id = UUID(obj.uuid)
+                        self.objects.delete(obj_id)
+                        deleted_count += 1
+                    except Exception as e:
+                        log.error("delete_all_by_type_object", extra={"error": str(e), "obj_id": obj.uuid})
+            
+            log.info("delete_all_by_type", extra={"type": obj_type, "deleted": deleted_count})
+            return {
+                "status": "success",
+                "deleted": deleted_count
+            }
+            
+        except Exception as e:
+            log.error("api_delete_all_by_type", extra={"error": str(e)})
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
+
     def import_stops(self, data: dict):
         """
         Импортировать остановки из Overpass API

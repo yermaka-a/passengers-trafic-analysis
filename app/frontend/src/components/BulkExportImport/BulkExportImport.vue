@@ -58,25 +58,19 @@ const toggleObject = (id: string) => {
 const handleExportAll = async () => {
   try {
     const objects = geometryObjects.value.map(([_, obj]) => obj);
-    const data = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      count: objects.length,
+    
+    const result = await (window as any).pywebview.api.export_geometry({
       objects
-    };
+    });
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `geometry_export_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    alert(`✅ Экспортировано ${objects.length} объектов`);
-    open.value = false;
+    if (result.status === "success") {
+      alert(`✅ ${result.message}`);
+      open.value = false;
+    } else if (result.status === "cancelled") {
+      console.log("[BulkExportImport] Экспорт отменён пользователем");
+    } else {
+      alert(`❌ Ошибка: ${result.message}`);
+    }
   } catch (e) {
     console.error("Ошибка экспорта:", e);
     alert(`❌ Ошибка: ${e}`);
@@ -95,25 +89,18 @@ const handleExportSelected = async () => {
       .filter(([id]) => selectedIds.value.has(id))
       .map(([_, obj]) => obj);
 
-    const data = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      count: objects.length,
+    const result = await (window as any).pywebview.api.export_geometry({
       objects
-    };
+    });
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `geometry_selected_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    alert(`✅ Экспортировано ${objects.length} объектов`);
-    open.value = false;
+    if (result.status === "success") {
+      alert(`✅ ${result.message}`);
+      open.value = false;
+    } else if (result.status === "cancelled") {
+      console.log("[BulkExportImport] Экспорт отменён пользователем");
+    } else {
+      alert(`❌ Ошибка: ${result.message}`);
+    }
   } catch (e) {
     console.error("Ошибка экспорта:", e);
     alert(`❌ Ошибка: ${e}`);
@@ -121,42 +108,22 @@ const handleExportSelected = async () => {
 };
 
 // Импорт из файла
-const handleImport = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
-
+const handleImport = async () => {
   try {
-    const text = await file.text();
-    const data = JSON.parse(text);
+    const result = await (window as any).pywebview.api.import_geometry({});
 
-    if (!data.objects || !Array.isArray(data.objects)) {
-      throw new Error("Неверный формат файла");
+    if (result.status === "success") {
+      alert(`✅ Импортировано ${result.imported} из ${result.total} объектов${result.failed > 0 ? ` (${result.failed} ошибок)` : ''}`);
+      emit("imported");
+      open.value = false;
+    } else if (result.status === "cancelled") {
+      console.log("[BulkExportImport] Импорт отменён пользователем");
+    } else {
+      alert(`❌ Ошибка: ${result.message}`);
     }
-
-    // Импорт через backend
-    const useApi = (await import("@/composables/useApi")).default;
-    const { createObject } = useApi();
-    let importedCount = 0;
-
-    for (const obj of data.objects) {
-      try {
-        await createObject(obj);
-        importedCount++;
-      } catch (e) {
-        console.error("Ошибка импорта объекта:", obj.id, e);
-      }
-    }
-
-    alert(`✅ Импортировано ${importedCount} из ${data.objects.length} объектов`);
-    emit("imported");
-    open.value = false;
-
-    // Очистка input
-    target.value = "";
   } catch (e) {
     console.error("Ошибка импорта:", e);
-    alert(`❌ Ошибка импорта: ${e}`);
+    alert(`❌ Ошибка: ${e}`);
   }
 };
 
@@ -173,21 +140,19 @@ const handleDeleteAllPolygons = async () => {
   }
 
   try {
-    const useApi = (await import("@/composables/useApi")).default;
-    const { deleteObject } = useApi();
-    let deletedCount = 0;
+    const result = await (window as any).pywebview.api.delete_all_by_type({
+      type: "Polygon"
+    });
 
-    for (const [id] of polygons) {
-      try {
-        await deleteObject(id);
+    if (result.status === "success") {
+      // Обновляем store
+      for (const [id] of polygons) {
         mapObjectStore.deleteObject(id);
-        deletedCount++;
-      } catch (e) {
-        console.error("Ошибка удаления:", id, e);
       }
+      alert(`✅ Удалено ${result.deleted} полигонов`);
+    } else {
+      alert(`❌ Ошибка: ${result.message}`);
     }
-
-    alert(`✅ Удалено ${deletedCount} полигонов`);
   } catch (e) {
     console.error("Ошибка удаления:", e);
     alert(`❌ Ошибка: ${e}`);
@@ -207,21 +172,19 @@ const handleDeleteAllPolylines = async () => {
   }
 
   try {
-    const useApi = (await import("@/composables/useApi")).default;
-    const { deleteObject } = useApi();
-    let deletedCount = 0;
+    const result = await (window as any).pywebview.api.delete_all_by_type({
+      type: "Polyline"
+    });
 
-    for (const [id] of polylines) {
-      try {
-        await deleteObject(id);
+    if (result.status === "success") {
+      // Обновляем store
+      for (const [id] of polylines) {
         mapObjectStore.deleteObject(id);
-        deletedCount++;
-      } catch (e) {
-        console.error("Ошибка удаления:", id, e);
       }
+      alert(`✅ Удалено ${result.deleted} полилиний`);
+    } else {
+      alert(`❌ Ошибка: ${result.message}`);
     }
-
-    alert(`✅ Удалено ${deletedCount} полилиний`);
   } catch (e) {
     console.error("Ошибка удаления:", e);
     alert(`❌ Ошибка: ${e}`);
@@ -270,12 +233,9 @@ const handleDeleteAllPolylines = async () => {
             <Download class="w-4 h-4 mr-2" />
             Экспорт выбранных ({{ selectedIds.size }})
           </Button>
-          <Button variant="outline" size="sm" as-child>
-            <label class="cursor-pointer">
-              <Upload class="w-4 h-4 mr-2" />
-              Импорт
-              <input type="file" accept=".json" @change="handleImport" class="hidden" />
-            </label>
+          <Button variant="outline" size="sm" @click="handleImport">
+            <Upload class="w-4 h-4 mr-2" />
+            Импорт
           </Button>
         </div>
 
