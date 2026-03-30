@@ -387,7 +387,6 @@ class Api:
                 df.write_excel(
                     file_path,
                     worksheet='Stops',
-                    engine='xlsxwriter',
                     column_formats={
                         'name': {'font_color': 'black'},
                         'description': {'font_color': 'black'},
