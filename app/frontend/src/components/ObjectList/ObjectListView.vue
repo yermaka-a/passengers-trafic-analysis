@@ -59,12 +59,15 @@ const cancelEditing = () => {
 const saveEditing = async (id: string) => {
   const obj = mapObjectStore.Objects.get(id);
   if (obj) {
+    // Обновляем в store
     const updatedObj = {
       ...obj,
       customName: editingCustomName.value || null,
       description: editingDescription.value || null,
     };
     mapObjectStore.Objects.set(id, updatedObj);
+    
+    // Отправляем на backend
     await updateObjectInBackend(updatedObj);
   }
   cancelEditing();

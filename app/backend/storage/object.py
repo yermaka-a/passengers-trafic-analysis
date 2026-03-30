@@ -168,6 +168,8 @@ class Objects:
                     id=str(options.Id),
                     name=options.name,
                     obj_type=options.obj_type,
+                    custom_name=options.custom_name,
+                    description=options.description,
                     latitude=latitude,
                     longitude=longitude,
                     latlng=latlng,
