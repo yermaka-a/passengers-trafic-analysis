@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutGrid, Table as TableIcon, ChevronDown, Search, Download, Upload } from "lucide-vue-next";
+import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
@@ -28,6 +28,27 @@ const tilesStore = useTilesStore();
 const view = ref<ViewType>("cards");
 const showTilesMenu = ref(false);
 const tilesMenuRef = ref<HTMLElement | null>(null);
+const showViewMenu = ref(false);
+const viewMenuRef = ref<HTMLElement | null>(null);
+const showImportExportMenu = ref(false);
+const importExportMenuRef = ref<HTMLElement | null>(null);
+const sortDescending = ref(true); // true = новые сверху
+
+// Сортировка объектов
+const sortedObjects = computed(() => {
+  const sorted = [...filteredObjects.value];
+  sorted.sort((a, b) => {
+    // Сортируем по ID (UUID v6 имеет временную метку в начале)
+    const idA = a[0];
+    const idB = b[0];
+    if (sortDescending.value) {
+      return idB.localeCompare(idA);
+    } else {
+      return idA.localeCompare(idB);
+    }
+  });
+  return sorted;
+});
 
 // Импорт остановок
 const showImportDialog = ref(false);
@@ -86,7 +107,7 @@ onMounted(() => {
   if (savedView === "cards" || savedView === "table") {
     view.value = savedView;
   }
-  
+
   // Обработчик клика вне dropdown
   document.addEventListener('click', handleClickOutside);
 });
@@ -98,6 +119,12 @@ onUnmounted(() => {
 const handleClickOutside = (event: MouseEvent) => {
   if (showTilesMenu.value && tilesMenuRef.value && !tilesMenuRef.value.contains(event.target as Node)) {
     showTilesMenu.value = false;
+  }
+  if (showViewMenu.value && viewMenuRef.value && !viewMenuRef.value.contains(event.target as Node)) {
+    showViewMenu.value = false;
+  }
+  if (showImportExportMenu.value && importExportMenuRef.value && !importExportMenuRef.value.contains(event.target as Node)) {
+    showImportExportMenu.value = false;
   }
 };
 
@@ -198,62 +225,102 @@ const openObjectPopup = (id: string) => {
           </div>
         </div>
 
-        <!-- Импорт остановок -->
-        <Button
-          variant="outline"
-          size="sm"
-          @click="showImportDialog = true"
-          class="flex items-center gap-2"
-        >
-          <Download class="w-4 h-4" />
-          Импорт остановок
-        </Button>
+        <!-- Импорт/Экспорт -->
+        <div ref="importExportMenuRef" class="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            @click="showImportExportMenu = !showImportExportMenu"
+            class="flex items-center gap-2"
+          >
+            <Import class="w-4 h-4" />
+            Остановки
+            <ChevronDown class="w-4 h-4" :class="{ 'rotate-180': showImportExportMenu }" />
+          </Button>
 
-        <!-- Экспорт остановок -->
-        <Button
-          variant="outline"
-          size="sm"
-          @click="handleExportStops"
-          class="flex items-center gap-2"
-        >
-          <Upload class="w-4 h-4" />
-          Экспорт остановок
-        </Button>
-        
+          <!-- Выпадающее меню -->
+          <div
+            v-if="showImportExportMenu"
+            class="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[180px]"
+          >
+            <button
+              @click="showImportDialog = true; showImportExportMenu = false"
+              class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            >
+              <Download class="w-4 h-4" />
+              Импорт
+            </button>
+            <button
+              @click="handleExportStops; showImportExportMenu = false"
+              class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            >
+              <Upload class="w-4 h-4" />
+              Экспорт
+            </button>
+          </div>
+        </div>
+
         <!-- Переключатель вида -->
-        <Button
-          variant="outline"
-          size="sm"
-          :class="view === 'cards' ? 'bg-accent' : ''"
-          @click="setView('cards')"
-          title="Вид: Карточки"
-        >
-          <LayoutGrid class="w-4 h-4 mr-2" />
-          Карточки
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          :class="view === 'table' ? 'bg-accent' : ''"
-          @click="setView('table')"
-          title="Вид: Таблица"
-        >
-          <TableIcon class="w-4 h-4 mr-2" />
-          Таблица
-        </Button>
+        <div ref="viewMenuRef" class="relative">
+          <Button
+            variant="outline"
+            size="sm"
+            @click="showViewMenu = !showViewMenu"
+            class="flex items-center gap-2"
+          >
+            <component :is="view === 'cards' ? LayoutGrid : TableIcon" class="w-4 h-4" />
+            {{ view === 'cards' ? 'Карточки' : 'Таблица' }}
+            <ChevronDown class="w-4 h-4" :class="{ 'rotate-180': showViewMenu }" />
+          </Button>
+
+          <!-- Выпадающее меню -->
+          <div
+            v-if="showViewMenu"
+            class="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[180px]"
+          >
+            <button
+              @click="setView('cards'); showViewMenu = false"
+              :class="[
+                'w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2',
+                view === 'cards' ? 'bg-accent font-medium' : ''
+              ]"
+            >
+              <LayoutGrid class="w-4 h-4" />
+              Карточки
+            </button>
+            <button
+              @click="setView('table'); showViewMenu = false"
+              :class="[
+                'w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2',
+                view === 'table' ? 'bg-accent font-medium' : ''
+              ]"
+            >
+              <TableIcon class="w-4 h-4" />
+              Таблица
+            </button>
+            <hr class="my-1" />
+            <button
+              @click="sortDescending = !sortDescending; showViewMenu = false"
+              class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            >
+              <component :is="sortDescending ? ChevronDown : ChevronUp" class="w-4 h-4" />
+              {{ sortDescending ? 'Сначала новые' : 'Сначала старые' }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- Контент -->
-    <div class="flex-1 overflow-hidden">
-      <ObjectListView 
-        v-if="view === 'cards'" 
-        :objects="filteredObjects"
+    <div class="flex-1 overflow-auto">
+      <ObjectListView
+        v-if="view === 'cards'"
+        :objects="sortedObjects"
         @open-popup="openObjectPopup"
       />
       <PropertyTable
         v-else
-        :objects="filteredObjects"
+        :objects="sortedObjects"
         @open-popup="openObjectPopup"
       />
     </div>
