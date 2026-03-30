@@ -25,6 +25,7 @@
     "pinia": "^3.0.4",
     "reka-ui": "^2.9.2",
     "shadcn-vue": "^2.4.3",
+    "supercluster": "^8.0.1",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "uuid": "^13.0.0",

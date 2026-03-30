@@ -14,10 +14,12 @@ import { generateIconAtlas } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
-import { HexagonLayer } from "@deck.gl/aggregation-layers";
+import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer, TextLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
+
+// Supercluster для кластеризации
+import Supercluster from 'supercluster';
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
@@ -487,74 +489,157 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - кластеризация через HexagonLayer + IconLayer
+  // 4. StopMarker layer - кластеризация через supercluster + ScatterplotLayer + TextLayer
   const stopMarkers = objectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
   const currentZoom = mapInstance.value?.getZoom() ?? 0;
 
-  // HexagonLayer для кластеризации на зумах < 14
-  if (stopMarkers.length > 0 && currentZoom < 14) {
-    const positions = stopMarkers.map(obj => obj.coordinates[0]).filter(Boolean);
+  // Показываем кластеры только на зумах 3-4, на 5+ показываем все точки
+  if (stopMarkers.length > 0 && currentZoom <= 4) {
+    // Создаём индекс supercluster
+    const index = new Supercluster({
+      radius: 60,      // Радиус кластеризации в пикселях
+      maxZoom: 4,      // Макс зум для кластеризации (на 5+ все точки отдельно)
+      extent: 512      // Размер тайла
+    });
 
-    layers.push(
-      new HexagonLayer({
-        id: "stop-markers-hexagon",
-        data: positions,
-        getPosition: (d: [number, number]) => d,
-        pickable: true,
-        extruded: false, // 2D круги вместо 3D
-        coverage: 1,
-        // Размер гексагона зависит от зума
-        radius: Math.max(500, 2000 / Math.pow(2, currentZoom)),
-        // Цвет зависит от количества точек в гексагоне
-        getColorWeight: 1,
-        colorRange: [
-          [1, 152, 189],   // голубой (1 точка)
-          [73, 227, 206],  // зелёный
-          [216, 254, 181], // светло-зелёный
-          [254, 237, 177], // жёлтый
-          [254, 173, 154], // оранжевый
-          [208, 28, 139]   // розовый (много точек)
-        ],
-        getColorAggregationType: 'SUM',
-        getHexagonColor: (d: any) => {
-          const count = d.points?.length || 1;
-          // Интенсивность цвета от количества
-          const intensity = Math.min(1, count / 50);
-          return [
-            255,
-            Math.round(100 * (1 - intensity)),
-            Math.round(100 * (1 - intensity)),
-            Math.round(155 + 100 * intensity)
-          ];
-        },
-        onClick: (info: any): boolean => {
-          if (info.object?.points?.length > 0) {
-            // Зум на кластер
-            const points = info.object.points;
-            const avgLat = points.reduce((sum: number, p: any) => sum + p[1], 0) / points.length;
-            const avgLng = points.reduce((sum: number, p: any) => sum + p[0], 0) / points.length;
-            mapInstance.value?.flyTo({
-              center: [avgLng, avgLat],
-              zoom: Math.min(currentZoom + 3, 16)
-            });
-            console.log(`[Map] Hexagon cluster: ${points.length} остановок`);
-          }
-          return true;
-        },
-        updateTriggers: {
-          getPosition: [positions.length],
-          getHexagonColor: [positions.length]
-        }
-      })
-    );
-  }
+    // Конвертируем в GeoJSON Features
+    const features = stopMarkers.map(obj => ({
+      type: 'Feature' as const,
+      properties: {
+        id: obj.id,
+        name: obj.name,
+        markerType: obj.markerType || 'pin',
+        color: obj.style.color,
+        radius: obj.style.radius,
+        getSizeScale: obj.style.getSizeScale
+      },
+      geometry: {
+        type: 'Point' as const,
+        coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0]
+      }
+    }));
 
-  // IconLayer для отдельных маркеров на зумах 14+
-  if (stopMarkers.length > 0 && currentZoom >= 14) {
-    // Генерируем sprite atlas из всех Lucide иконок
+    index.load(features);
+
+    // Получаем кластеры для текущего зума и области видимости
+    const bounds = mapInstance.value?.getBounds();
+    if (bounds) {
+      const clusters = index.getClusters([
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth()
+      ], Math.floor(currentZoom));
+
+      // ScatterplotLayer для кружков кластеров
+      const clusterCircles = clusters
+        .filter((c: any) => c.properties.cluster)
+        .map((c: any) => ({
+          position: [c.geometry.coordinates[0], c.geometry.coordinates[1]],
+          clusterId: c.properties.cluster_id,
+          point_count: c.properties.point_count,
+          isCluster: true
+        }));
+
+      if (clusterCircles.length > 0) {
+        layers.push(
+          new ScatterplotLayer({
+            id: "stop-markers-clusters",
+            data: clusterCircles,
+            getPosition: (d: any) => d.position,
+            getFillColor: (d: any) => {
+              // Цвет от количества: голубой → оранжевый → красный
+              const count = d.point_count;
+              if (count < 10) return [0, 188, 212, 220];      // голубой
+              if (count < 50) return [255, 152, 0, 220];      // оранжевый
+              return [244, 67, 54, 220];                       // красный
+            },
+            getRadius: (d: any) => Math.max(25, Math.min(80, 20 + d.point_count * 0.8)),
+            getLineColor: [255, 255, 255],
+            getLineWidth: 3,
+            pickable: true,
+            onClick: (info: any): boolean => {
+              if (info.object?.isCluster) {
+                const clusterId = info.object.clusterId;
+                const zoom = index.getClusterExpansionZoom(clusterId);
+                mapInstance.value?.flyTo({
+                  center: [info.object.position[0], info.object.position[1]],
+                  zoom: Math.min(zoom, 16)
+                });
+                console.log(`[Map] Cluster: ${info.object.point_count} остановок`);
+              }
+              return true;
+            },
+            updateTriggers: {
+              getPosition: [clusters.length],
+              getFillColor: [clusters.length],
+              getRadius: [clusters.length]
+            }
+          })
+        );
+
+        // TextLayer для цифр внутри кластеров
+        layers.push(
+          new TextLayer({
+            id: "stop-markers-cluster-text",
+            data: clusterCircles,
+            getPosition: (d: any) => d.position,
+            getText: (d: any) => d.point_count.toString(),
+            getSize: 16,
+            getAlignmentBaseline: 'center',
+            getAnchorPosition: 'center',
+            getColor: [255, 255, 255],
+            updateTriggers: {
+              getPosition: [clusters.length],
+              getText: [clusters.length]
+            }
+          })
+        );
+      }
+
+      // Показываем отдельные маркеры для не-кластеров (если зум достаточно большой)
+      const individualMarkers = clusters
+        .filter((c: any) => !c.properties.cluster)
+        .map((c: any) => ({
+          position: [c.geometry.coordinates[0], c.geometry.coordinates[1]],
+          properties: c.properties
+        }));
+
+      if (individualMarkers.length > 0 && currentZoom >= 3) {
+        const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+
+        layers.push(
+          new IconLayer({
+            id: "stop-markers-individual",
+            data: individualMarkers,
+            iconAtlas,
+            iconMapping,
+            getIcon: (obj: any) => {
+              const type = obj.properties?.markerType || 'pin';
+              return iconMapping[type] ? type : 'pin';
+            },
+            getPosition: (obj: any) => obj.position,
+            getSize: () => 24,
+            sizeScale: 1,
+            sizeMinPixels: 10,
+            sizeMaxPixels: 100,
+            getColor: (obj: any) => obj.properties?.color || [255, 0, 0],
+            pickable: true,
+            autoHighlight: true,
+            onClick: (info: any) => {
+              if (info.object) {
+                selectObject(info.object.properties?.id);
+              }
+            }
+          })
+        );
+      }
+    }
+  } else if (stopMarkers.length > 0) {
+    // На зумах 5+ показываем все отдельные иконки
     const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
 
     layers.push(
