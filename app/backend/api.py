@@ -421,6 +421,9 @@ class Api:
                 try:
                     self.objects.create_object(obj)
                     imported_count += 1
+                    # Синхронизируем окна
+                    if self.objects.api:
+                        self.objects.api.sync_windows('OBJECT_CREATED', {'id': obj.get('id')})
                 except Exception as e:
                     log.error("import_geometry_object", extra={"error": str(e), "obj_id": obj.get("id")})
                     failed_count += 1
@@ -471,11 +474,14 @@ class Api:
             from uuid import UUID
             
             for obj in all_objects:
-                if obj.obj_type == obj_type:
+                if hasattr(obj, 'obj_type') and obj.obj_type == obj_type:
                     try:
                         obj_id = UUID(obj.uuid)
                         self.objects.delete(obj_id)
                         deleted_count += 1
+                        # Синхронизируем окна
+                        if self.objects.api:
+                            self.objects.api.sync_windows('OBJECT_DELETED', {'id': str(obj_id)})
                     except Exception as e:
                         log.error("delete_all_by_type_object", extra={"error": str(e), "obj_id": obj.uuid})
             
