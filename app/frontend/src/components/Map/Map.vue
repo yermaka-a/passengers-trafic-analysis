@@ -18,23 +18,6 @@ import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/l
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
-// MapLibre кластеризация
-interface ClusterGeoJSON {
-  type: 'FeatureCollection';
-  features: Array<{
-    type: 'Feature';
-    geometry: { type: 'Point'; coordinates: [number, number] };
-    properties: {
-      id: string;
-      name: string;
-      markerType: string;
-      color: number[];
-      radius: number;
-      getSizeScale: number;
-    };
-  }>;
-}
-
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
 const tilesStore = useTilesStore();
@@ -641,20 +624,19 @@ onMounted(() => {
     mapStore.showObjectPopupRef = showObjectPopup;
     console.log("[Map] MapLibre создана");
 
-    // === КЛАСТЕРИЗАЦИЯ STOPMARKER через MapLibre ===
-    // Создаём GeoJSON источник с кластеризацией
-    const stopMarkersGeoJSON: ClusterGeoJSON = {
-      type: 'FeatureCollection',
-      features: []
-    };
-
-    map.addSource('stop-markers-cluster', {
-      type: 'geojson',
-      data: stopMarkersGeoJSON,
-      cluster: true,
-      clusterMaxZoom: 14,
-      clusterRadius: 50
-    });
+    // Ждём загрузки стиля перед добавлением слоёв
+    map.on('load', () => {
+      // === КЛАСТЕРИЗАЦИЯ STOPMARKER через MapLibre ===
+      console.log("[Map] Style loaded, initializing clusters...");
+      
+      // Создаём GeoJSON источник с кластеризацией
+      map.addSource('stop-markers-cluster', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50
+      });
 
     // Слой кластеров (круги)
     map.addLayer({
@@ -756,6 +738,8 @@ onMounted(() => {
       updateClusters();
     }, { deep: true });
 
+      console.log("[Map] Кластеризация инициализирована");
+    });
     // === КОНЕЦ КЛАСТЕРИЗАЦИИ ===
 
     // Слушаем событие переключения тайлов из List.vue
