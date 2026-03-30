@@ -41,22 +41,19 @@ const handleImported = async () => {
 const handleExportStops = async () => {
   try {
     const result = await (window as any).pywebview.api.export_stops({});
+    
     if (result.status === "success") {
-      // Скачиваем CSV файл
-      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `stops_export_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      console.log(`[List] Экспортировано ${result.count} остановок`);
+      console.log(`[List] Экспортировано ${result.count} остановок в ${result.message}`);
+      alert(`✅ ${result.message}`);
+    } else if (result.status === "cancelled") {
+      console.log("[List] Экспорт отменён пользователем");
     } else {
       console.error("Ошибка экспорта:", result.message);
-      alert(`Ошибка: ${result.message}`);
+      alert(`❌ Ошибка: ${result.message}`);
     }
   } catch (e) {
     console.error("Ошибка экспорта:", e);
-    alert(`Ошибка: ${e}`);
+    alert(`❌ Ошибка: ${e}`);
   }
 };
 

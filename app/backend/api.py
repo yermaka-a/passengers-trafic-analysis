@@ -316,18 +316,20 @@ class Api:
 
     def export_stops(self, data: dict):
         """
-        Экспортировать остановки в CSV
+        Экспортировать остановки в CSV файл
         
         Args:
             data: {"city": "Ангарск"} или {} для всех
         
         Returns:
-            {"status": "success", "csv": "name,lat,lon,type\n..."}
+            {"status": "success", "message": "Экспортировано 320 остановок", "count": 320}
         """
         try:
             from .models.object import MapObject, StopMetadata
             import csv
             import io
+            import webview
+            from pathlib import Path
             
             with self.storage.localSession() as session:
                 # Загружаем остановки с метаданными
@@ -360,12 +362,32 @@ class Api:
                 
                 csv_content = output.getvalue()
                 
-                log.info("export_stops", extra={"count": len(objects)})
-                return {
-                    "status": "success",
-                    "csv": csv_content,
-                    "count": len(objects)
-                }
+                # Диалог сохранения файла
+                window = webview.active_window()
+                file_path = window.create_file_save(
+                    title='Сохранить CSV',
+                    file_types=[('CSV files', '*.csv')],
+                    save_filename='stops_export.csv'
+                )
+                
+                if file_path:
+                    # Сохраняем файл
+                    with open(file_path, 'w', encoding='utf-8', newline='') as f:
+                        f.write(csv_content)
+                    
+                    log.info("export_stops", extra={"count": len(objects), "file": file_path})
+                    return {
+                        "status": "success",
+                        "message": f"Экспортировано {len(objects)} остановок в {file_path}",
+                        "count": len(objects)
+                    }
+                else:
+                    # Пользователь отменил сохранение
+                    return {
+                        "status": "cancelled",
+                        "message": "Сохранение отменено",
+                        "count": 0
+                    }
                 
         except Exception as e:
             log.error("api_export_stops", extra={"error": str(e)})
