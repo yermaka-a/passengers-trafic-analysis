@@ -316,20 +316,20 @@ class Api:
 
     def export_stops(self, data: dict):
         """
-        Экспортировать остановки в CSV файл
+        Экспортировать остановки в Excel файл
         
         Args:
-            data: {"city": "Ангарск"} или {} для всех
+            data: {}
         
         Returns:
             {"status": "success", "message": "Экспортировано 320 остановок", "count": 320}
         """
         try:
             from .models.object import MapObject, StopMetadata
-            import csv
-            import io
+            import pandas as pd
             import webview
             from pathlib import Path
+            from datetime import datetime
             
             with self.storage.localSession() as session:
                 # Загружаем остановки с метаданными
@@ -342,53 +342,58 @@ class Api:
                 
                 objects = query.all()
                 
-                # Генерируем CSV
-                output = io.StringIO()
-                writer = csv.writer(output)
+                if not objects:
+                    return {
+                        "status": "failed",
+                        "message": "Нет остановок для экспорта"
+                    }
                 
-                # Заголовок
-                writer.writerow(['name', 'lat', 'lon', 'type', 'osm_id', 'marker_type'])
-                
-                # Данные
+                # Создаём DataFrame
+                data = []
                 for map_obj, stop_meta in objects:
-                    writer.writerow([
-                        map_obj.name,
-                        map_obj.latitude,
-                        map_obj.longitude,
-                        'StopMarker',
-                        stop_meta.osm_id,
-                        stop_meta.marker_type
-                    ])
+                    data.append({
+                        'name': map_obj.name,
+                        'latitude': map_obj.latitude,
+                        'longitude': map_obj.longitude,
+                        'type': 'StopMarker',
+                        'osm_id': stop_meta.osm_id,
+                        'marker_type': stop_meta.marker_type,
+                        'radius': stop_meta.radius,
+                        'color': stop_meta.color
+                    })
                 
-                csv_content = output.getvalue()
+                df = pd.DataFrame(data)
                 
-                # Диалог сохранения файла
+                # Диалог выбора папки
                 window = webview.active_window()
-                file_path = window.create_file_dialog(
-                    webview.SAVE_DIALOG,
-                    directory='',
-                    save_filename='stops_export.csv',
-                    file_types=('*.csv',)
+                folder = window.create_file_dialog(
+                    webview.FOLDER_DIALOG,
+                    directory=str(Path.home())
                 )
                 
-                if file_path:
-                    # Сохраняем файл
-                    with open(file_path, 'w', encoding='utf-8', newline='') as f:
-                        f.write(csv_content)
-                    
-                    log.info("export_stops", extra={"count": len(objects), "file": file_path})
-                    return {
-                        "status": "success",
-                        "message": f"Экспортировано {len(objects)} остановок в {file_path}",
-                        "count": len(objects)
-                    }
-                else:
-                    # Пользователь отменил сохранение
+                if not folder:
+                    # Пользователь отменил
                     return {
                         "status": "cancelled",
                         "message": "Сохранение отменено",
                         "count": 0
                     }
+                
+                # Генерируем имя файла с датой
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                filename = f'stops_export_{timestamp}.xlsx'
+                file_path = Path(folder) / filename
+                
+                # Сохраняем Excel файл
+                df.to_excel(file_path, index=False, engine='openpyxl')
+                
+                log.info("export_stops", extra={"count": len(objects), "file": str(file_path)})
+                return {
+                    "status": "success",
+                    "message": f"Экспортировано {len(objects)} остановок в {file_path}",
+                    "count": len(objects),
+                    "file_path": str(file_path)
+                }
                 
         except Exception as e:
             log.error("api_export_stops", extra={"error": str(e)})

@@ -7,6 +7,8 @@ requires-python = ">=3.12"
 dependencies = [
     "colorama>=0.4.6",
     "httpx>=0.28.1",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.1",
     "pydantic>=2.12.5",
     "pywebview>=6.1",
     "sqlalchemy>=2.0.46",
