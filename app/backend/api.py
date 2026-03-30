@@ -393,7 +393,7 @@ class Api:
             # Диалог выбора файла
             window = webview.active_window()
             result = window.create_file_dialog(
-                dialog_type=webview.OPEN_FILE_DIALOG,
+                dialog_type=webview.OPEN_DIALOG,
                 file_types=('JSON files (*.json)', 'All files (*.*)'),
                 directory=str(Path.home())
             )
