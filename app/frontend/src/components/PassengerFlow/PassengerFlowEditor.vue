@@ -1,0 +1,378 @@
+<script setup lang="ts">
+import { ref, computed, watch } from "vue";
+import { useMapObjectStore } from "@/store";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Plus, Trash2, Save, X } from "lucide-vue-next";
+
+const mapObjectStore = useMapObjectStore();
+
+const open = defineModel<boolean>("open", { default: false });
+const emit = defineEmits<{
+  saved: [];
+}>();
+
+// Форма создания/редактирования
+const flowId = ref<string | null>(null);
+const flowName = ref("");
+const flowDate = ref(new Date().toISOString().split("T")[0]);
+const flowTimePeriod = ref<"morning_peak" | "evening_peak" | "off_peak" | "night">("off_peak");
+const flowDirection = ref("forward");
+const flowDescription = ref("");
+const flowRouteId = ref<string | null>(null);
+
+// Остановки в потоке
+interface FlowStop {
+  stop_id: string;
+  stop_name: string;
+  order: number;
+  passengers_on_board: number;
+  passengers_off_board: number;
+  passengers_remaining: number;
+}
+
+const flowStops = ref<FlowStop[]>([]);
+
+// Все остановки для выбора
+const availableStops = computed(() => {
+  const allObjects = Array.from(mapObjectStore.Objects.entries());
+  return allObjects
+    .filter(([_, obj]) => obj.type === "StopMarker")
+    .map(([id, obj]) => ({
+      id,
+      name: obj.customName || obj.name || "Без названия"
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+});
+
+// Добавить остановку
+const addStop = () => {
+  const nextOrder = flowStops.value.length > 0 
+    ? Math.max(...flowStops.value.map(s => s.order)) + 1 
+    : 1;
+  
+  flowStops.value.push({
+    stop_id: "",
+    stop_name: "",
+    order: nextOrder,
+    passengers_on_board: 0,
+    passengers_off_board: 0,
+    passengers_remaining: 0
+  });
+};
+
+// Удалить остановку
+const removeStop = (index: number) => {
+  flowStops.value.splice(index, 1);
+  // Пересчитываем порядок
+  flowStops.value.forEach((stop, idx) => {
+    stop.order = idx + 1;
+  });
+};
+
+// Выбрать остановку из списка
+const selectStop = (index: number, stopId: string) => {
+  const stop = availableStops.value.find(s => s.id === stopId);
+  if (stop && flowStops.value[index]) {
+    flowStops.value[index].stop_id = stopId;
+    flowStops.value[index].stop_name = stop.name;
+  }
+};
+
+// Пересчитать остаток пассажиров
+const recalculateRemaining = () => {
+  let remaining = 0;
+  flowStops.value.forEach(stop => {
+    remaining = remaining + stop.passengers_on_board - stop.passengers_off_board;
+    stop.passengers_remaining = Math.max(0, remaining);
+  });
+};
+
+// Сохранить поток
+const saveFlow = async () => {
+  try {
+    const { create_passenger_flow, update_passenger_flow } = (window as any).pywebview?.api || {};
+    
+    if (!create_passenger_flow) {
+      alert("❌ API недоступно");
+      return;
+    }
+    
+    const stopsData = flowStops.value.map(stop => ({
+      stop_id: stop.stop_id,
+      order: stop.order,
+      passengers_on_board: stop.passengers_on_board,
+      passengers_off_board: stop.passengers_off_board
+    }));
+    
+    const data = {
+      name: flowName.value,
+      date: flowDate.value,
+      time_period: flowTimePeriod.value,
+      direction: flowDirection.value,
+      description: flowDescription.value,
+      route_id: flowRouteId.value || undefined,
+      stops: stopsData
+    };
+    
+    let result;
+    if (flowId.value) {
+      result = await update_passenger_flow({
+        flow_id: flowId.value,
+        ...data
+      });
+    } else {
+      result = await create_passenger_flow(data);
+    }
+    
+    if (result?.status === "success") {
+      alert("✅ Пассажиропоток сохранён");
+      emit("saved");
+      open.value = false;
+      resetForm();
+    } else {
+      alert(`❌ Ошибка: ${result?.message}`);
+    }
+  } catch (e) {
+    console.error("saveFlow error:", e);
+    alert(`❌ Ошибка: ${e}`);
+  }
+};
+
+// Сброс формы
+const resetForm = () => {
+  flowId.value = null;
+  flowName.value = "";
+  flowDate.value = new Date().toISOString().split("T")[0];
+  flowTimePeriod.value = "off_peak";
+  flowDirection.value = "forward";
+  flowDescription.value = "";
+  flowRouteId.value = null;
+  flowStops.value = [];
+};
+
+// Открыть для редактирования
+const openForEdit = async (flow: any) => {
+  resetForm();
+  flowId.value = flow.flow_id;
+  flowName.value = flow.name;
+  flowDate.value = flow.date;
+  flowTimePeriod.value = flow.time_period;
+  flowDirection.value = flow.direction;
+  flowDescription.value = flow.description || "";
+  flowRouteId.value = flow.route_id || null;
+  
+  if (flow.stops) {
+    flowStops.value = flow.stops.map((stop: any) => ({
+      stop_id: stop.stop_id,
+      stop_name: stop.stop_name,
+      order: stop.stop_order,
+      passengers_on_board: stop.passengers_on_board,
+      passengers_off_board: stop.passengers_off_board,
+      passengers_remaining: stop.passengers_remaining
+    }));
+  }
+  
+  open.value = true;
+};
+
+// Отслеживаем изменения для пересчёта
+watch(flowStops, () => {
+  recalculateRemaining();
+}, { deep: true });
+
+// Экспортируем для внешнего использования
+defineExpose({ openForEdit, resetForm });
+</script>
+
+<template>
+  <Dialog v-model:open="open">
+    <DialogContent class="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogHeader>
+        <DialogTitle>
+          {{ flowId ? "Редактировать пассажиропоток" : "Новый пассажиропоток" }}
+        </DialogTitle>
+      </DialogHeader>
+
+      <div class="flex-1 overflow-auto py-4">
+        <!-- Основная информация -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+          <div class="space-y-2">
+            <Label>Название *</Label>
+            <Input v-model="flowName" placeholder="Например: Маршрут №5 - Утренний" />
+          </div>
+          
+          <div class="space-y-2">
+            <Label>Дата *</Label>
+            <Input v-model="flowDate" type="date" />
+          </div>
+          
+          <div class="space-y-2">
+            <Label>Период</Label>
+            <Select v-model="flowTimePeriod">
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите период" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="morning_peak">Утренний пик (6:00-9:00)</SelectItem>
+                <SelectItem value="evening_peak">Вечерний пик (17:00-20:00)</SelectItem>
+                <SelectItem value="off_peak">Вне пика</SelectItem>
+                <SelectItem value="night">Ночь</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div class="space-y-2">
+            <Label>Направление</Label>
+            <Select v-model="flowDirection">
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите направление" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="forward">Прямое (→)</SelectItem>
+                <SelectItem value="backward">Обратное (←)</SelectItem>
+                <SelectItem value="northbound">На север (↑)</SelectItem>
+                <SelectItem value="southbound">На юг (↓)</SelectItem>
+                <SelectItem value="eastbound">На восток (→)</SelectItem>
+                <SelectItem value="westbound">На запад (←)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div class="space-y-2 col-span-2">
+            <Label>Описание</Label>
+            <Input v-model="flowDescription" placeholder="Описание пассажиропотока" />
+          </div>
+        </div>
+
+        <!-- Остановки -->
+        <div class="border rounded-lg">
+          <div class="flex items-center justify-between p-3 border-b bg-muted/50">
+            <h3 class="font-semibold">Остановки в потоке</h3>
+            <Button @click="addStop" size="sm" variant="outline">
+              <Plus class="w-4 h-4 mr-2" />
+              Добавить остановку
+            </Button>
+          </div>
+
+          <div class="divide-y max-h-[400px] overflow-auto">
+            <div
+              v-for="(stop, index) in flowStops"
+              :key="index"
+              class="flex items-center gap-2 p-3 hover:bg-muted/50"
+            >
+              <!-- Порядок -->
+              <div class="w-12 text-center font-bold text-lg">
+                {{ stop.order }}
+              </div>
+              
+              <!-- Выбор остановки -->
+              <div class="flex-1">
+                <Select
+                  :model-value="stop.stop_id"
+                  @update:model-value="(value) => { if (typeof value === 'string') selectStop(index, value) }"
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите остановку" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      v-for="s in availableStops"
+                      :key="s.id"
+                      :value="s.id"
+                    >
+                      {{ s.name }}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <!-- Село -->
+              <div class="w-24">
+                <Input
+                  v-model.number="stop.passengers_on_board"
+                  type="number"
+                  min="0"
+                  placeholder="Село"
+                  class="text-center"
+                />
+              </div>
+              
+              <!-- Вышло -->
+              <div class="w-24">
+                <Input
+                  v-model.number="stop.passengers_off_board"
+                  type="number"
+                  min="0"
+                  placeholder="Вышло"
+                  class="text-center"
+                />
+              </div>
+              
+              <!-- Остаток (авто) -->
+              <div class="w-24 text-center font-medium text-muted-foreground">
+                {{ stop.passengers_remaining }}
+              </div>
+              
+              <!-- Удалить -->
+              <Button
+                @click="removeStop(index)"
+                size="icon"
+                variant="ghost"
+                class="text-destructive hover:text-destructive"
+              >
+                <Trash2 class="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div v-if="flowStops.length === 0" class="p-8 text-center text-muted-foreground">
+              Нет остановок. Нажмите "Добавить остановку"
+            </div>
+          </div>
+
+          <!-- Итого -->
+          <div class="p-3 border-t bg-muted/30">
+            <div class="flex justify-between text-sm">
+              <span>Всего остановок:</span>
+              <span class="font-bold">{{ flowStops.length }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span>Всего село:</span>
+              <span class="font-bold">{{ flowStops.reduce((sum, s) => sum + s.passengers_on_board, 0) }}</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span>Всего вышло:</span>
+              <span class="font-bold">{{ flowStops.reduce((sum, s) => sum + s.passengers_off_board, 0) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="flex justify-end gap-2 pt-4 border-t">
+        <Button @click="open = false; resetForm()" variant="outline">
+          <X class="w-4 h-4 mr-2" />
+          Отмена
+        </Button>
+        <Button @click="saveFlow">
+          <Save class="w-4 h-4 mr-2" />
+          Сохранить
+        </Button>
+      </div>
+    </DialogContent>
+  </Dialog>
+</template>
