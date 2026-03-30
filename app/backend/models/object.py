@@ -51,6 +51,7 @@ class MapObject(Base):
     latlng: Mapped[List[dict]] = mapped_column(MutableList.as_mutable(JSON), nullable=False)
 
     # Поля С default (необязательные) - должны идти после
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
     latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True, index=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)

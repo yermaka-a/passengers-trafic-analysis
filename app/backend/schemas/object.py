@@ -24,12 +24,6 @@ class Options(RootObjBaseModel):
         None,
         max_length=40000,
     )
-    custom_name: Optional[str] = Field(
-        None,
-        alias="customName",
-        serialization_alias="customName",
-        max_length=255,
-    )
     color: Optional[str] | None = Field(None, max_length=10)
     stroke: Optional[bool] | None = None
     dash_array: Optional[List[float]] | None = Field(

@@ -132,7 +132,6 @@ const deckGLToBackend = (obj: DeckGLObject): BackendObjectCreate => {
       Id: obj.id,
       name: obj.name,
       objType: obj.type,
-      customName: obj.customName ?? null,
       description: obj.description ?? null,
       color,
       stroke: isStopMarker ? undefined : ((obj.style.strokeWidth ?? 0) > 0),
