@@ -17,7 +17,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, X } from "lucide-vue-next";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Trash2, Save, X, Check, ChevronsUpDown } from "lucide-vue-next";
 
 const mapObjectStore = useMapObjectStore();
 
@@ -30,7 +43,6 @@ const emit = defineEmits<{
 const flowId = ref<string | null>(null);
 const flowName = ref("");
 const flowDate = ref(new Date().toISOString().split("T")[0]);
-const flowTimePeriod = ref<"morning_peak" | "evening_peak" | "off_peak" | "night">("off_peak");
 const flowDirection = ref("forward");
 const flowDescription = ref("");
 const flowRouteId = ref<string | null>(null);
@@ -46,17 +58,27 @@ interface FlowStop {
 }
 
 const flowStops = ref<FlowStop[]>([]);
+const openCombobox = ref<string | null>(null);
+const searchQuery = ref("");
 
 // Все остановки для выбора
 const availableStops = computed(() => {
   const allObjects = Array.from(mapObjectStore.Objects.entries());
-  return allObjects
+  const stops = allObjects
     .filter(([_, obj]) => obj.type === "StopMarker")
     .map(([id, obj]) => ({
       id,
       name: obj.customName || obj.name || "Без названия"
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+  
+  // Фильтруем по поиску
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    return stops.filter(stop => stop.name.toLowerCase().includes(query));
+  }
+  
+  return stops;
 });
 
 // Добавить остановку
@@ -90,6 +112,8 @@ const selectStop = (index: number, stopId: string) => {
   if (stop && flowStops.value[index]) {
     flowStops.value[index].stop_id = stopId;
     flowStops.value[index].stop_name = stop.name;
+    openCombobox.value = null;
+    searchQuery.value = "";
   }
 };
 
@@ -122,7 +146,6 @@ const saveFlow = async () => {
     const data = {
       name: flowName.value,
       date: flowDate.value,
-      time_period: flowTimePeriod.value,
       direction: flowDirection.value,
       description: flowDescription.value,
       route_id: flowRouteId.value || undefined,
@@ -158,7 +181,6 @@ const resetForm = () => {
   flowId.value = null;
   flowName.value = "";
   flowDate.value = new Date().toISOString().split("T")[0];
-  flowTimePeriod.value = "off_peak";
   flowDirection.value = "forward";
   flowDescription.value = "";
   flowRouteId.value = null;
@@ -171,7 +193,6 @@ const openForEdit = async (flow: any) => {
   flowId.value = flow.flow_id;
   flowName.value = flow.name;
   flowDate.value = flow.date;
-  flowTimePeriod.value = flow.time_period;
   flowDirection.value = flow.direction;
   flowDescription.value = flow.description || "";
   flowRouteId.value = flow.route_id || null;
@@ -215,27 +236,12 @@ defineExpose({ openForEdit, resetForm });
             <Label>Название *</Label>
             <Input v-model="flowName" placeholder="Например: Маршрут №5 - Утренний" />
           </div>
-          
+
           <div class="space-y-2">
             <Label>Дата *</Label>
             <Input v-model="flowDate" type="date" />
           </div>
-          
-          <div class="space-y-2">
-            <Label>Период</Label>
-            <Select v-model="flowTimePeriod">
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите период" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="morning_peak">Утренний пик (6:00-9:00)</SelectItem>
-                <SelectItem value="evening_peak">Вечерний пик (17:00-20:00)</SelectItem>
-                <SelectItem value="off_peak">Вне пика</SelectItem>
-                <SelectItem value="night">Ночь</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
+
           <div class="space-y-2">
             <Label>Направление</Label>
             <Select v-model="flowDirection">
@@ -245,14 +251,10 @@ defineExpose({ openForEdit, resetForm });
               <SelectContent>
                 <SelectItem value="forward">Прямое (→)</SelectItem>
                 <SelectItem value="backward">Обратное (←)</SelectItem>
-                <SelectItem value="northbound">На север (↑)</SelectItem>
-                <SelectItem value="southbound">На юг (↓)</SelectItem>
-                <SelectItem value="eastbound">На восток (→)</SelectItem>
-                <SelectItem value="westbound">На запад (←)</SelectItem>
               </SelectContent>
             </Select>
           </div>
-          
+
           <div class="space-y-2 col-span-2">
             <Label>Описание</Label>
             <Input v-model="flowDescription" placeholder="Описание пассажиропотока" />
@@ -282,23 +284,46 @@ defineExpose({ openForEdit, resetForm });
               
               <!-- Выбор остановки -->
               <div class="flex-1">
-                <Select
-                  :model-value="stop.stop_id"
-                  @update:model-value="(value) => { if (typeof value === 'string') selectStop(index, value) }"
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите остановку" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="s in availableStops"
-                      :key="s.id"
-                      :value="s.id"
+                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { if (!val) { openCombobox = null; searchQuery = ''; } else { openCombobox = `stop-${index}`; } }">
+                  <PopoverTrigger as-child>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      :aria-expanded="openCombobox === `stop-${index}`"
+                      class="w-full justify-between"
                     >
-                      {{ s.name }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                      <span class="truncate">
+                        {{ stop.stop_name || "Выберите остановку" }}
+                      </span>
+                      <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent class="w-[300px] p-0">
+                    <Command>
+                      <CommandInput 
+                        v-model="searchQuery" 
+                        placeholder="Поиск остановки..." 
+                      />
+                      <CommandList>
+                        <CommandEmpty>Ничего не найдено</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            v-for="s in availableStops"
+                            :key="s.id"
+                            :value="s.id"
+                            @select="selectStop(index, s.id)"
+                          >
+                            <Check
+                              :class="stop.stop_id === s.id ? 'opacity-100' : 'opacity-0'"
+                              class="mr-2 h-4 w-4"
+                            />
+                            {{ s.name }}
+                          </CommandItem>
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
               
               <!-- Село -->
