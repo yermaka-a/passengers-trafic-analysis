@@ -545,6 +545,8 @@ const createDeckLayers = () => {
         };
       });
 
+      console.log(`[Map] Кластеры: ${clusterData.length} шт, остановок: ${stopMarkers.length}`);
+
       // ScatterplotLayer для кругов кластеров
       layers.push(
         new ScatterplotLayer({
@@ -563,13 +565,19 @@ const createDeckLayers = () => {
           pickable: true,
           onClick: (info: any) => {
             if (info.object) {
-              // Зум на кластер
+              // Зум на кластер - увеличиваем зум до 14-16
+              const targetZoom = Math.max(14, currentZoom + 4);
               mapInstance.value?.flyTo({
                 center: [info.object.position[0], info.object.position[1]],
-                zoom: Math.min(currentZoom + 2, 16)
+                zoom: Math.min(targetZoom, 18)
               });
-              console.log(`[Map] Cluster: ${info.object.count} остановок`);
+              console.log(`[Map] Cluster: ${info.object.count} остановок, зум: ${currentZoom} → ${targetZoom}`);
             }
+          },
+          updateTriggers: {
+            getPosition: [clusterData.length, currentZoom],
+            getFillColor: [clusterData.length],
+            getRadius: [clusterData.length]
           }
         })
       );
