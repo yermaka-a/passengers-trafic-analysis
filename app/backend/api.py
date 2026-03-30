@@ -103,7 +103,7 @@ class Api:
         """
         Синхронизировать ВСЕ окна через evaluate_js.
         Вызывается после создания/обновления/удаления объекта.
-        
+
         Args:
             event_type: Тип события (OBJECT_CREATED, OBJECT_UPDATED, OBJECT_DELETED)
             data: Данные события
@@ -113,9 +113,10 @@ class Api:
             'type': event_type,
             'data': data or {}
         })
-        
+
         print(f'[API] Syncing windows with {event_type} (exclude: {exclude_window_id})')
-        
+        print(f'[API] Message: {message}')
+
         # Отправляем в главное окно
         if self._main_window:
             try:
@@ -132,7 +133,8 @@ class Api:
                     }}
                 }})();
                 """
-                self._main_window.evaluate_js(js_code)
+                result = self._main_window.evaluate_js(js_code)
+                print(f'[API] Main window sync result: {result}')
             except Exception as e:
                 print(f'[API] Error syncing main window: {e}')
         

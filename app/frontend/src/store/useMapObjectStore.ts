@@ -420,6 +420,9 @@ export const useMapObjectStore = defineStore("mapobjects", {
         this.EditingObjectId = null;
       }
       console.log(`[MapObjectStore] Удалён объект ${id}, осталось: ${this.Objects.size}`);
+      
+      // Принудительно вызываем событие для watch
+      this.$patch({});
     },
 
     // ========================================================================

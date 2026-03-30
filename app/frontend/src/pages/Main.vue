@@ -31,10 +31,15 @@ const pyWebViewReadyHandler = async () => {
 // Обработчик синхронизации между окнами
 const handlePanelSync = async (event: CustomEvent) => {
   console.log('[Main] Panel sync event:', event.detail);
-  const { type } = event.detail;
-  
-  if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED' || type === 'OBJECT_DELETED') {
-    // Перезагружаем объекты из БД
+  const { type, data } = event.detail;
+
+  if (type === 'OBJECT_DELETED' && data?.id) {
+    // Просто удаляем объект из store, без полной перезагрузки
+    console.log('[Main] Deleting object from store:', data.id);
+    objectStore.deleteObject(data.id);
+    console.log('[Main] Object deleted, remaining:', objectStore.Objects.size);
+  } else if (type === 'OBJECT_CREATED' || type === 'OBJECT_UPDATED') {
+    // Для создания/обновления - полная перезагрузка
     await objectStore.loadAllObjectsFromDB();
     console.log('[Main] Objects reloaded after', type);
   }
