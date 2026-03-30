@@ -365,10 +365,10 @@ class Api:
                 # Диалог сохранения файла
                 window = webview.active_window()
                 file_path = window.create_file_dialog(
-                    dialog_type=webview.SAVE_DIALOG,
-                    title='Сохранить CSV',
-                    file_types=('CSV files (*.csv)',),
-                    save_filename='stops_export.csv'
+                    webview.SAVE_DIALOG,
+                    directory='',
+                    save_filename='stops_export.csv',
+                    file_types=('CSV files (*.csv)|*.csv',)
                 )
                 
                 if file_path:
