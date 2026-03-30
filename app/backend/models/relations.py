@@ -50,10 +50,18 @@ class ObjectRelation(Base):
 
     # Связи с объектами
     parent: Mapped[Optional["MapObject"]] = relationship(
-        "MapObject", foreign_keys=[parent_id], back_populates="child_relations", init=False
+        "MapObject", 
+        foreign_keys=[parent_id], 
+        back_populates="child_relations", 
+        init=False,
+        primaryjoin="ObjectRelation.parent_id == MapObject.id"
     )
     child: Mapped[Optional["MapObject"]] = relationship(
-        "MapObject", foreign_keys=[child_id], back_populates="parent_relations", init=False
+        "MapObject", 
+        foreign_keys=[child_id], 
+        back_populates="parent_relations", 
+        init=False,
+        primaryjoin="ObjectRelation.child_id == MapObject.id"
     )
 
     @property
@@ -101,7 +109,12 @@ class PassengerFlow(Base):
     )
 
     # Связь с маршрутом
-    route: Mapped[Optional["Route"]] = relationship("Route", back_populates="passenger_flows", init=False)
+    route: Mapped[Optional["Route"]] = relationship(
+        "Route", 
+        back_populates="passenger_flows", 
+        init=False,
+        primaryjoin="PassengerFlow.route_id == Route.id"
+    )
 
     @property
     def uuid(self) -> str:
@@ -133,8 +146,18 @@ class PassengerFlowStop(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
     # Связи
-    flow: Mapped["PassengerFlow"] = relationship("PassengerFlow", back_populates="flow_stops", init=False)
-    stop: Mapped[Optional["MapObject"]] = relationship("MapObject", back_populates="passenger_flow_stops", init=False)
+    flow: Mapped["PassengerFlow"] = relationship(
+        "PassengerFlow", 
+        back_populates="flow_stops", 
+        init=False,
+        primaryjoin="PassengerFlowStop.flow_id == PassengerFlow.id"
+    )
+    stop: Mapped[Optional["MapObject"]] = relationship(
+        "MapObject", 
+        back_populates="passenger_flow_stops", 
+        init=False,
+        primaryjoin="PassengerFlowStop.stop_id == MapObject.id"
+    )
 
     @property
     def flow_uuid(self) -> str:
@@ -165,12 +188,20 @@ class Route(Base):
 
     # Остановки в маршруте
     route_stops: Mapped[List["RouteStop"]] = relationship(
-        "RouteStop", back_populates="route", cascade="all, delete-orphan", init=False
+        "RouteStop", 
+        back_populates="route", 
+        cascade="all, delete-orphan", 
+        init=False,
+        primaryjoin="Route.id == RouteStop.route_id"
     )
     
     # Пассажиропотоки для маршрута
     passenger_flows: Mapped[List["PassengerFlow"]] = relationship(
-        "PassengerFlow", back_populates="route", cascade="all, delete-orphan", init=False
+        "PassengerFlow", 
+        back_populates="route", 
+        cascade="all, delete-orphan", 
+        init=False,
+        primaryjoin="Route.id == PassengerFlow.route_id"
     )
 
     @property

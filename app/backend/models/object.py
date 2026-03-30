@@ -67,10 +67,18 @@ class MapObject(Base):
     
     # Связи для object_relations (полигоны ↔ маркеры)
     child_relations: Mapped[List["ObjectRelation"]] = relationship(
-        "ObjectRelation", foreign_keys="ObjectRelation.parent_id", back_populates="parent", init=False
+        "ObjectRelation", 
+        foreign_keys="ObjectRelation.parent_id", 
+        back_populates="parent", 
+        init=False,
+        primaryjoin="ObjectRelation.parent_id == MapObject.id"
     )
     parent_relations: Mapped[List["ObjectRelation"]] = relationship(
-        "ObjectRelation", foreign_keys="ObjectRelation.child_id", back_populates="child", init=False
+        "ObjectRelation", 
+        foreign_keys="ObjectRelation.child_id", 
+        back_populates="child", 
+        init=False,
+        primaryjoin="ObjectRelation.child_id == MapObject.id"
     )
     
     # Связи для passenger_flow_stops
