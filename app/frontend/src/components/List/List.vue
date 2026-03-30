@@ -13,10 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import } from "lucide-vue-next";
+import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import, FileJson } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
+import BulkExportImport from "@/components/BulkExportImport/BulkExportImport.vue";
 
 type ViewType = "cards" | "table";
 
@@ -32,6 +33,7 @@ const showViewMenu = ref(false);
 const viewMenuRef = ref<HTMLElement | null>(null);
 const showImportExportMenu = ref(false);
 const importExportMenuRef = ref<HTMLElement | null>(null);
+const showBulkExportImport = ref(false);
 const sortDescending = ref(true); // true = новые сверху
 
 // Сортировка объектов
@@ -55,6 +57,12 @@ const showImportDialog = ref(false);
 
 const handleImported = async () => {
   console.log("[List] Остановки импортированы, обновляем...");
+  await mapObjectStore.loadAllObjectsFromDB();
+};
+
+// Обработчик импорта геометрии
+const handleGeometryImported = async () => {
+  console.log("[List] Геометрия импортирована, обновляем...");
   await mapObjectStore.loadAllObjectsFromDB();
 };
 
@@ -236,15 +244,18 @@ const openObjectPopup = (id: string) => {
             class="flex items-center gap-2"
           >
             <Import class="w-4 h-4" />
-            Остановки
+            Объекты
             <ChevronDown class="w-4 h-4" :class="{ 'rotate-180': showImportExportMenu }" />
           </Button>
 
           <!-- Выпадающее меню -->
           <div
             v-if="showImportExportMenu"
-            class="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[180px]"
+            class="absolute right-0 top-full mt-1 bg-white border rounded-md shadow-lg z-50 min-w-[220px]"
           >
+            <div class="px-3 py-2 text-xs font-medium text-muted-foreground border-b">
+              Остановки
+            </div>
             <button
               @click="showImportDialog = true; showImportExportMenu = false"
               class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
@@ -258,6 +269,16 @@ const openObjectPopup = (id: string) => {
             >
               <Upload class="w-4 h-4" />
               Экспорт
+            </button>
+            <div class="px-3 py-2 text-xs font-medium text-muted-foreground border-b border-t">
+              Геометрия (Полигоны/Полилинии)
+            </div>
+            <button
+              @click="showBulkExportImport = true; showImportExportMenu = false"
+              class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+            >
+              <FileJson class="w-4 h-4" />
+              Импорт/Экспорт
             </button>
           </div>
         </div>
@@ -331,6 +352,12 @@ const openObjectPopup = (id: string) => {
     <OverpassImport
       v-model:open="showImportDialog"
       @imported="handleImported"
+    />
+
+    <!-- Dialog импорта/экспорта геометрии -->
+    <BulkExportImport
+      v-model:open="showBulkExportImport"
+      @imported="handleGeometryImported"
     />
   </div>
 </template>
