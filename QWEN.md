@@ -38,7 +38,8 @@ first/
 │   │   ├── schemas/       # Pydantic схемы валидации
 │   │   ├── storage/       # Storage класс (работа с БД)
 │   │   ├── config/        # Конфигурация
-│   │   └── logger/        # Настройки логирования
+│   │   ├── logger/        # Настройки логирования
+│   │   └── services/      # Сервисы (overpass_client.py для импорта остановок)
 │   └── frontend/           # Vue 3 приложение
 │       ├── src/
 │       │   ├── components/ # Vue компоненты (Map, List, BrushTable, ObjectList)
@@ -65,7 +66,7 @@ yarn dev
 # Backend + frontend через pywebview (основной режим)
 python main.py
 
-# Frontend + backend одновременно (backend пытается открыть pywebview окно)
+# Frontend + backend одновременно (backend открывается в отдельном окне)
 yarn dev:all
 ```
 
@@ -136,15 +137,18 @@ python main.py
 ### Таблицы
 
 **map_objects:**
-- `Id` (VARCHAR(36), primary key)
-- `name`, `description`, `custom_name`
-- `color`, `stroke`, `weight`, `fill`, `fill_opacity`
-- `latlng` (JSON), `obj_type`, `dash_array`
-- `marker_type` (для StopMarker), `radius` (для StopMarker/CircleMarker)
+- `Id` (VARCHAR(16) binary, primary key)
+- `name`, `description`
+- `latlng` (JSON), `obj_type`, `latitude`, `longitude`
+- `created_at`, `updated_at`
 
-**tile_layer_settings:**
-- `id` (INTEGER, primary key)
-- `key`, `value` (для сохранения текущего слоя карты)
+**stop_metadata:**
+- `object_id` (FK к map_objects)
+- `osm_id`, `marker_type`, `radius`, `color`
+
+**object_styles:**
+- `object_id` (FK к map_objects)
+- `stroke`, `weight`, `fill`, `fill_opacity`, `dash_array`, `color`
 
 ### Миграции
 
@@ -154,21 +158,10 @@ python migrate_add_marker_type.py
 
 # Добавить колонку radius
 python migrate_add_radius.py
+
+# Оптимизация схемы БД
+python migrate_optimize_schema.py
 ```
-
-## 🎨 UI Компоненты
-
-### Основные компоненты
-- **Map.vue** — карта с MapLibre + Deck.gl overlay
-- **List.vue** — список объектов с настройками стилей (cards/table view)
-- **BrushTable.vue** — выбор типа объекта (Polygon, Polyline, CircleMarker, StopMarker)
-- **MapOptions.vue** — кнопки управления (добавить, отменить, undo/redo)
-- **TilesSwitcher** — переключатель слоёв карты (OSM, Satellite, Hybrid, OpenFreeMap)
-
-### Курсоры
-- `plus-cursor.svg` — крест для режима рисования
-- `grab-cursor.svg` — рука для перетаскивания
-- Применяются через CSS с `!important` к `.maplibre-gl-canvas`
 
 ## 📦 Зависимости
 
@@ -178,6 +171,8 @@ python migrate_add_radius.py
 - `pydantic>=2.12.5` — валидация
 - `structlog>=25.5.0` — логирование
 - `colorama>=0.4.6` — цвета в консоли
+- `polars>=1.39.3` — экспорт в Excel
+- `xlsxwriter>=3.2.9` — Excel файлы
 
 ### Frontend (package.json)
 - `@deck.gl/*@9.2.11` — визуализация (IconLayer, ScatterplotLayer, PolygonLayer, PathLayer)
@@ -186,6 +181,23 @@ python migrate_add_radius.py
 - `pinia@3.0.4` — state management
 - `shadcn-vue@2.4.3` — UI компоненты
 - `lucide-vue-next@0.563.0` — иконки для StopMarker
+- `supercluster@8.0.1` — кластеризация маркеров
+
+## 🎨 UI Компоненты
+
+### Основные компоненты
+- **Map.vue** — карта с MapLibre + Deck.gl overlay
+- **List.vue** — список объектов с настройками стилей (cards/table view)
+- **BrushTable.vue** — выбор типа объекта (Polygon, Polyline, CircleMarker, StopMarker)
+- **MapOptions.vue** — кнопки управления (добавить, отменить, undo/redo)
+- **TilesSwitcher** — переключатель слоёв карты (OSM, Satellite, Hybrid, OpenFreeMap)
+- **BulkExportImport.vue** — массовый импорт/экспорт геометрии (JSON)
+- **OverpassImport.vue** — импорт остановок из Overpass API
+
+### Курсоры
+- `plus-cursor.svg` — крест для режима рисования
+- `grab-cursor.svg` — рука для перетаскивания
+- Применяются через CSS с `!important` к `.maplibre-gl-canvas`
 
 ## 🔧 Разработка
 
