@@ -36,7 +36,9 @@ class ObjectController:
     def create_object(self, data):
         try:
             obj_data = ObjectCreate(**data)
+            log.info("create_object_data", extra={"id": obj_data.options.Id, "type": obj_data.options.obj_type})
             res = self.objects.create(obj_data)
+            log.info("create_object_result", extra={"id": obj_data.options.Id, "result": res})
             if res:
                 # Синхронизируем ВСЕ окна (включая отправителя)
                 if self.api:
@@ -45,6 +47,10 @@ class ObjectController:
             return {"satus": "failed", "message": "data is not written"}
         except ValidationError as e:
             return {"status": "failed", "message": e.json()}
+        except Exception as e:
+            op = "create_object"
+            log.error(op, {"err": str(e), "data": data})
+            return {"status": "failed", "message": str(e)}
 
     def get_all_objects(self):
         try:
@@ -64,7 +70,9 @@ class ObjectController:
             # Конвертируем строку в UUID
             if isinstance(Id, str):
                 Id = UUID(Id)
+            log.info("delete_object_start", extra={"Id": str(Id)})
             result = self.objects.delete(Id)
+            log.info("delete_object_result", extra={"Id": str(Id), "result": result})
             # Синхронизируем ВСЕ окна (включая отправителя)
             if self.api and result:
                 self.api.sync_windows('OBJECT_DELETED', {'id': str(Id)})

@@ -319,6 +319,7 @@ class Api:
         try:
             import json
             import webview
+            from webview import FileDialog
             from pathlib import Path
             from datetime import datetime
             
@@ -340,8 +341,9 @@ class Api:
             # Диалог сохранения файла
             window = webview.active_window()
             result = window.create_file_dialog(
-                dialog_type=webview.FOLDER_DIALOG,
-                directory=str(Path.home())
+                dialog_type=FileDialog.SAVE,
+                directory=str(Path.home()),
+                save_filename=f"geometry_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             )
             
             if not result:
@@ -350,11 +352,7 @@ class Api:
                     "message": "Экспорт отменён пользователем"
                 }
             
-            # Сохраняем в выбранную папку
-            folder = result[0] if isinstance(result, tuple) else result
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"geometry_export_{timestamp}.json"
-            file_path = Path(folder) / filename
+            file_path = result[0] if isinstance(result, tuple) else result
             
             # Записываем файл
             with open(file_path, 'w', encoding='utf-8') as f:
@@ -388,12 +386,13 @@ class Api:
         try:
             import json
             import webview
+            from webview import FileDialog
             from pathlib import Path
             
             # Диалог выбора файла
             window = webview.active_window()
             result = window.create_file_dialog(
-                dialog_type=webview.OPEN_DIALOG,
+                dialog_type=FileDialog.OPEN,
                 file_types=('JSON files (*.json)', 'All files (*.*)'),
                 directory=str(Path.home())
             )
@@ -419,11 +418,14 @@ class Api:
             
             for obj in export_data["objects"]:
                 try:
-                    self.objects.create_object(obj)
-                    imported_count += 1
-                    # Синхронизируем окна
-                    if self.objects.api:
-                        self.objects.api.sync_windows('OBJECT_CREATED', {'id': obj.get('id')})
+                    result = self.objects.create_object(obj)
+                    if result:
+                        imported_count += 1
+                        # Синхронизируем окна
+                        if self.objects.api:
+                            self.objects.api.sync_windows('OBJECT_CREATED', {'id': obj.get('id')})
+                    else:
+                        failed_count += 1
                 except Exception as e:
                     log.error("import_geometry_object", extra={"error": str(e), "obj_id": obj.get("id")})
                     failed_count += 1
