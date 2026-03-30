@@ -105,7 +105,11 @@ class PassengerFlow(Base):
 
     # Остановки в потоке
     flow_stops: Mapped[List["PassengerFlowStop"]] = relationship(
-        "PassengerFlowStop", back_populates="flow", cascade="all, delete-orphan", init=False
+        "PassengerFlowStop", 
+        back_populates="flow", 
+        cascade="all, delete-orphan", 
+        init=False,
+        primaryjoin="foreign(PassengerFlowStop.flow_id) == PassengerFlow.id"
     )
 
     # Связь с маршрутом
