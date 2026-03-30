@@ -86,11 +86,12 @@ class PassengerFlow(Base):
     # Поля С default (необязательные) - должны идти после
     route_id: Mapped[Optional[bytes]] = mapped_column(
         ForeignKey("routes.id", ondelete="SET NULL"),
-        nullable=True
+        nullable=True,
+        default=None
     )
     direction: Mapped[str] = mapped_column(String(30), default='forward')
     time_period: Mapped[str] = mapped_column(String(30), default='off_peak')
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default=None)
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
 
