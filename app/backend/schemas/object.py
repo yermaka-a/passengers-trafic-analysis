@@ -84,6 +84,7 @@ class ObjectCreate(RootObjBaseModel):
             "Id": obj.uuid,
             "name": obj.name,
             "objType": obj.obj_type,
+            "description": obj.description,
         }
         
         # Добавляем данные из stop_metadata если есть

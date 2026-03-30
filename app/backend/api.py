@@ -349,12 +349,12 @@ class Api:
                         "message": "Нет остановок для экспорта"
                     }
                 
-                # Создаём DataFrame через Polars
+                # Создаём DataFrame через Polars с русскими названиями
                 data = {
-                    'name': [obj.name for obj, _ in objects],
-                    'description': [obj.description or '' for obj, _ in objects],
-                    'latitude': [obj.latitude for obj, _ in objects],
-                    'longitude': [obj.longitude for obj, _ in objects]
+                    'Название': [obj.name for obj, _ in objects],
+                    'Описание': [obj.description or '' for obj, _ in objects],
+                    'Широта': [obj.latitude for obj, _ in objects],
+                    'Долгота': [obj.longitude for obj, _ in objects]
                 }
                 
                 df = pl.DataFrame(data)
@@ -380,18 +380,24 @@ class Api:
                 
                 # Генерируем имя файла с датой
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                filename = f'stops_export_{timestamp}.xlsx'
+                filename = f'остановки_{timestamp}.xlsx'
                 file_path = Path(folder) / filename
                 
-                # Сохраняем Excel файл через xlsxwriter
+                # Сохраняем Excel файл с форматированием
                 df.write_excel(
                     file_path,
-                    worksheet='Stops',
+                    worksheet='Остановки',
                     column_formats={
-                        'name': {'font_color': 'black'},
-                        'description': {'font_color': 'black'},
-                        'latitude': {'num_format': '0.000000'},
-                        'longitude': {'num_format': '0.000000'},
+                        'Название': {'font_color': 'black', 'bold': True},
+                        'Описание': {'font_color': 'black'},
+                        'Широта': {'num_format': '0.000000', 'font_color': 'blue'},
+                        'Долгота': {'num_format': '0.000000', 'font_color': 'blue'},
+                    },
+                    column_widths={
+                        'Название': 30,
+                        'Описание': 50,
+                        'Широта': 15,
+                        'Долгота': 15,
                     }
                 )
                 
