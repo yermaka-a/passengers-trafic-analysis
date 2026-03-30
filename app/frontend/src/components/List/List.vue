@@ -60,9 +60,11 @@ const handleImported = async () => {
 
 // Экспорт остановок
 const handleExportStops = async () => {
+  showImportExportMenu.value = false;
+  
   try {
     const result = await (window as any).pywebview.api.export_stops({});
-    
+
     if (result.status === "success") {
       console.log(`[List] Экспортировано ${result.count} остановок в ${result.message}`);
       alert(`✅ ${result.message}`);
@@ -251,7 +253,7 @@ const openObjectPopup = (id: string) => {
               Импорт
             </button>
             <button
-              @click="handleExportStops; showImportExportMenu = false"
+              @click="handleExportStops"
               class="w-full px-4 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
             >
               <Upload class="w-4 h-4" />
