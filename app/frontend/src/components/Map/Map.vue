@@ -15,6 +15,7 @@ import { generateIconAtlas } from "@/config/stopMarkers";
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
 import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
+import { HexagonLayer } from "@deck.gl/aggregation-layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
 
@@ -486,12 +487,73 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - показываем только на зумах 14+
+  // 4. StopMarker layer - кластеризация через HexagonLayer + IconLayer
   const stopMarkers = objectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
-  if (stopMarkers.length > 0) {
+  const currentZoom = mapInstance.value?.getZoom() ?? 0;
+
+  // HexagonLayer для кластеризации на зумах < 14
+  if (stopMarkers.length > 0 && currentZoom < 14) {
+    const positions = stopMarkers.map(obj => obj.coordinates[0]).filter(Boolean);
+
+    layers.push(
+      new HexagonLayer({
+        id: "stop-markers-hexagon",
+        data: positions,
+        getPosition: (d: [number, number]) => d,
+        pickable: true,
+        extruded: false, // 2D круги вместо 3D
+        coverage: 1,
+        // Размер гексагона зависит от зума
+        radius: Math.max(500, 2000 / Math.pow(2, currentZoom)),
+        // Цвет зависит от количества точек в гексагоне
+        getColorWeight: 1,
+        colorRange: [
+          [1, 152, 189],   // голубой (1 точка)
+          [73, 227, 206],  // зелёный
+          [216, 254, 181], // светло-зелёный
+          [254, 237, 177], // жёлтый
+          [254, 173, 154], // оранжевый
+          [208, 28, 139]   // розовый (много точек)
+        ],
+        getColorAggregationType: 'SUM',
+        getHexagonColor: (d: any) => {
+          const count = d.points?.length || 1;
+          // Интенсивность цвета от количества
+          const intensity = Math.min(1, count / 50);
+          return [
+            255,
+            Math.round(100 * (1 - intensity)),
+            Math.round(100 * (1 - intensity)),
+            Math.round(155 + 100 * intensity)
+          ];
+        },
+        onClick: (info: any): boolean => {
+          if (info.object?.points?.length > 0) {
+            // Зум на кластер
+            const points = info.object.points;
+            const avgLat = points.reduce((sum: number, p: any) => sum + p[1], 0) / points.length;
+            const avgLng = points.reduce((sum: number, p: any) => sum + p[0], 0) / points.length;
+            mapInstance.value?.flyTo({
+              center: [avgLng, avgLat],
+              zoom: Math.min(currentZoom + 3, 16)
+            });
+            console.log(`[Map] Hexagon cluster: ${points.length} остановок`);
+          }
+          return true;
+        },
+        updateTriggers: {
+          getPosition: [positions.length],
+          getHexagonColor: [positions.length]
+        }
+      })
+    );
+  }
+
+  // IconLayer для отдельных маркеров на зумах 14+
+  if (stopMarkers.length > 0 && currentZoom >= 14) {
     // Генерируем sprite atlas из всех Lucide иконок
     const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
 
@@ -521,14 +583,11 @@ const createDeckLayers = () => {
             selectObject((info.object as DeckGLObject).id);
           }
         },
-        // Скрываем на зумах < 14 чтобы не тормозило
-        visible: (mapInstance.value?.getZoom() ?? 0) >= 14,
         updateTriggers: {
           getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
           getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
           getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
           getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
-          visible: [(mapInstance.value?.getZoom() ?? 0)]
         }
       })
     );
@@ -741,7 +800,7 @@ onMounted(() => {
     map.on("click", onMapClick);
     console.log("[Map] MapLibre click обработчик добавлен");
 
-    // Обработчик изменения зума для обновления видимости слоёв
+    // Обработчик изменения зума для обновления слоёв кластеризации
     map.on('zoom', () => {
       if (deckOverlay) {
         deckOverlay.setProps({
@@ -749,6 +808,10 @@ onMounted(() => {
         });
       }
     });
+
+    // === КЛАСТЕРИЗАЦИЯ ЧЕРЕЗ DECK.GL HEXAGON ===
+    // HexagonLayer показывает плотность остановок на зумах 0-13
+    // IconLayer показывает иконки на зумах 14+
 
     // Обработчик движения мыши для отображения координат
     map.on("mousemove", (e: any) => {

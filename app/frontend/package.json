@@ -11,6 +11,7 @@
     "dev:all": "concurrently \"yarn dev\" \"wait-on http://localhost:5173 && yarn start:py\""
   },
   "dependencies": {
+    "@deck.gl/aggregation-layers": "^9.2.11",
     "@deck.gl/core": "^9.2.11",
     "@deck.gl/extensions": "^9.2.11",
     "@deck.gl/layers": "^9.2.11",
