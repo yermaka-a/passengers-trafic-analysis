@@ -68,7 +68,8 @@ export default class ObjectController {
   deleteObject = async (id: string): Promise<boolean> => {
     try {
       if (innerAPI.objects) {
-        return await innerAPI.objects.delete_object(id);
+        const result: any = await innerAPI.objects.delete_object(id);
+        return result?.status === 'success';
       }
       throw new Error("pywebview is not registered");
     } catch (err) {

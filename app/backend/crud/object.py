@@ -65,12 +65,13 @@ class ObjectController:
             Id = id_validator.validate_python(Id)
             result = self.objects.delete(Id)
             # Синхронизируем ВСЕ окна (включая отправителя)
-            if self.api:
+            if self.api and result:
                 self.api.sync_windows('OBJECT_DELETED', {'id': str(Id)})
             return result
         except Exception as e:
             op = "delete_object"
             log.error(op, {"err": e})
+            return False
 
     def update_object(self, data):
         try:

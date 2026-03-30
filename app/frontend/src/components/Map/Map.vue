@@ -784,9 +784,23 @@ onMounted(() => {
       }
     });
 
-    // Слушаем изменения слоя карт от других окон
+    // Слушаем изменения от других окон (удаление/создание объектов, слои)
     window.addEventListener('panel-sync', (event: any) => {
-      if (event.detail?.type === 'TILE_LAYER_CHANGED') {
+      const type = event.detail?.type;
+      const data = event.detail?.data;
+      
+      console.log('[Map] Received panel-sync:', type, data);
+      
+      if (type === 'OBJECT_DELETED') {
+        // Объект удалён в другом окне - удаляем из store
+        const id = data?.id;
+        if (id && mapObjectStore.Objects.has(id)) {
+          console.log('[Map] Deleting object from store:', id);
+          mapObjectStore.deleteObject(id);
+        }
+      }
+      
+      if (type === 'TILE_LAYER_CHANGED') {
         const layer = event.detail.data?.layer;
         console.log('[Map] Received TILE_LAYER_CHANGED:', layer, 'current:', tilesStore.currentLayer);
         if (layer && tilesStore.currentLayer !== layer) {
@@ -794,7 +808,7 @@ onMounted(() => {
           // Применяем слой
           const config = tilesStore.getCurrentLayerConfig();
           console.log('[Map] Applying config:', config);
-          
+
           // Для векторных стилей - применяем style напрямую
           if (config.type === 'vector' && config.style) {
             console.log('[Map] Switching to vector style:', config.style);
@@ -802,7 +816,7 @@ onMounted(() => {
             console.log('[Map] Vector style applied successfully!');
             return;
           }
-          
+
           // Для растровых тайлов
           const style = mapInstance.value?.getStyle();
           if (style && style.sources?.["osm"] && "tiles" in style.sources["osm"]) {
@@ -866,7 +880,8 @@ onMounted(() => {
     // Используем Array.from для реактивности Map
     watch(
       () => Array.from(Objects.value?.values() ?? []),
-      () => {
+      (newVal, oldVal) => {
+        console.log(`[Map] Objects changed: было ${oldVal?.length ?? 0}, стало ${newVal.length}`);
         // Принудительно обновляем layers для Deck.gl через публичный API
         if (deckOverlay) {
           deckOverlay.setProps({

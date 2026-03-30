@@ -273,6 +273,38 @@ class Api:
                         print(f'[API] Error syncing tile layer to window {window_id}: {e}')
         return result
     
+    def delete_object(self, id: str):
+        """
+        Удалить объект
+        
+        Args:
+            id: ID объекта для удаления
+            
+        Returns:
+            {"status": "success", "id": "..."} или {"status": "failed", "message": "..."}
+        """
+        try:
+            import uuid
+            from uuid import UUID
+            
+            # Валидация UUID
+            obj_uuid = uuid.UUID(id)
+            
+            # Удаление через контроллер
+            result = self.objects.delete_object(obj_uuid)
+            
+            if result:
+                print(f'[API] delete_object: удалён объект {id}')
+                return {"status": "success", "id": id}
+            else:
+                print(f'[API] delete_object: объект {id} не найден')
+                return {"status": "failed", "message": "Объект не найден"}
+                
+        except Exception as e:
+            print(f'[API] delete_object ошибка: {e}')
+            log.error("api_delete_object", extra={"error": str(e), "id": id})
+            return {"status": "failed", "message": str(e)}
+
     def import_stops(self, data: dict):
         """
         Импортировать остановки из Overpass API

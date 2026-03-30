@@ -407,7 +407,11 @@ export const useMapObjectStore = defineStore("mapobjects", {
 
     /** Удалить объект из store */
     deleteObject(id: string) {
-      this.Objects.delete(id);
+      // Создаём новую Map для триггера реактивности
+      const newObjects = new Map(this.Objects);
+      newObjects.delete(id);
+      this.Objects = newObjects;
+      
       this.strokeState.delete(id);
       if (this.ClickedObjId === id) {
         this.ClickedObjId = null;
@@ -415,6 +419,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
       if (this.EditingObjectId === id) {
         this.EditingObjectId = null;
       }
+      console.log(`[MapObjectStore] Удалён объект ${id}, осталось: ${this.Objects.size}`);
     },
 
     // ========================================================================
