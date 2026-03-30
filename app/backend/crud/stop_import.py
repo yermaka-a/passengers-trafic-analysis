@@ -206,6 +206,9 @@ class StopImportController:
             # 2. Вставка объектов
             for obj in new_objects:
                 session.add(obj)
+                # Вставляем stop_metadata отдельно чтобы osm_id сохранился
+                if obj.stop_metadata:
+                    session.add(obj.stop_metadata)
 
             session.commit()
 

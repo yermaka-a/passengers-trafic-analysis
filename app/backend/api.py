@@ -303,12 +303,72 @@ class Api:
             print(f'[API] import_stops: начинаем импорт для {cities}')
             result = self.stop_import.import_stops(cities, request.stop_types)
             print(f'[API] import_stops: результат {result}')
-            
+
             return result.model_dump()
-            
+
         except Exception as e:
             print(f'[API] import_stops ошибка: {e}')
             log.error("api_import_stops", extra={"error": str(e)})
+            return {
+                "status": "failed",
+                "message": str(e)
+            }
+
+    def export_stops(self, data: dict):
+        """
+        Экспортировать остановки в CSV
+        
+        Args:
+            data: {"city": "Ангарск"} или {} для всех
+        
+        Returns:
+            {"status": "success", "csv": "name,lat,lon,type\n..."}
+        """
+        try:
+            from ..models import MapObject, StopMetadata
+            import csv
+            import io
+            
+            with self.storage.localSession() as session:
+                # Загружаем остановки с метаданными
+                query = session.query(MapObject, StopMetadata).join(
+                    StopMetadata,
+                    MapObject.id == StopMetadata.object_id
+                ).filter(
+                    MapObject.obj_type == "StopMarker"
+                )
+                
+                objects = query.all()
+                
+                # Генерируем CSV
+                output = io.StringIO()
+                writer = csv.writer(output)
+                
+                # Заголовок
+                writer.writerow(['name', 'lat', 'lon', 'type', 'osm_id', 'marker_type'])
+                
+                # Данные
+                for map_obj, stop_meta in objects:
+                    writer.writerow([
+                        map_obj.name,
+                        map_obj.latitude,
+                        map_obj.longitude,
+                        'StopMarker',
+                        stop_meta.osm_id,
+                        stop_meta.marker_type
+                    ])
+                
+                csv_content = output.getvalue()
+                
+                log.info("export_stops", extra={"count": len(objects)})
+                return {
+                    "status": "success",
+                    "csv": csv_content,
+                    "count": len(objects)
+                }
+                
+        except Exception as e:
+            log.error("api_export_stops", extra={"error": str(e)})
             return {
                 "status": "failed",
                 "message": str(e)

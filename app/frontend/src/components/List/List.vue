@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutGrid, Table as TableIcon, ChevronDown, Search, Download } from "lucide-vue-next";
+import { LayoutGrid, Table as TableIcon, ChevronDown, Search, Download, Upload } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
@@ -35,6 +35,29 @@ const showImportDialog = ref(false);
 const handleImported = async () => {
   console.log("[List] Остановки импортированы, обновляем...");
   await mapObjectStore.loadAllObjectsFromDB();
+};
+
+// Экспорт остановок
+const handleExportStops = async () => {
+  try {
+    const result = await (window as any).pywebview.api.export_stops({});
+    if (result.status === "success") {
+      // Скачиваем CSV файл
+      const blob = new Blob([result.csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `stops_export_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      console.log(`[List] Экспортировано ${result.count} остановок`);
+    } else {
+      console.error("Ошибка экспорта:", result.message);
+      alert(`Ошибка: ${result.message}`);
+    }
+  } catch (e) {
+    console.error("Ошибка экспорта:", e);
+    alert(`Ошибка: ${e}`);
+  }
 };
 
 // Фильтры
@@ -187,6 +210,17 @@ const openObjectPopup = (id: string) => {
         >
           <Download class="w-4 h-4" />
           Импорт остановок
+        </Button>
+
+        <!-- Экспорт остановок -->
+        <Button
+          variant="outline"
+          size="sm"
+          @click="handleExportStops"
+          class="flex items-center gap-2"
+        >
+          <Upload class="w-4 h-4" />
+          Экспорт остановок
         </Button>
         
         <!-- Переключатель вида -->
