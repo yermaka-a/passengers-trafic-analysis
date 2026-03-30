@@ -83,12 +83,20 @@ class MapObject(Base):
     
     # Связи для passenger_flow_stops
     passenger_flow_stops: Mapped[List["PassengerFlowStop"]] = relationship(
-        "PassengerFlowStop", back_populates="stop", cascade="all, delete-orphan", init=False
+        "PassengerFlowStop", 
+        back_populates="stop", 
+        cascade="all, delete-orphan", 
+        init=False,
+        primaryjoin="PassengerFlowStop.stop_id == MapObject.id"
     )
     
     # Связи для routes
     route_stops: Mapped[List["RouteStop"]] = relationship(
-        "RouteStop", back_populates="stop", cascade="all, delete-orphan", init=False
+        "RouteStop", 
+        back_populates="stop", 
+        cascade="all, delete-orphan", 
+        init=False,
+        primaryjoin="RouteStop.stop_id == MapObject.id"
     )
 
     # Методы для конвертации UUID
