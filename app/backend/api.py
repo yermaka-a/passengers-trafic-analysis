@@ -349,18 +349,14 @@ class Api:
                         "message": "Нет остановок для экспорта"
                     }
                 
-                # Создаём DataFrame
+                # Создаём DataFrame с основными данными
                 data = []
                 for map_obj, stop_meta in objects:
                     data.append({
                         'name': map_obj.name,
+                        'description': map_obj.description or '',
                         'latitude': map_obj.latitude,
-                        'longitude': map_obj.longitude,
-                        'type': 'StopMarker',
-                        'osm_id': stop_meta.osm_id,
-                        'marker_type': stop_meta.marker_type,
-                        'radius': stop_meta.radius,
-                        'color': stop_meta.color
+                        'longitude': map_obj.longitude
                     })
                 
                 df = pd.DataFrame(data)
