@@ -696,7 +696,9 @@ onMounted(() => {
     const updateClusters = () => {
       const stopMarkers = Array.from(Objects.value?.values() ?? [])
         .filter(obj => obj.type === 'StopMarker');
-      
+
+      console.log("[Map] updateClusters:", stopMarkers.length, "остановок");
+
       const features = stopMarkers.map(obj => ({
         type: 'Feature' as const,
         geometry: {
@@ -719,6 +721,7 @@ onMounted(() => {
           type: 'FeatureCollection',
           features
         });
+        console.log("[Map] Cluster source updated");
       }
     };
 
@@ -726,6 +729,11 @@ onMounted(() => {
     watch(() => Array.from(Objects.value?.values() ?? []), () => {
       updateClusters();
     }, { deep: true });
+
+    // Первый вызов для инициализации
+    setTimeout(() => {
+      updateClusters();
+    }, 1000);
 
       console.log("[Map] Кластеризация инициализирована");
     });
