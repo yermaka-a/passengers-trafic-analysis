@@ -10,8 +10,7 @@ RoutesController:
 - reorder_stops(route_id, stop_id, new_order)
 """
 from typing import List, Optional, Dict
-from sqlalchemy import select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import select, func
 from datetime import datetime
 import uuid
 
@@ -20,11 +19,11 @@ from ..logger import log
 
 
 class RoutesController:
-    def __init__(self, sessionmaker: sessionmaker):
-        self.sessionmaker = sessionmaker
+    def __init__(self, storage):
+        self.storage = storage
 
-    def _get_session(self) -> Session:
-        return self.sessionmaker()
+    def _get_session(self):
+        return self.storage.localSession()
 
     def create_route(self, name: str, description: str = None, 
                      stops_list: List[Dict] = None) -> Optional[str]:

@@ -10,7 +10,6 @@ ObjectRelations:
 """
 from typing import List, Optional
 from sqlalchemy import select
-from sqlalchemy.orm import Session, sessionmaker
 import uuid
 
 from ..models import ObjectRelation, MapObject
@@ -18,11 +17,11 @@ from ..logger import log
 
 
 class ObjectRelationsController:
-    def __init__(self, sessionmaker: sessionmaker):
-        self.sessionmaker = sessionmaker
+    def __init__(self, storage):
+        self.storage = storage
 
-    def _get_session(self) -> Session:
-        return self.sessionmaker()
+    def _get_session(self):
+        return self.storage.localSession()
 
     def add_relation(self, parent_id: str, child_id: str, relation_type: str = 'CONTAINS') -> bool:
         """

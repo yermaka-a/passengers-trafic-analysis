@@ -10,21 +10,20 @@ PassengerFlowController:
 - get_flows_by_route(route_id, date)
 """
 from typing import List, Optional, Dict
-from sqlalchemy import select
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy import select, func
 from datetime import datetime
 import uuid
 
-from ..models import PassengerFlow, PassengerFlowStop, MapObject
+from ..models import PassengerFlow, PassengerFlowStop, MapObject, ObjectRelation
 from ..logger import log
 
 
 class PassengerFlowController:
-    def __init__(self, sessionmaker: sessionmaker):
-        self.sessionmaker = sessionmaker
+    def __init__(self, storage):
+        self.storage = storage
 
-    def _get_session(self) -> Session:
-        return self.sessionmaker()
+    def _get_session(self):
+        return self.storage.localSession()
 
     def create_flow(self, name: str, date: str, time_period: str = 'off_peak',
                     direction: str = 'forward', description: str = None,
