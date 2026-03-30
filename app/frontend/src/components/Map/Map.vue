@@ -14,12 +14,9 @@ import { generateIconAtlas } from "@/config/stopMarkers";
 
 // Deck.gl imports
 import { MapboxOverlay } from "@deck.gl/mapbox";
-import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer, TextLayer } from "@deck.gl/layers";
+import { PolygonLayer, PathLayer, ScatterplotLayer, IconLayer } from "@deck.gl/layers";
 import { PathStyleExtension } from "@deck.gl/extensions";
 import { DeckGLMapConfig } from "@/config/DeckGLMapConfig";
-
-// Supercluster для кластеризации
-import Supercluster from 'supercluster';
 
 const mapObjectStore = useMapObjectStore();
 const mapStore = useMapStore();
@@ -489,193 +486,173 @@ const createDeckLayers = () => {
     console.log("[Map] CircleMarker слой добавлен");
   }
 
-  // 4. StopMarker layer - кластеризация через supercluster + ScatterplotLayer + TextLayer
+  // 4. StopMarker layer - кластеризация через MapLibre GL JS (нативная)
   const stopMarkers = objectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
   const currentZoom = mapInstance.value?.getZoom() ?? 0;
 
-  // Показываем кластеры только на зумах 3-4, на 5+ показываем все точки
-  if (stopMarkers.length > 0 && currentZoom <= 4) {
-    // Создаём индекс supercluster
-    const index = new Supercluster({
-      radius: 60,      // Радиус кластеризации в пикселях
-      maxZoom: 4,      // Макс зум для кластеризации (на 5+ все точки отдельно)
-      extent: 512      // Размер тайла
-    });
+  // На зумах < 7 показываем кластеры через MapLibre, на 7+ показываем Deck.gl иконки
+  if (stopMarkers.length > 0 && mapInstance.value) {
+    // Конвертируем в GeoJSON
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features: stopMarkers.map(obj => ({
+        type: 'Feature' as const,
+        properties: {
+          id: obj.id,
+          name: obj.name,
+          markerType: obj.markerType || 'pin',
+          color: obj.style.color,
+          radius: obj.style.radius,
+          getSizeScale: obj.style.getSizeScale
+        },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0]
+        }
+      }))
+    };
 
-    // Конвертируем в GeoJSON Features
-    const features = stopMarkers.map(obj => ({
-      type: 'Feature' as const,
-      properties: {
-        id: obj.id,
-        name: obj.name,
-        markerType: obj.markerType || 'pin',
-        color: obj.style.color,
-        radius: obj.style.radius,
-        getSizeScale: obj.style.getSizeScale
-      },
-      geometry: {
-        type: 'Point' as const,
-        coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0]
-      }
-    }));
+    // Добавляем источник с кластеризацией
+    if (!mapInstance.value.getSource('stop-markers-cluster')) {
+      mapInstance.value.addSource('stop-markers-cluster', {
+        type: 'geojson',
+        data: geojson,
+        cluster: true,
+        clusterMaxZoom: 6, // Кластеризация на зумах 0-6
+        clusterRadius: 50
+      });
 
-    index.load(features);
+      // Слой кластеров (круги)
+      mapInstance.value.addLayer({
+        id: 'stop-markers-clusters',
+        type: 'circle',
+        source: 'stop-markers-cluster',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',  // < 100: голубой
+            100,
+            '#f1f075',  // 100-750: жёлтый
+            750,
+            '#f28cb1'   // >= 750: розовый
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            20,  // < 100: 20px
+            100,
+            30,  // 100-750: 30px
+            750,
+            40   // >= 750: 40px
+          ]
+        }
+      });
 
-    // Получаем кластеры для текущего зума и области видимости
-    const bounds = mapInstance.value?.getBounds();
-    if (bounds) {
-      const clusters = index.getClusters([
-        bounds.getWest(),
-        bounds.getSouth(),
-        bounds.getEast(),
-        bounds.getNorth()
-      ], Math.floor(currentZoom));
+      // Слой с количеством в кластере (цифры)
+      mapInstance.value.addLayer({
+        id: 'stop-markers-cluster-count',
+        type: 'symbol',
+        source: 'stop-markers-cluster',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': '{point_count_abbreviated}',
+          'text-font': ['Noto Sans Regular'],
+          'text-size': 12
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#333333',
+          'text-halo-width': 1
+        }
+      });
 
-      // ScatterplotLayer для кружков кластеров
-      const clusterCircles = clusters
-        .filter((c: any) => c.properties.cluster)
-        .map((c: any) => ({
-          position: [c.geometry.coordinates[0], c.geometry.coordinates[1]],
-          clusterId: c.properties.cluster_id,
-          point_count: c.properties.point_count,
-          isCluster: true
-        }));
-
-      if (clusterCircles.length > 0) {
-        layers.push(
-          new ScatterplotLayer({
-            id: "stop-markers-clusters",
-            data: clusterCircles,
-            getPosition: (d: any) => d.position,
-            getFillColor: (d: any) => {
-              // Цвет от количества: голубой → оранжевый → красный
-              const count = d.point_count;
-              if (count < 10) return [0, 188, 212, 220];      // голубой
-              if (count < 50) return [255, 152, 0, 220];      // оранжевый
-              return [244, 67, 54, 220];                       // красный
-            },
-            getRadius: (d: any) => Math.max(25, Math.min(80, 20 + d.point_count * 0.8)),
-            getLineColor: [255, 255, 255],
-            getLineWidth: 3,
-            pickable: true,
-            onClick: (info: any): boolean => {
-              if (info.object?.isCluster) {
-                const clusterId = info.object.clusterId;
-                const zoom = index.getClusterExpansionZoom(clusterId);
-                mapInstance.value?.flyTo({
-                  center: [info.object.position[0], info.object.position[1]],
-                  zoom: Math.min(zoom, 16)
-                });
-                console.log(`[Map] Cluster: ${info.object.point_count} остановок`);
-              }
-              return true;
-            },
-            updateTriggers: {
-              getPosition: [clusters.length],
-              getFillColor: [clusters.length],
-              getRadius: [clusters.length]
+      // Клик на кластер - зум
+      mapInstance.value.on('click', 'stop-markers-clusters', async (e: any) => {
+        const features = mapInstance.value!.queryRenderedFeatures(e.point, {
+          layers: ['stop-markers-clusters']
+        });
+        if (features.length > 0 && features[0]) {
+          const clusterId = (features[0].properties as any).cluster_id;
+          const source = mapInstance.value!.getSource('stop-markers-cluster') as any;
+          if (source && clusterId) {
+            const zoom = await source.getClusterExpansionZoom(clusterId);
+            const coords = (features[0].geometry as any)?.coordinates;
+            if (coords && coords.length >= 2) {
+              mapInstance.value!.easeTo({
+                center: [coords[0], coords[1]] as [number, number],
+                zoom: Math.min(zoom, 16)
+              });
             }
-          })
-        );
+          }
+        }
+      });
 
-        // TextLayer для цифр внутри кластеров
-        layers.push(
-          new TextLayer({
-            id: "stop-markers-cluster-text",
-            data: clusterCircles,
-            getPosition: (d: any) => d.position,
-            getText: (d: any) => d.point_count.toString(),
-            getSize: 16,
-            getAlignmentBaseline: 'center',
-            getAnchorPosition: 'center',
-            getColor: [255, 255, 255],
-            updateTriggers: {
-              getPosition: [clusters.length],
-              getText: [clusters.length]
-            }
-          })
-        );
-      }
-
-      // Показываем отдельные маркеры для не-кластеров (если зум достаточно большой)
-      const individualMarkers = clusters
-        .filter((c: any) => !c.properties.cluster)
-        .map((c: any) => ({
-          position: [c.geometry.coordinates[0], c.geometry.coordinates[1]],
-          properties: c.properties
-        }));
-
-      if (individualMarkers.length > 0 && currentZoom >= 3) {
-        const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
-
-        layers.push(
-          new IconLayer({
-            id: "stop-markers-individual",
-            data: individualMarkers,
-            iconAtlas,
-            iconMapping,
-            getIcon: (obj: any) => {
-              const type = obj.properties?.markerType || 'pin';
-              return iconMapping[type] ? type : 'pin';
-            },
-            getPosition: (obj: any) => obj.position,
-            getSize: () => 24,
-            sizeScale: 1,
-            sizeMinPixels: 10,
-            sizeMaxPixels: 100,
-            getColor: (obj: any) => obj.properties?.color || [255, 0, 0],
-            pickable: true,
-            autoHighlight: true,
-            onClick: (info: any) => {
-              if (info.object) {
-                selectObject(info.object.properties?.id);
-              }
-            }
-          })
-        );
+      // Курсор при наведении
+      mapInstance.value.on('mouseenter', 'stop-markers-clusters', () => {
+        mapInstance.value!.getCanvas().style.cursor = 'pointer';
+      });
+      mapInstance.value.on('mouseleave', 'stop-markers-clusters', () => {
+        mapInstance.value!.getCanvas().style.cursor = '';
+      });
+    } else {
+      // Обновляем данные источника
+      const source = mapInstance.value.getSource('stop-markers-cluster') as any;
+      if (source) {
+        source.setData(geojson);
       }
     }
-  } else if (stopMarkers.length > 0) {
-    // На зумах 5+ показываем все отдельные иконки
-    const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
 
-    layers.push(
-      new IconLayer({
-        id: "stop-markers",
-        data: stopMarkers,
-        iconAtlas,
-        iconMapping,
-        getIcon: (obj: DeckGLObject) => {
-          const type = obj.markerType || 'pin';
-          return iconMapping[type] ? type : 'pin';
-        },
-        getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
-        getSize: (obj: DeckGLObject) => {
-          const scale = obj.style.getSizeScale || 1.5;
-          return 24 * scale;
-        },
-        sizeScale: 1,
-        sizeMinPixels: 10,
-        sizeMaxPixels: 100,
-        getColor: (obj: DeckGLObject) => obj.style.color,
-        pickable: true,
-        autoHighlight: true,
-        onClick: (info: any) => {
-          if (info.object) {
-            selectObject((info.object as DeckGLObject).id);
+    // Показываем/скрываем слои в зависимости от зума
+    const showClusters = currentZoom < 7;
+    const showIcons = currentZoom >= 7;
+
+    mapInstance.value.setLayoutProperty('stop-markers-clusters', 'visibility', showClusters ? 'visible' : 'none');
+    mapInstance.value.setLayoutProperty('stop-markers-cluster-count', 'visibility', showClusters ? 'visible' : 'none');
+
+    // Deck.gl иконки показываем только на зумах 7+
+    if (showIcons) {
+      const { atlas: iconAtlas, mapping: iconMapping } = generateIconAtlas();
+
+      layers.push(
+        new IconLayer({
+          id: "stop-markers",
+          data: stopMarkers,
+          iconAtlas,
+          iconMapping,
+          getIcon: (obj: DeckGLObject) => {
+            const type = obj.markerType || 'pin';
+            return iconMapping[type] ? type : 'pin';
+          },
+          getPosition: (obj: DeckGLObject) => obj.coordinates[0] ?? [0, 0],
+          getSize: (obj: DeckGLObject) => {
+            const scale = obj.style.getSizeScale || 1.5;
+            return 24 * scale;
+          },
+          sizeScale: 1,
+          sizeMinPixels: 10,
+          sizeMaxPixels: 100,
+          getColor: (obj: DeckGLObject) => obj.style.color,
+          pickable: true,
+          autoHighlight: true,
+          onClick: (info: any) => {
+            if (info.object) {
+              selectObject((info.object as DeckGLObject).id);
+            }
+          },
+          updateTriggers: {
+            getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
+            getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
+            getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
+            getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
           }
-        },
-        updateTriggers: {
-          getIcon: stopMarkers.map(o => ({ id: o.id, markerType: o.markerType })),
-          getPosition: stopMarkers.map(o => ({ id: o.id, coordinates: o.coordinates[0] })),
-          getColor: stopMarkers.map(o => ({ id: o.id, color: o.style.color })),
-          getSize: stopMarkers.map(o => ({ id: o.id, getSizeScale: o.style.getSizeScale, radius: o.style.radius })),
-        }
-      })
-    );
+        })
+      );
+    }
   }
 
   // ========================================================================
@@ -885,18 +862,22 @@ onMounted(() => {
     map.on("click", onMapClick);
     console.log("[Map] MapLibre click обработчик добавлен");
 
-    // Обработчик изменения зума для обновления слоёв кластеризации
+    // Обработчик изменения зума для обновления кластеров
+    let zoomTimeout: ReturnType<typeof setTimeout>;
     map.on('zoom', () => {
-      if (deckOverlay) {
-        deckOverlay.setProps({
-          layers: createDeckLayers()
-        });
-      }
+      clearTimeout(zoomTimeout);
+      zoomTimeout = setTimeout(() => {
+        if (deckOverlay) {
+          deckOverlay.setProps({
+            layers: createDeckLayers()
+          });
+        }
+      }, 100);
     });
 
-    // === КЛАСТЕРИЗАЦИЯ ЧЕРЕЗ DECK.GL HEXAGON ===
-    // HexagonLayer показывает плотность остановок на зумах 0-13
-    // IconLayer показывает иконки на зумах 14+
+    // === КЛАСТЕРИЗАЦИЯ ЧЕРЕЗ SUPERCLUSTER ===
+    // Zoom 0-4: кластеры (круги с цифрами)
+    // Zoom 5+: все точки остановок
 
     // Обработчик движения мыши для отображения координат
     map.on("mousemove", (e: any) => {
