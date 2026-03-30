@@ -638,102 +638,102 @@ onMounted(() => {
         clusterRadius: 50
       });
 
-    // Слой кластеров (круги)
-    map.addLayer({
-      id: 'clusters',
-      type: 'circle',
-      source: 'stop-markers-cluster',
-      filter: ['has', 'point_count'],
-      paint: {
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#51bbd6',    // < 100: голубой
-          100,          // 100-750: жёлтый
-          '#f1f075',
-          750,          // >= 750: розовый
-          '#f28cb1'
-        ],
-        'circle-radius': [
-          'step',
-          ['get', 'point_count'],
-          15,           // < 100: 15px
-          100,          // 100-750: 25px
-          25,
-          750,          // >= 750: 35px
-          35
-        ]
-      }
-    });
+      // Слой кластеров (круги) - добавляем ПЕРЕД другими слоями
+      map.addLayer({
+        id: 'clusters',
+        type: 'circle',
+        source: 'stop-markers-cluster',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': [
+            'step',
+            ['get', 'point_count'],
+            '#51bbd6',    // < 100: голубой
+            100,          // 100-750: жёлтый
+            '#f1f075',
+            750,          // >= 750: розовый
+            '#f28cb1'
+          ],
+          'circle-radius': [
+            'step',
+            ['get', 'point_count'],
+            15,           // < 100: 15px
+            100,          // 100-750: 25px
+            25,
+            750,          // >= 750: 35px
+            35
+          ]
+        }
+      }, 'waterway-label'); // Добавляем перед слоем с надписями
 
-    // Текст с количеством убран - требует glyphs в стиле карты
+      // Текст с количеством убран - требует glyphs в стиле карты
 
-    // Клик на кластер - зум
-    map.on('click', 'clusters', async (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
-      if (features.length > 0 && features[0]) {
-        const clusterId = features[0].properties?.cluster_id;
+      // Клик на кластер - зум
+      map.on('click', 'clusters', async (e) => {
+        const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+        if (features.length > 0 && features[0]) {
+          const clusterId = features[0].properties?.cluster_id;
+          const source = map.getSource('stop-markers-cluster') as any;
+          if (source && clusterId) {
+            const zoom = await source.getClusterExpansionZoom(clusterId);
+            map.easeTo({
+              center: (features[0].geometry as any).coordinates,
+              zoom
+            });
+          }
+        }
+      });
+
+      // Курсор при наведении на кластер
+      map.on('mouseenter', 'clusters', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'clusters', () => {
+        map.getCanvas().style.cursor = '';
+      });
+
+      // Функция обновления кластеров
+      const updateClusters = () => {
+        const stopMarkers = Array.from(Objects.value?.values() ?? [])
+          .filter(obj => obj.type === 'StopMarker');
+
+        console.log("[Map] updateClusters:", stopMarkers.length, "остановок");
+
+        const features = stopMarkers.map(obj => ({
+          type: 'Feature' as const,
+          geometry: {
+            type: 'Point' as const,
+            coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0] // [lng, lat]
+          },
+          properties: {
+            id: obj.id,
+            name: obj.name,
+            markerType: obj.markerType || 'pin',
+            color: obj.style.color,
+            radius: obj.style.radius,
+            getSizeScale: obj.style.getSizeScale
+          }
+        }));
+
         const source = map.getSource('stop-markers-cluster') as any;
-        if (source && clusterId) {
-          const zoom = await source.getClusterExpansionZoom(clusterId);
-          map.easeTo({
-            center: (features[0].geometry as any).coordinates,
-            zoom
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features
           });
+          console.log("[Map] Cluster source updated");
         }
-      }
-    });
+      };
 
-    // Курсор при наведении на кластер
-    map.on('mouseenter', 'clusters', () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', 'clusters', () => {
-      map.getCanvas().style.cursor = '';
-    });
+      // Обновляем кластеры при изменении объектов
+      watch(() => Array.from(Objects.value?.values() ?? []), () => {
+        updateClusters();
+      }, { deep: true });
 
-    // Функция обновления кластеров
-    const updateClusters = () => {
-      const stopMarkers = Array.from(Objects.value?.values() ?? [])
-        .filter(obj => obj.type === 'StopMarker');
-
-      console.log("[Map] updateClusters:", stopMarkers.length, "остановок");
-
-      const features = stopMarkers.map(obj => ({
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Point' as const,
-          coordinates: obj.coordinates[0] ? [obj.coordinates[0][1], obj.coordinates[0][0]] : [0, 0] // [lng, lat]
-        },
-        properties: {
-          id: obj.id,
-          name: obj.name,
-          markerType: obj.markerType || 'pin',
-          color: obj.style.color,
-          radius: obj.style.radius,
-          getSizeScale: obj.style.getSizeScale
-        }
-      }));
-
-      const source = map.getSource('stop-markers-cluster') as any;
-      if (source) {
-        source.setData({
-          type: 'FeatureCollection',
-          features
-        });
-        console.log("[Map] Cluster source updated");
-      }
-    };
-
-    // Обновляем кластеры при изменении объектов
-    watch(() => Array.from(Objects.value?.values() ?? []), () => {
-      updateClusters();
-    }, { deep: true });
-
-    // Первый вызов для инициализации
-    setTimeout(() => {
-      updateClusters();
-    }, 1000);
+      // Первый вызов для инициализации
+      setTimeout(() => {
+        updateClusters();
+      }, 1000);
 
       console.log("[Map] Кластеризация инициализирована");
     });
