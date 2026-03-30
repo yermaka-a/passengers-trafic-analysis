@@ -40,25 +40,35 @@ const props = defineProps<{
 const mapObjectStore = useMapObjectStore();
 
 const editingId = ref<string | null>(null);
+const editingName = ref<string>("");
 const editingDescription = ref<string>("");
 const expandedDescriptions = ref<Set<string>>(new Set());
 
 const startEditing = (id: string, obj: DeckGLObject) => {
   editingId.value = id;
+  editingName.value = obj.name || "";
   editingDescription.value = obj.description || "";
 };
 
 const cancelEditing = () => {
   editingId.value = null;
+  editingName.value = "";
   editingDescription.value = "";
 };
 
 const saveEditing = async (id: string) => {
   const obj = mapObjectStore.Objects.get(id);
   if (obj) {
+    console.log('[ObjectListView] saveEditing:', { 
+      id, 
+      name: editingName.value, 
+      description: editingDescription.value 
+    });
+    
     // Обновляем в store
     const updatedObj = {
       ...obj,
+      name: editingName.value,
       description: editingDescription.value || null,
     };
     mapObjectStore.Objects.set(id, updatedObj);
@@ -179,9 +189,14 @@ const onCloseModal = () => {
         </CardHeader>
         <CardContent>
           <CardDescription>
-            <!-- Редактирование description -->
+            <!-- Редактирование name и description -->
             <template v-if="editingId === obj[0]">
               <div class="flex gap-2 mb-4">
+                <Input
+                  v-model="editingName"
+                  placeholder="Название"
+                  class="flex-1"
+                />
                 <Button variant="outline" size="sm" @click="cancelEditing">Отмена</Button>
                 <Button size="sm" @click="saveEditing(obj[0])">Сохранить</Button>
               </div>

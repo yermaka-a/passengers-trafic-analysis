@@ -157,6 +157,7 @@ class Objects:
                     extra={
                         "Id": options.Id,
                         "name": options.name,
+                        "description": options.description,
                         "obj_type": options.obj_type,
                         "latitude": latitude,
                         "longitude": longitude,

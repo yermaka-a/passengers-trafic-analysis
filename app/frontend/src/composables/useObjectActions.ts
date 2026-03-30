@@ -150,6 +150,11 @@ export const useObjectActions = () => {
    */
   const updateObjectInBackend = async (obj: DeckGLObject) => {
     const backendObj = mapObjectStore.convertDeckGLToBackend(obj);
+    console.log('[useObjectActions] updateObjectInBackend:', {
+      id: obj.id,
+      name: backendObj.options.name,
+      description: backendObj.options.description
+    });
     const result = await updateObject(backendObj);
 
     if (result?.status !== "success") {
