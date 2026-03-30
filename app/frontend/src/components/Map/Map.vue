@@ -557,7 +557,7 @@ const createDeckLayers = () => {
       // demotiles не предоставляет glyphs, поэтому цифры не показываем
 
       // Клик на кластер - зум
-      mapInstance.value.on('click', 'stop-markers-clusters', async (e: any) => {
+      mapInstance.value.on('click', 'stop-markers-clusters', (e: any) => {
         const features = mapInstance.value!.queryRenderedFeatures(e.point, {
           layers: ['stop-markers-clusters']
         });
@@ -565,9 +565,10 @@ const createDeckLayers = () => {
           const clusterId = (features[0].properties as any).cluster_id;
           const source = mapInstance.value!.getSource('stop-markers-cluster') as any;
           if (source && clusterId) {
-            const zoom = await source.getClusterExpansionZoom(clusterId);
+            // getClusterExpansionZoom возвращает число, не Promise
+            const zoom = source.getClusterExpansionZoom(clusterId);
             const coords = (features[0].geometry as any)?.coordinates;
-            if (coords && coords.length >= 2) {
+            if (coords && Array.isArray(coords) && coords.length >= 2 && !isNaN(coords[0]) && !isNaN(coords[1])) {
               mapInstance.value!.easeTo({
                 center: [coords[0], coords[1]] as [number, number],
                 zoom: Math.min(zoom, 16)
