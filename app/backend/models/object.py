@@ -9,9 +9,9 @@
 Все ID в binary(16) для экономии места
 """
 from typing import List, Optional
-from sqlalchemy import Integer, String, Text, Boolean, Float, JSON, ForeignKey, Index, DateTime
+from sqlalchemy import Integer, String, Text, Boolean, Float, JSON, ForeignKey, Index, DateTime, ForeignKeyConstraint
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from .base import Base
 from datetime import datetime
 import uuid
@@ -71,14 +71,14 @@ class MapObject(Base):
         foreign_keys="ObjectRelation.parent_id", 
         back_populates="parent", 
         init=False,
-        primaryjoin="ObjectRelation.parent_id == MapObject.id"
+        primaryjoin="foreign(ObjectRelation.parent_id) == MapObject.id"
     )
     parent_relations: Mapped[List["ObjectRelation"]] = relationship(
         "ObjectRelation", 
         foreign_keys="ObjectRelation.child_id", 
         back_populates="child", 
         init=False,
-        primaryjoin="ObjectRelation.child_id == MapObject.id"
+        primaryjoin="foreign(ObjectRelation.child_id) == MapObject.id"
     )
     
     # Связи для passenger_flow_stops
@@ -87,7 +87,7 @@ class MapObject(Base):
         back_populates="stop", 
         cascade="all, delete-orphan", 
         init=False,
-        primaryjoin="PassengerFlowStop.stop_id == MapObject.id"
+        primaryjoin="foreign(PassengerFlowStop.stop_id) == MapObject.id"
     )
     
     # Связи для routes
@@ -96,7 +96,7 @@ class MapObject(Base):
         back_populates="stop", 
         cascade="all, delete-orphan", 
         init=False,
-        primaryjoin="RouteStop.stop_id == MapObject.id"
+        primaryjoin="foreign(RouteStop.stop_id) == MapObject.id"
     )
 
     # Методы для конвертации UUID

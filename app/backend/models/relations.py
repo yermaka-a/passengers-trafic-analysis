@@ -10,7 +10,7 @@
 from typing import List, Optional
 from sqlalchemy import Integer, String, Text, Boolean, Float, JSON, ForeignKey, Index, DateTime, CheckConstraint, UniqueConstraint
 from sqlalchemy.ext.mutable import MutableList
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, foreign
 from .base import Base
 from datetime import datetime
 import uuid
@@ -54,14 +54,14 @@ class ObjectRelation(Base):
         foreign_keys=[parent_id], 
         back_populates="child_relations", 
         init=False,
-        primaryjoin="ObjectRelation.parent_id == MapObject.id"
+        primaryjoin="foreign(ObjectRelation.parent_id) == MapObject.id"
     )
     child: Mapped[Optional["MapObject"]] = relationship(
         "MapObject", 
         foreign_keys=[child_id], 
         back_populates="parent_relations", 
         init=False,
-        primaryjoin="ObjectRelation.child_id == MapObject.id"
+        primaryjoin="foreign(ObjectRelation.child_id) == MapObject.id"
     )
 
     @property
@@ -113,7 +113,7 @@ class PassengerFlow(Base):
         "Route", 
         back_populates="passenger_flows", 
         init=False,
-        primaryjoin="PassengerFlow.route_id == Route.id"
+        primaryjoin="foreign(PassengerFlow.route_id) == Route.id"
     )
 
     @property
@@ -150,13 +150,13 @@ class PassengerFlowStop(Base):
         "PassengerFlow", 
         back_populates="flow_stops", 
         init=False,
-        primaryjoin="PassengerFlowStop.flow_id == PassengerFlow.id"
+        primaryjoin="foreign(PassengerFlowStop.flow_id) == PassengerFlow.id"
     )
     stop: Mapped[Optional["MapObject"]] = relationship(
         "MapObject", 
         back_populates="passenger_flow_stops", 
         init=False,
-        primaryjoin="PassengerFlowStop.stop_id == MapObject.id"
+        primaryjoin="foreign(PassengerFlowStop.stop_id) == MapObject.id"
     )
 
     @property
@@ -192,7 +192,7 @@ class Route(Base):
         back_populates="route", 
         cascade="all, delete-orphan", 
         init=False,
-        primaryjoin="Route.id == RouteStop.route_id"
+        primaryjoin="foreign(RouteStop.route_id) == Route.id"
     )
     
     # Пассажиропотоки для маршрута
@@ -201,7 +201,7 @@ class Route(Base):
         back_populates="route", 
         cascade="all, delete-orphan", 
         init=False,
-        primaryjoin="Route.id == PassengerFlow.route_id"
+        primaryjoin="foreign(PassengerFlow.route_id) == Route.id"
     )
 
     @property
