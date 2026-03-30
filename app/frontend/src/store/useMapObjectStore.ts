@@ -45,6 +45,8 @@ interface MapObjectStoreState {
     string,
     { strokeWidth: number; strokeDasharray?: [number, number] }
   >;
+  // Фильтры видимости для StopMarker
+  visibleStopMarkerTypes: Set<string>;
 }
 
 // ============================================================================
@@ -165,6 +167,7 @@ export const useMapObjectStore = defineStore("mapobjects", {
     EditingObjectId: null,
     ClickedObjId: null,
     strokeState: new Map(),
+    visibleStopMarkerTypes: new Set(['pin', 'pinned', 'flag', 'flag-check', 'pin-check', 'pin-plus', 'balloon']),
   }),
 
   getters: {
@@ -186,6 +189,9 @@ export const useMapObjectStore = defineStore("mapobjects", {
 
     /** ID кликнутого объекта */
     getClickedObjId: (state) => state.ClickedObjId,
+    
+    /** Получить видимые типы маркеров */
+    getVisibleStopMarkerTypes: (state) => state.visibleStopMarkerTypes,
   },
 
   actions: {
@@ -481,6 +487,22 @@ export const useMapObjectStore = defineStore("mapobjects", {
     /** Конвертировать DeckGLObject в BackendObjectCreate (публичный метод) */
     convertDeckGLToBackend(obj: DeckGLObject): BackendObjectCreate {
       return deckGLToBackend(obj);
+    },
+    
+    /** Установить видимые типы маркеров */
+    setVisibleStopMarkerTypes(types: Set<string>) {
+      this.$state.visibleStopMarkerTypes = types;
+    },
+    
+    /** Переключить видимость типа маркера */
+    toggleStopMarkerType(type: string) {
+      const types = new Set(this.$state.visibleStopMarkerTypes);
+      if (types.has(type)) {
+        types.delete(type);
+      } else {
+        types.add(type);
+      }
+      this.$state.visibleStopMarkerTypes = types;
     },
   },
 });

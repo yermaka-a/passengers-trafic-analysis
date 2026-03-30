@@ -488,7 +488,7 @@ const createDeckLayers = () => {
 
   // 4. StopMarker layer - иконки для остановок
   const stopMarkers = objectsArray.filter(
-    (obj) => obj.type === "StopMarker"
+    (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
   if (stopMarkers.length > 0) {
