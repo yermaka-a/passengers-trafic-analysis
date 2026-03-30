@@ -581,12 +581,15 @@ const createDeckLayers = () => {
           data: clusterData,
           getPosition: (d: any) => d.position,
           getText: (d: any) => d.count.toString(),
-          getSize: 16,
+          getSize: 18,
           getAlignmentBaseline: 'center',
           getAnchorPosition: 'center',
           getColor: [255, 255, 255],
           fontWeight: 'bold',
-          fontFamily: 'Arial'
+          fontFamily: 'Arial',
+          // Фон для читаемости
+          getBackgroundColor: [0, 0, 0, 180],
+          getPadding: [4, 2, 4, 2]
         })
       );
     } else {
