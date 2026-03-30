@@ -638,7 +638,7 @@ onMounted(() => {
         clusterRadius: 50
       });
 
-    // Слой кластеров (круги)
+    // Слой кластеров (круги с количеством внутри)
     map.addLayer({
       id: 'clusters',
       type: 'circle',
@@ -666,7 +666,7 @@ onMounted(() => {
       }
     });
 
-    // Слой с количеством в кластере
+    // Слой с количеством в кластере (текст)
     map.addLayer({
       id: 'cluster-count',
       type: 'symbol',
@@ -674,8 +674,13 @@ onMounted(() => {
       filter: ['has', 'point_count'],
       layout: {
         'text-field': '{point_count_abbreviated}',
-        'text-font': ['Noto Sans Regular'],
-        'text-size': 12
+        'text-size': 12,
+        'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular']
+      },
+      paint: {
+        'text-color': '#fff',
+        'text-halo-color': '#333',
+        'text-halo-width': 1
       }
     });
 
