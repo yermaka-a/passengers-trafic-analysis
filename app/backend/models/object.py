@@ -64,6 +64,24 @@ class MapObject(Base):
     object_styles: Mapped[Optional["ObjectStyles"]] = relationship(
         "ObjectStyles", back_populates="object", uselist=False, cascade="all, delete-orphan", init=False
     )
+    
+    # Связи для object_relations (полигоны ↔ маркеры)
+    child_relations: Mapped[List["ObjectRelation"]] = relationship(
+        "ObjectRelation", foreign_keys="ObjectRelation.parent_id", back_populates="parent", init=False
+    )
+    parent_relations: Mapped[List["ObjectRelation"]] = relationship(
+        "ObjectRelation", foreign_keys="ObjectRelation.child_id", back_populates="child", init=False
+    )
+    
+    # Связи для passenger_flow
+    passenger_flows: Mapped[List["PassengerFlow"]] = relationship(
+        "PassengerFlow", back_populates="stop", cascade="all, delete-orphan", init=False
+    )
+    
+    # Связи для routes
+    route_stops: Mapped[List["RouteStop"]] = relationship(
+        "RouteStop", back_populates="stop", cascade="all, delete-orphan", init=False
+    )
 
     # Методы для конвертации UUID
     @property
