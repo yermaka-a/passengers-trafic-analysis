@@ -553,23 +553,8 @@ const createDeckLayers = () => {
         }
       });
 
-      // Слой с количеством в кластере (цифры)
-      mapInstance.value.addLayer({
-        id: 'stop-markers-cluster-count',
-        type: 'symbol',
-        source: 'stop-markers-cluster',
-        filter: ['has', 'point_count'],
-        layout: {
-          'text-field': '{point_count_abbreviated}',
-          'text-font': ['Noto Sans Regular'],
-          'text-size': 12
-        },
-        paint: {
-          'text-color': '#ffffff',
-          'text-halo-color': '#333333',
-          'text-halo-width': 1
-        }
-      });
+      // Примечание: text-field требует glyphs в стиле карты
+      // demotiles не предоставляет glyphs, поэтому цифры не показываем
 
       // Клик на кластер - зум
       mapInstance.value.on('click', 'stop-markers-clusters', async (e: any) => {
@@ -612,7 +597,6 @@ const createDeckLayers = () => {
     const showIcons = currentZoom >= 7;
 
     mapInstance.value.setLayoutProperty('stop-markers-clusters', 'visibility', showClusters ? 'visible' : 'none');
-    mapInstance.value.setLayoutProperty('stop-markers-cluster-count', 'visibility', showClusters ? 'visible' : 'none');
 
     // Deck.gl иконки показываем только на зумах 7+
     if (showIcons) {
