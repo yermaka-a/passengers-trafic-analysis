@@ -78,15 +78,18 @@ class PassengerFlow(Base):
         Index('ix_pf_time_period', 'time_period'),
     )
 
+    # Поля БЕЗ default (обязательные) - должны идти первыми
     id: Mapped[bytes] = mapped_column("id", String(16).with_variant(String(16), 'sqlite'), primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
+    date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    
+    # Поля С default (необязательные) - должны идти после
     route_id: Mapped[Optional[bytes]] = mapped_column(
         ForeignKey("routes.id", ondelete="SET NULL"),
         nullable=True
     )
-    direction: Mapped[str] = mapped_column(String(30), default='forward')  # forward, backward, northbound, southbound, etc.
-    date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
-    time_period: Mapped[str] = mapped_column(String(30), default='off_peak')  # morning_peak, evening_peak, off_peak, night
+    direction: Mapped[str] = mapped_column(String(30), default='forward')
+    time_period: Mapped[str] = mapped_column(String(30), default='off_peak')
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow, onupdate=datetime.utcnow)
