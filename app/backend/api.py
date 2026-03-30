@@ -458,8 +458,8 @@ class Api:
                     "message": "Неверный тип объекта"
                 }
             
-            # Получаем все объекты
-            all_objects = self.objects.get_all_objects()
+            # Получаем все объекты из БД напрямую
+            all_objects = self.storage.objects.get_all_objects()
             if not all_objects:
                 return {
                     "status": "success",
