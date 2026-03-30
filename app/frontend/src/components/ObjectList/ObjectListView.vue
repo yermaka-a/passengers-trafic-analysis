@@ -26,7 +26,7 @@ import { Toggle } from "@/components/ui/toggle/";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil } from "lucide-vue-next";
+import { Pencil, Eye, EyeOff } from "lucide-vue-next";
 import { ref, Teleport } from "vue";
 import type { DeckGLObject } from "@/types";
 import useObjectActions from "@/composables/useObjectActions";
@@ -59,12 +59,12 @@ const cancelEditing = () => {
 const saveEditing = async (id: string) => {
   const obj = mapObjectStore.Objects.get(id);
   if (obj) {
-    console.log('[ObjectListView] saveEditing:', { 
-      id, 
-      name: editingName.value, 
-      description: editingDescription.value 
+    console.log('[ObjectListView] saveEditing:', {
+      id,
+      name: editingName.value,
+      description: editingDescription.value
     });
-    
+
     // Обновляем в store
     const updatedObj = {
       ...obj,
@@ -72,11 +72,26 @@ const saveEditing = async (id: string) => {
       description: editingDescription.value || null,
     };
     mapObjectStore.Objects.set(id, updatedObj);
-    
+
     // Отправляем на backend
     await updateObjectInBackend(updatedObj);
   }
   cancelEditing();
+};
+
+// Переключить видимость объекта
+const toggleVisibility = async (event: Event, id: string, type: string) => {
+  event.stopPropagation();
+  
+  // Скрываем только полигоны и полилинии
+  if (type !== "Polygon" && type !== "Polyline") return;
+  
+  await mapObjectStore.toggleObjectVisibility(id);
+};
+
+// Проверить: скрыт ли объект
+const isHidden = (id: string): boolean => {
+  return mapObjectStore.isObjectHidden(id);
 };
 
 const toggleDescription = (id: string) => {
@@ -164,14 +179,31 @@ const onCloseModal = () => {
               <span class="flex-1 truncate" :title="obj[1].customName || obj[1].name">
                 {{ truncateText(obj[1].customName || obj[1].name, 15) }}
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                @click="startEditing(obj[0], obj[1])"
-                class="h-6 w-6 p-0"
-              >
-                <Pencil class="w-3 h-3" />
-              </Button>
+              <div class="flex items-center gap-2">
+                <!-- Чекбокс видимости для полигонов/полилиний -->
+                <div
+                  v-if="obj[1].type === 'Polygon' || obj[1].type === 'Polyline'"
+                  class="flex items-center gap-1"
+                  title="Скрыть/Показать"
+                >
+                  <button
+                    @click.stop="toggleVisibility($event, obj[0], obj[1].type)"
+                    class="text-gray-400 hover:text-gray-600"
+                  >
+                    <EyeOff v-if="isHidden(obj[0])" class="w-3 h-3" />
+                    <Eye v-else class="w-3 h-3" />
+                  </button>
+                </div>
+                
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  @click="startEditing(obj[0], obj[1])"
+                  class="h-6 w-6 p-0"
+                >
+                  <Pencil class="w-3 h-3" />
+                </Button>
+              </div>
             </div>
             <div v-if="obj[1].description && editingId !== obj[0]" class="flex items-start gap-1 mt-1">
               <span class="text-xs text-gray-500 flex-1">
