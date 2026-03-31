@@ -41,24 +41,33 @@ class ObjectRelationsController:
                 parent_uuid = uuid.UUID(parent_id)
                 child_uuid = uuid.UUID(child_id)
                 
-                # Проверяем существование объектов
-                parent = session.get(MapObject, parent_uuid.bytes)
-                child = session.get(MapObject, child_uuid.bytes)
+                # Ищем объекты через select вместо session.get
+                parent = session.execute(
+                    select(MapObject).where(MapObject.id == parent_uuid.bytes)
+                ).scalar_one_or_none()
                 
+                child = session.execute(
+                    select(MapObject).where(MapObject.id == child_uuid.bytes)
+                ).scalar_one_or_none()
+
                 log.info("add_relation: проверка объектов", extra={
                     "parent_id": parent_id,
+                    "parent_uuid_bytes": parent_uuid.bytes.hex() if parent_uuid.bytes else None,
                     "parent_found": parent is not None,
                     "child_id": child_id,
+                    "child_uuid_bytes": child_uuid.bytes.hex() if child_uuid.bytes else None,
                     "child_found": child is not None
                 })
-                
+
                 if not parent or not child:
                     log.warning("add_relation: объект не найден", extra={
                         "parent_id": parent_id,
-                        "child_id": child_id
+                        "parent_found": parent is not None,
+                        "child_id": child_id,
+                        "child_found": child is not None
                     })
                     return False
-                
+
                 # Проверяем что связь ещё не существует
                 existing = session.execute(
                     select(ObjectRelation).where(
@@ -66,14 +75,14 @@ class ObjectRelationsController:
                         ObjectRelation.child_id == child.id
                     )
                 ).scalar_one_or_none()
-                
+
                 if existing:
                     log.info("add_relation: связь уже существует", extra={
                         "parent_id": parent_id,
                         "child_id": child_id
                     })
                     return True
-                
+
                 # Создаём связь
                 relation = ObjectRelation(
                     parent_id=parent.id,
