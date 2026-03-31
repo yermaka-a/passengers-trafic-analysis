@@ -163,14 +163,15 @@ class ObjectRelationsController:
             with self._get_session() as session:
                 # Конвертируем UUID строку в bytes
                 parent_uuid = uuid.UUID(parent_id)
-                parent_id_bytes = parent_uuid.bytes
                 parent_id_hex = parent_uuid.hex
                 
                 log.info("get_children: входные данные", extra={
                     "parent_id": parent_id,
-                    "parent_id_bytes_len": len(parent_id_bytes),
                     "parent_id_hex": parent_id_hex
                 })
+                
+                # Импортируем text для SQL запроса
+                from sqlalchemy import text
                 
                 # Проверяем что есть в БД
                 all_relations = session.execute(
@@ -182,8 +183,7 @@ class ObjectRelationsController:
                     "sample": [(r[2], r[3]) for r in all_relations[:5]]  # hex представления
                 })
                 
-                # Ищем связи через raw SQL
-                from sqlalchemy import text
+                # Ищем связи через raw SQL с hex() сравнением
                 result = session.execute(
                     text("""
                         SELECT mo.id, mo.name, mo.obj_type, mo.latlng, mo.description,
