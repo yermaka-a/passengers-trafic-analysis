@@ -164,8 +164,25 @@ class ObjectRelationsController:
                 # Конвертируем UUID строку в bytes
                 parent_uuid = uuid.UUID(parent_id)
                 parent_id_bytes = parent_uuid.bytes
+                parent_id_hex = parent_uuid.hex
                 
-                # Используем raw SQL для надёжности
+                log.info("get_children: входные данные", extra={
+                    "parent_id": parent_id,
+                    "parent_id_bytes_len": len(parent_id_bytes),
+                    "parent_id_hex": parent_id_hex
+                })
+                
+                # Проверяем что есть в БД
+                all_relations = session.execute(
+                    text("SELECT parent_id, child_id, hex(parent_id) as parent_hex, hex(child_id) as child_hex FROM object_relations")
+                ).fetchall()
+                
+                log.info("get_children: все связи в БД", extra={
+                    "total_relations": len(all_relations),
+                    "sample": [(r[2], r[3]) for r in all_relations[:5]]  # hex представления
+                })
+                
+                # Ищем связи через raw SQL
                 from sqlalchemy import text
                 result = session.execute(
                     text("""
@@ -173,9 +190,9 @@ class ObjectRelationsController:
                                mo.latitude, mo.longitude, mo.created_at, mo.updated_at
                         FROM map_objects mo
                         INNER JOIN object_relations orel ON mo.id = orel.child_id
-                        WHERE orel.parent_id = :parent_id
+                        WHERE hex(orel.parent_id) = :parent_id_hex
                     """),
-                    {"parent_id": parent_id_bytes}
+                    {"parent_id_hex": parent_id_hex}
                 )
                 
                 children = []
