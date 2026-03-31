@@ -20,6 +20,7 @@ const ObjectsTypes = [
   ["Polyline", "Полилайн"],
   ["CircleMarker", "Маркер-круг"],
   ["StopMarker", "Маркер"],
+  ["PassengerFlow", "Пассажиропоток"],
   ["Edit", "Редактировать объект"],
 ] as const;
 

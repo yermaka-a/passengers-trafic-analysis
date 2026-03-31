@@ -63,7 +63,7 @@ const searchQueries = ref<Record<number, string>>({});
 const searchInputRefs = ref<Record<number, HTMLInputElement | null>>({});
 
 // Все остановки для выбора (отдельно для каждого индекса)
-const getAvailableStops = (index: number) => {
+const getAvailableStops = (index: number, limit: number = 100) => {
   const allObjects = Array.from(mapObjectStore.Objects.entries());
   let stops = allObjects
     .filter(([_, obj]) => obj.type === "StopMarker")
@@ -84,7 +84,24 @@ const getAvailableStops = (index: number) => {
     .filter((_, i) => i !== index)
     .map(s => s.stop_id);
   
-  return stops.filter(s => !selectedIds.includes(s.id));
+  stops = stops.filter(s => !selectedIds.includes(s.id));
+
+  // Возвращаем только первые N (для производительности)
+  return stops.slice(0, limit);
+};
+
+// Показывать все результаты или нет
+const showAllStops = ref<Record<number, boolean>>({});
+
+// Получить остановки с учётом "показать ещё"
+const getDisplayedStops = (index: number) => {
+  const limit = showAllStops.value[index] ? undefined : 100;
+  return getAvailableStops(index, limit);
+};
+
+// Показать ещё остановки
+const loadMoreStops = (index: number) => {
+  showAllStops.value[index] = true;
 };
 
 // Добавить остановку
@@ -337,11 +354,11 @@ defineExpose({ openForEdit, resetForm });
                           Ничего не найдено
                         </CommandEmpty>
                         <CommandEmpty v-else>
-                          Начните вводить название
+                          {{ getAvailableStops(index).length > 0 ? 'Начните вводить название или выберите из списка' : 'Нет остановок' }}
                         </CommandEmpty>
                         <CommandGroup>
                           <CommandItem
-                            v-for="s in getAvailableStops(index)"
+                            v-for="s in getDisplayedStops(index)"
                             :key="s.id"
                             :value="s.id"
                             @select="selectStop(index, s.id)"
@@ -351,6 +368,17 @@ defineExpose({ openForEdit, resetForm });
                               class="mr-2 h-4 w-4"
                             />
                             {{ s.name }}
+                          </CommandItem>
+                          
+                          <!-- Кнопка "Показать ещё" -->
+                          <CommandItem
+                            v-if="!showAllStops[index] && getAvailableStops(index).length > 100"
+                            value="show-more"
+                            @select="loadMoreStops(index)"
+                            class="text-primary font-medium"
+                          >
+                            <span class="mr-2">📋</span>
+                            Показать ещё ({{ getAvailableStops(index).length - 100 }})
                           </CommandItem>
                         </CommandGroup>
                       </CommandList>

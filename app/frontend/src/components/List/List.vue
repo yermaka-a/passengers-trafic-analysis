@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import, FileJson } from "lucide-vue-next";
+import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import, FileJson, Route } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
@@ -112,6 +112,27 @@ const filteredObjects = computed(() => {
   });
 });
 
+// Пассажиропотоки для отображения в списке
+const displayedFlows = computed(() => {
+  const flows = mapObjectStore.passengerFlows;
+  
+  // Фильтр по типу
+  if (filterType.value !== "all" && filterType.value !== "PassengerFlow") {
+    return [];
+  }
+  
+  // Поиск по названию
+  const searchLower = searchQuery.value.toLowerCase();
+  if (searchQuery.value) {
+    return flows.filter(flow =>
+      flow.name.toLowerCase().includes(searchLower) ||
+      flow.date.includes(searchLower)
+    );
+  }
+  
+  return flows;
+});
+
 // Загружаем предпочтения из localStorage
 onMounted(() => {
   const savedView = localStorage.getItem("objectListView") as ViewType;
@@ -172,6 +193,41 @@ const switchLayer = async (layer: TileLayer) => {
 const openObjectPopup = (id: string) => {
   mapStore.openPopup(id);
 };
+
+// Открыть popup для потока
+const openFlowPopup = (flow: any) => {
+  // Показываем popup с информацией о потоке
+  const popupContent = `
+    <div class="p-2">
+      <h3 class="font-bold text-lg mb-2">${flow.name}</h3>
+      <div class="space-y-1 text-sm">
+        <p><span class="font-medium">Дата:</span> ${flow.date}</p>
+        <p><span class="font-medium">Остановок:</span> ${flow.stops_count}</p>
+        <p><span class="font-medium">Пассажиров:</span> ${flow.total_passengers}</p>
+        <p><span class="font-medium">Направление:</span> ${flow.direction === 'forward' ? 'Прямое →' : 'Обратное ←'}</p>
+      </div>
+    </div>
+  `;
+  
+  // Показываем popup на карте (если есть координаты первой остановки)
+  if (flow.coordinates && flow.coordinates.length > 0) {
+    const firstStop = flow.coordinates[0];
+    mapStore.mapInstance?.flyTo({
+      center: [firstStop.lng, firstStop.lat],
+      zoom: 14
+    });
+  }
+  
+  // Используем showObjectPopupRef если есть
+  if (mapStore.showObjectPopupRef) {
+    mapStore.showObjectPopupRef({
+      id: flow.flow_id,
+      name: flow.name,
+      type: 'PassengerFlow',
+      customName: flow.name
+    });
+  }
+};
 </script>
 
 <template>
@@ -192,6 +248,7 @@ const openObjectPopup = (id: string) => {
               <SelectItem value="Polyline">Полилинии</SelectItem>
               <SelectItem value="CircleMarker">Маркеры-круг</SelectItem>
               <SelectItem value="StopMarker">Маркеры</SelectItem>
+              <SelectItem value="PassengerFlow">Пассажиропотоки</SelectItem>
             </SelectContent>
           </Select>
 
@@ -337,16 +394,49 @@ const openObjectPopup = (id: string) => {
 
     <!-- Контент -->
     <div class="flex-1 overflow-auto">
-      <ObjectListView
-        v-if="view === 'cards'"
-        :objects="sortedObjects"
-        @open-popup="openObjectPopup"
-      />
-      <PropertyTable
-        v-else
-        :objects="sortedObjects"
-        @open-popup="openObjectPopup"
-      />
+      <!-- Пассажиропотоки -->
+      <div v-if="filterType === 'PassengerFlow' || filterType === 'all'" class="p-4">
+        <h3 class="text-sm font-semibold mb-3 text-muted-foreground">
+          Пассажиропотоки ({{ displayedFlows.length }})
+        </h3>
+        <div v-if="displayedFlows.length === 0" class="text-sm text-muted-foreground italic p-4 text-center">
+          {{ mapObjectStore.passengerFlows.length === 0 ? 'Нет созданных потоков' : 'Нет потоков по заданным критериям' }}
+        </div>
+        <div v-else class="space-y-2">
+          <div
+            v-for="flow in displayedFlows"
+            :key="flow.flow_id"
+            class="p-3 border rounded-lg bg-card hover:bg-accent/50 cursor-pointer transition-colors"
+            @click="openFlowPopup(flow)"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Route class="w-4 h-4 text-primary" />
+                <span class="font-medium">{{ flow.name }}</span>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                <span>{{ flow.date }}</span>
+                <span>{{ flow.stops_count }} ост.</span>
+                <span class="font-bold text-primary">{{ flow.total_passengers }} пасс.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Обычные объекты -->
+      <div v-if="filterType === 'all' || filterType !== 'PassengerFlow'" class="p-4">
+        <ObjectListView
+          v-if="view === 'cards'"
+          :objects="sortedObjects"
+          @open-popup="openObjectPopup"
+        />
+        <PropertyTable
+          v-else
+          :objects="sortedObjects"
+          @open-popup="openObjectPopup"
+        />
+      </div>
     </div>
     
     <!-- Dialog импорта остановок -->
