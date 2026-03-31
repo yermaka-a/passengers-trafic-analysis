@@ -152,50 +152,47 @@ class ObjectRelationsController:
     def get_children(self, parent_id: str) -> List[MapObject]:
         """
         Получить все дочерние объекты (маркеры в полигоне/полилинии)
-        
+
         Args:
             parent_id: UUID родителя
-            
+
         Returns:
             Список MapObject
         """
         try:
             with self._get_session() as session:
-                # Используем text query для надёжности
-                from sqlalchemy import text
-                result = session.execute(
-                    text("""
-                        SELECT mo.* FROM map_objects mo
-                        INNER JOIN object_relations orel ON mo.id = orel.child_id
-                        WHERE orel.parent_id = :parent_id
-                    """),
-                    {"parent_id": uuid.UUID(parent_id).bytes}
-                )
+                # Конвертируем UUID в bytes для поиска
+                parent_uuid = uuid.UUID(parent_id)
                 
-                children = []
-                for row in result:
-                    # Создаём MapObject из row
-                    child = MapObject(
-                        id=row[0],
-                        name=row[1],
-                        obj_type=row[2],
-                        latlng=row[3],
-                        description=row[4] if len(row) > 4 else None,
-                        latitude=row[5] if len(row) > 5 else None,
-                        longitude=row[6] if len(row) > 6 else None,
-                        created_at=row[7] if len(row) > 7 else None,
-                        updated_at=row[8] if len(row) > 8 else None
+                # Ищем связи через select
+                relations = session.execute(
+                    select(ObjectRelation).where(
+                        ObjectRelation.parent_id == parent_uuid.bytes
                     )
-                    children.append(child)
+                ).scalars().all()
                 
+                log.info("get_children: найдено связей", extra={
+                    "parent_id": parent_id,
+                    "relations_count": len(relations)
+                })
+                
+                # Получаем дочерние объекты
+                children = []
+                for relation in relations:
+                    child = session.execute(
+                        select(MapObject).where(MapObject.id == relation.child_id)
+                    ).scalar_one_or_none()
+                    if child:
+                        children.append(child)
+
                 log.info("get_children: найдено объектов", extra={
                     "parent_id": parent_id,
                     "count": len(children)
                 })
                 return children
-                
+
         except Exception as e:
-            log.error("get_children: ошибка", extra={"error": str(e)})
+            log.error("get_children: ошибка", extra={"error": str(e), "traceback": __import__('traceback').format_exc()})
             return []
 
     def get_parents(self, child_id: str) -> List[MapObject]:

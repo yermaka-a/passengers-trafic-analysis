@@ -3,16 +3,24 @@ import MapPanel from "@/components/MapPanel/MapPanel.vue";
 import { useMapObjectStore } from "@/store";
 import { usePanelLayoutStore } from "@/store/usePanelLayoutStore";
 import { useTilesStore } from "@/store/useTilesStore";
-import { onMounted, onUnmounted } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import { Loader } from "lucide-vue-next";
 
 const objectStore = useMapObjectStore();
 const layoutStore = usePanelLayoutStore();
 const tilesStore = useTilesStore();
+const loading = ref(true);
+
+const loadObjects = async () => {
+  console.log('[Main] Loading objects from DB');
+  await objectStore.loadAllObjectsFromDB();
+  loading.value = false;
+};
 
 const pyWebViewReadyHandler = async () => {
   console.log('[Main] pywebview ready - loading objects from DB');
-  await objectStore.loadAllObjectsFromDB();
-  
+  await loadObjects();
+
   // Загружаем сохранённый слой карт через useApi
   const useApiModule = await import('@/composables/useApi');
   const { getCurrentTileLayer } = useApiModule.default();
@@ -24,7 +32,7 @@ const pyWebViewReadyHandler = async () => {
   } catch (e) {
     console.error('[Main] Error loading tile layer:', e);
   }
-  
+
   globalThis.removeEventListener("pywebviewready", pyWebViewReadyHandler);
 };
 
@@ -91,7 +99,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <MapPanel />
+  <div class="relative w-full h-full">
+    <MapPanel />
+    
+    <!-- Спиннер загрузки -->
+    <div v-if="loading" class="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="flex flex-col items-center gap-4">
+        <Loader class="w-12 h-12 animate-spin text-primary" />
+        <p class="text-lg font-medium text-foreground">Загрузка приложения...</p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped></style>
