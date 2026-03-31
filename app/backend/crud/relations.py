@@ -161,29 +161,37 @@ class ObjectRelationsController:
         """
         try:
             with self._get_session() as session:
-                # Конвертируем UUID в bytes для поиска
+                # Конвертируем UUID строку в bytes
                 parent_uuid = uuid.UUID(parent_id)
+                parent_id_bytes = parent_uuid.bytes
                 
-                # Ищем связи через select
-                relations = session.execute(
-                    select(ObjectRelation).where(
-                        ObjectRelation.parent_id == parent_uuid.bytes
-                    )
-                ).scalars().all()
+                # Используем raw SQL для надёжности
+                from sqlalchemy import text
+                result = session.execute(
+                    text("""
+                        SELECT mo.id, mo.name, mo.obj_type, mo.latlng, mo.description,
+                               mo.latitude, mo.longitude, mo.created_at, mo.updated_at
+                        FROM map_objects mo
+                        INNER JOIN object_relations orel ON mo.id = orel.child_id
+                        WHERE orel.parent_id = :parent_id
+                    """),
+                    {"parent_id": parent_id_bytes}
+                )
                 
-                log.info("get_children: найдено связей", extra={
-                    "parent_id": parent_id,
-                    "relations_count": len(relations)
-                })
-                
-                # Получаем дочерние объекты
                 children = []
-                for relation in relations:
-                    child = session.execute(
-                        select(MapObject).where(MapObject.id == relation.child_id)
-                    ).scalar_one_or_none()
-                    if child:
-                        children.append(child)
+                for row in result:
+                    child = MapObject(
+                        id=row[0],
+                        name=row[1],
+                        obj_type=row[2],
+                        latlng=row[3],
+                        description=row[4],
+                        latitude=row[5],
+                        longitude=row[6],
+                        created_at=row[7],
+                        updated_at=row[8]
+                    )
+                    children.append(child)
 
                 log.info("get_children: найдено объектов", extra={
                     "parent_id": parent_id,
