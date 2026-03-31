@@ -3,7 +3,6 @@ import { Plus, X, ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import MapFilters from "./MapFilters.vue";
 
 interface Props {
   cancelChanges: () => void;
@@ -79,8 +78,6 @@ const handleColorChange = (value: string) => {
     >
       <ChevronRight />
     </Button>
-    <Separator orientation="vertical" class="h-6" />
-    <MapFilters />
     <Separator orientation="vertical" class="h-6" />
     <Button
       variant="outline"
