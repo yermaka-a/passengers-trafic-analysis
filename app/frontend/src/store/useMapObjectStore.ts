@@ -512,37 +512,45 @@ export const useMapObjectStore = defineStore("mapobjects", {
 
     /** Скрыть объект и все связанные маркеры */
     async hideObject(objectId: string) {
+      console.log(`[MapObjectStore] hideObject: НАЧАЛО objectId=${objectId}`);
+      
       this.$state.hiddenObjects.add(objectId);
 
       // Получаем объект чтобы определить тип
       const obj = this.Objects.get(objectId);
+      console.log(`[MapObjectStore] hideObject: obj.type=${obj?.type}`);
       if (!obj) return;
 
       // Если это полигон/полилиния, скрываем все маркеры внутри
       if (obj.type === "Polygon" || obj.type === "Polyline") {
+        console.log(`[MapObjectStore] hideObject: вызываем get_polygon_stops для ${objectId}`);
         // Получаем маркеры для этого объекта через API
         const { get_polygon_stops } = (window as any).pywebview?.api || {};
         if (get_polygon_stops) {
           try {
             const result = await get_polygon_stops({ polygon_id: objectId });
+            console.log(`[MapObjectStore] hideObject: get_polygon_stops результат:`, result);
             if (result?.status === "success" && result.stops) {
+              console.log(`[MapObjectStore] hideObject: найдено ${result.stops.length} маркеров`);
               result.stops.forEach((stop: any) => {
                 this.$state.hiddenChildMarkers.add(stop.id);
                 console.log(`[MapObjectStore] Скрыт маркер ${stop.id} (родитель ${objectId})`);
               });
             } else {
-              console.log(`[MapObjectStore] Нет маркеров для ${objectId}`);
+              console.log(`[MapObjectStore] Нет маркеров для ${objectId}, result=`, result);
             }
           } catch (e) {
             console.error("[MapObjectStore] hideObject error:", e);
           }
+        } else {
+          console.error("[MapObjectStore] get_polygon_stops не найден в API");
         }
       }
 
       // Принудительно вызываем реактивность
       this.$state.hiddenObjects = new Set(this.$state.hiddenObjects);
       this.$state.hiddenChildMarkers = new Set(this.$state.hiddenChildMarkers);
-      console.log(`[MapObjectStore] hideObject: ${objectId}, hiddenObjects: ${this.$state.hiddenObjects.size}, hiddenChildMarkers: ${this.$state.hiddenChildMarkers.size}`);
+      console.log(`[MapObjectStore] hideObject: КОНЕЦ hiddenObjects=${this.$state.hiddenObjects.size}, hiddenChildMarkers=${this.$state.hiddenChildMarkers.size}`);
     },
 
     /** Показать объект и все связанные маркеры */

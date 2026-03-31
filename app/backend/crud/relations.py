@@ -163,17 +163,19 @@ class ObjectRelationsController:
             with self._get_session() as session:
                 # Конвертируем UUID строку в bytes
                 parent_uuid = uuid.UUID(parent_id)
+                parent_id_bytes = parent_uuid.bytes
                 parent_id_hex = parent_uuid.hex
                 
                 log.info("get_children: входные данные", extra={
                     "parent_id": parent_id,
+                    "parent_id_bytes": parent_id_bytes.hex(),
                     "parent_id_hex": parent_id_hex
                 })
                 
                 # Импортируем text для SQL запроса
                 from sqlalchemy import text
                 
-                # Проверяем что есть в БД
+                # Проверяем что есть в БД - получаем все связи
                 all_relations = session.execute(
                     text("SELECT parent_id, child_id, hex(parent_id) as parent_hex, hex(child_id) as child_hex FROM object_relations")
                 ).fetchall()
@@ -183,16 +185,25 @@ class ObjectRelationsController:
                     "sample": [(r[2], r[3]) for r in all_relations[:5]]  # hex представления
                 })
                 
+                # Получаем parent_id из БД для первого полигона
+                first_parent_hex = all_relations[0][2] if all_relations else None
+                log.info("get_children: сравнение hex", extra={
+                    "db_hex": first_parent_hex,
+                    "search_hex": parent_id_hex,
+                    "match": first_parent_hex == parent_id_hex
+                })
+                
                 # Ищем связи через raw SQL с hex() сравнением
+                # hex() в SQLite возвращает hex байтов, поэтому сравниваем с parent_id.bytes.hex()
                 result = session.execute(
                     text("""
                         SELECT mo.id, mo.name, mo.obj_type, mo.latlng, mo.description,
                                mo.latitude, mo.longitude, mo.created_at, mo.updated_at
                         FROM map_objects mo
                         INNER JOIN object_relations orel ON mo.id = orel.child_id
-                        WHERE hex(orel.parent_id) = :parent_id_hex
+                        WHERE hex(orel.parent_id) = :parent_id_bytes_hex
                     """),
-                    {"parent_id_hex": parent_id_hex}
+                    {"parent_id_bytes_hex": parent_id_bytes.hex()}
                 )
                 
                 children = []
