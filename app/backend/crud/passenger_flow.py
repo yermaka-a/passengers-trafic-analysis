@@ -324,6 +324,8 @@ class PassengerFlowController:
         try:
             with self._get_session() as session:
                 flows = session.execute(select(PassengerFlow)).scalars().all()
+                
+                log.info("get_flows_with_coordinates", extra={"total_flows": len(flows)})
 
                 result = []
                 for flow in flows:
@@ -333,6 +335,11 @@ class PassengerFlowController:
                         .where(PassengerFlowStop.flow_id == flow.id)
                         .order_by(PassengerFlowStop.stop_order)
                     ).scalars().all()
+                    
+                    log.info("get_flows_with_coordinates: поток", extra={
+                        "flow_id": flow.uuid,
+                        "flow_stops_count": len(flow_stops)
+                    })
 
                     # Получаем координаты остановок
                     coordinates = []

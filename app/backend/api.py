@@ -726,6 +726,13 @@ class Api:
             if not route_id or route_id.strip() == "":
                 route_id = None
             
+            stops_list = data.get("stops")
+            log.info("api_create_passenger_flow", extra={
+                "name": data.get("name"),
+                "stops_count": len(stops_list) if stops_list else 0,
+                "stops": stops_list
+            })
+            
             flow_id = self.passenger_flow.create_flow(
                 name=data.get("name"),
                 date=data.get("date"),
@@ -733,7 +740,7 @@ class Api:
                 direction=data.get("direction", "forward"),
                 description=data.get("description"),
                 route_id=route_id,
-                stops_list=data.get("stops")
+                stops_list=stops_list
             )
             if flow_id:
                 return {"status": "success", "flow_id": flow_id}
