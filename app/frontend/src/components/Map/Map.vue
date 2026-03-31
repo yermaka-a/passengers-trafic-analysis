@@ -305,7 +305,17 @@ const createDeckLayers = () => {
   const layers: any[] = [];
 
   const objectsArray = Array.from(Objects.value?.values() ?? []);
-  console.log("[Map] createDeckLayers:", objectsArray.length, "объектов");
+  
+  // Фильтруем скрытые объекты
+  const visibleObjectsArray = objectsArray.filter(obj => {
+    const isHidden = mapObjectStore.isObjectHidden(obj.id);
+    if (isHidden) {
+      console.log(`[Map] Скрыт объект: ${obj.id} (${obj.type})`);
+    }
+    return !isHidden;
+  });
+  
+  console.log("[Map] createDeckLayers:", visibleObjectsArray.length, "видимых объектов из", objectsArray.length);
 
   // ========================================================================
   // СЛОИ ДЛЯ СУЩЕСТВУЮЩИХ ОБЪЕКТОВ
@@ -313,7 +323,7 @@ const createDeckLayers = () => {
   // ========================================================================
 
   // 1. Polygon fill layer (и Polyline если filled=true) - самый нижний слой
-  const polygonFillObjects = objectsArray.filter(
+  const polygonFillObjects = visibleObjectsArray.filter(
     (obj) => (obj.type === "Polygon" || obj.type === "Polyline") && obj.style.filled !== false
   );
   
@@ -353,7 +363,7 @@ const createDeckLayers = () => {
   }
 
   // 2. Polygon/Polyline stroke layer - средний слой
-  const lineObjects = objectsArray.filter(
+  const lineObjects = visibleObjectsArray.filter(
     (obj) => obj.type === "Polygon" || obj.type === "Polyline"
   );
 
@@ -413,7 +423,7 @@ const createDeckLayers = () => {
   }
 
   // 3. CircleMarker layer - самый верхний слой (рисуется поверх всех)
-  const pointObjects = objectsArray.filter(
+  const pointObjects = visibleObjectsArray.filter(
     (obj) => obj.type === "CircleMarker"
   );
 
@@ -489,7 +499,7 @@ const createDeckLayers = () => {
   // 4. StopMarker layer - кластеризация через Deck.gl
   // На зумах < 5 показываем кластеры (круги с количеством)
   // На зумах 5+ показываем все иконки
-  const stopMarkers = objectsArray.filter(
+  const stopMarkers = visibleObjectsArray.filter(
     (obj) => obj.type === "StopMarker" && mapObjectStore.visibleStopMarkerTypes.has(obj.markerType || 'pin')
   );
 
