@@ -663,10 +663,12 @@ class Api:
 
                 log.info("auto_assign_stops: полигон", extra={
                     "polygon_id": polygon.uuid,
+                    "polygon_name": polygon.name,
                     "stops_found": len(stops_in_polygon)
                 })
 
                 for stop_data in stops_in_polygon:
+                    # Используем UUID строки - add_relation сам сконвертирует
                     if self.relations.add_relation(polygon.uuid, stop_data["id"], "CONTAINS"):
                         assigned_count += 1
 
@@ -681,6 +683,7 @@ class Api:
 
                 log.info("auto_assign_stops: полилиния", extra={
                     "polyline_id": polyline.uuid,
+                    "polyline_name": polyline.name,
                     "stops_found": len(stops_near_line)
                 })
 

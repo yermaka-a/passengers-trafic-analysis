@@ -326,12 +326,13 @@ const createDeckLayers = () => {
     
     const isHidden = isSelfHidden || isParentHidden;
     if (isHidden) {
-      console.log(`[Map] Скрыт объект: ${obj.id} (${obj.type})`);
+      console.log(`[Map] Скрыт объект: ${obj.id} (${obj.type}), self=${isSelfHidden}, parent=${isParentHidden}`);
     }
     return !isHidden;
   });
   
-  console.log("[Map] createDeckLayers:", visibleObjectsArray.length, "видимых объектов из", objectsArray.length);
+  console.log("[Map] createDeckLayers:", visibleObjectsArray.length, "видимых объектов из", objectsArray.length, 
+    "(скрыто:", objectsArray.length - visibleObjectsArray.length, ")");
 
   // ========================================================================
   // СЛОИ ДЛЯ СУЩЕСТВУЮЩИХ ОБЪЕКТОВ
@@ -897,6 +898,35 @@ onMounted(() => {
 
     // Watch для реактивности - перерисовка при изменении объектов
     // Используем Array.from для реактивности Map
+    watch(
+      () => Array.from(Objects.value?.values() ?? []),
+      () => {
+        if (deckOverlay) {
+          console.log("[Map] Objects changed, перерисовка Deck.gl");
+          deckOverlay.setProps({
+            layers: createDeckLayers(),
+          });
+        }
+      },
+      { deep: true }
+    );
+
+    // Watch для скрытия объектов
+    watch(
+      () => ({ 
+        hiddenObjects: Array.from(mapObjectStore.hiddenObjects),
+        hiddenChildMarkers: Array.from(mapObjectStore.hiddenChildMarkers)
+      }),
+      () => {
+        if (deckOverlay) {
+          console.log("[Map] Hidden objects changed, перерисовка Deck.gl");
+          deckOverlay.setProps({
+            layers: createDeckLayers(),
+          });
+        }
+      },
+      { deep: true }
+    );
     watch(
       () => Array.from(Objects.value?.values() ?? []),
       (newVal, oldVal) => {
