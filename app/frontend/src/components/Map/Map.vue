@@ -734,13 +734,74 @@ const createDeckLayers = () => {
     }
   }
 
+  // ========================================================================
+  // СЛОЙ ДЛЯ ПАССАЖИРОПОТОКОВ
+  // ========================================================================
+  const visibleFlows = mapObjectStore.passengerFlows.filter(flow =>
+    mapObjectStore.isPassengerFlowVisible(flow.flow_id)
+  );
+
+  if (visibleFlows.length > 0) {
+    // Создаём PathLayer для каждого потока
+    visibleFlows.forEach(flow => {
+      // Конвертируем координаты в [[lng, lat], ...]
+      const pathCoordinates = flow.coordinates.map(coord => [coord.lng, coord.lat]);
+
+      if (pathCoordinates.length >= 2) {
+        // Вычисляем цвет на основе интенсивности (total_passengers)
+        // Градиент от зелёного (мало) до красного (много)
+        const intensity = Math.min(1, flow.total_passengers / 100); // Нормализуем 0-1
+        const colorRGB = [
+          Math.round(255 * intensity),      // R: 0 -> 255
+          Math.round(255 * (1 - intensity)), // G: 255 -> 0
+          0                                  // B: 0
+        ];
+
+        // Толщина линии зависит от интенсивности
+        const lineWidth = 2 + (intensity * 6); // 2-8px
+
+        layers.push(
+          new PathLayer({
+            id: `passenger-flow-${flow.flow_id}`,
+            data: [{
+              flow_id: flow.flow_id,
+              name: flow.name,
+              path: pathCoordinates,
+              color: colorRGB,
+              width: lineWidth,
+              passengers: flow.total_passengers
+            }],
+            getPath: (d: any) => d.path,
+            getColor: (d: any) => d.color,
+            getWidth: (d: any) => d.width,
+            pickable: true,
+            autoHighlight: true,
+            highlightColor: [255, 255, 0, 200],
+            onClick: (info: any) => {
+              if (info.object) {
+                console.log(`[Map] Поток: ${info.object.name}, пассажиров: ${info.object.passengers}`);
+              }
+            },
+            getWidthMinPixels: 2,
+            getWidthMaxPixels: 10,
+          })
+        );
+
+        console.log(`[Map] Добавлен поток ${flow.name} (${flow.coordinates.length} остановок, ${flow.total_passengers} пассажиров)`);
+      }
+    });
+  }
+
   return layers;
 };
 
 // Инициализация карты
-onMounted(() => {
+onMounted(async () => {
   console.log("[Map] onMounted - начинаем инициализацию");
-  
+
+  // Загружаем пассажиропотоки
+  await mapObjectStore.loadPassengerFlows();
+
   try {
     // Создаём MapLibre map
     const map = new maplibregl.Map({

@@ -47,10 +47,31 @@ interface MapObjectStoreState {
   >;
   // Фильтры видимости для StopMarker
   visibleStopMarkerTypes: Set<string>;
-  
+
   // Скрытые объекты (полигоны/полилинии и их маркеры)
   hiddenObjects: Set<string>;
   hiddenChildMarkers: Set<string>;
+
+  // Пассажиропотоки
+  passengerFlows: Array<{
+    flow_id: string;
+    name: string;
+    date: string;
+    direction: string;
+    coordinates: Array<{
+      stop_id: string;
+      stop_name: string;
+      lat: number;
+      lng: number;
+      order: number;
+      passengers_on: number;
+      passengers_off: number;
+      passengers_remaining: number;
+    }>;
+    total_passengers: number;
+    stops_count: number;
+  }>;
+  visiblePassengerFlows: Set<string>;
 }
 
 // ============================================================================
@@ -173,6 +194,8 @@ export const useMapObjectStore = defineStore("mapobjects", {
     visibleStopMarkerTypes: new Set(['pin', 'pinned', 'flag', 'flag-check', 'pin-check', 'pin-plus', 'balloon']),
     hiddenObjects: new Set(),
     hiddenChildMarkers: new Set(),
+    passengerFlows: [],
+    visiblePassengerFlows: new Set(),
   }),
 
   getters: {
@@ -589,6 +612,46 @@ export const useMapObjectStore = defineStore("mapobjects", {
     /** Проверить: скрыт ли объект */
     isObjectHidden(objectId: string): boolean {
       return this.$state.hiddenObjects.has(objectId) || this.$state.hiddenChildMarkers.has(objectId);
+    },
+
+    // ========================================================================
+    // ПАССАЖИРОПОТОКИ
+    // ========================================================================
+
+    /** Загрузить все пассажиропотоки с координатами */
+    async loadPassengerFlows() {
+      try {
+        const { get_passenger_flows_with_coordinates } = (window as any).pywebview?.api || {};
+        if (!get_passenger_flows_with_coordinates) {
+          console.warn("[MapObjectStore] API get_passenger_flows_with_coordinates недоступно");
+          return;
+        }
+
+        const result = await get_passenger_flows_with_coordinates();
+        if (result?.status === "success" && result.flows) {
+          this.$state.passengerFlows = result.flows;
+          console.log(`[MapObjectStore] Загружено ${result.flows.length} пассажиропотоков`);
+        }
+      } catch (e) {
+        console.error("[MapObjectStore] loadPassengerFlows error:", e);
+      }
+    },
+
+    /** Переключить видимость потока */
+    togglePassengerFlowVisibility(flowId: string) {
+      if (this.$state.visiblePassengerFlows.has(flowId)) {
+        this.$state.visiblePassengerFlows.delete(flowId);
+      } else {
+        this.$state.visiblePassengerFlows.add(flowId);
+      }
+      // Вызываем реактивность
+      this.$state.visiblePassengerFlows = new Set(this.$state.visiblePassengerFlows);
+      console.log(`[MapObjectStore] Поток ${flowId}: visible=${this.$state.visiblePassengerFlows.has(flowId)}`);
+    },
+
+    /** Поток видим? */
+    isPassengerFlowVisible(flowId: string): boolean {
+      return this.$state.visiblePassengerFlows.has(flowId);
     },
   },
 });

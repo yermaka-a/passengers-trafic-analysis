@@ -18,6 +18,7 @@ import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
 import OverpassImport from "@/components/OverpassImport/OverpassImport.vue";
 import BulkExportImport from "@/components/BulkExportImport/BulkExportImport.vue";
+import PassengerFlowFilters from "@/components/PassengerFlow/PassengerFlowFilters.vue";
 
 type ViewType = "cards" | "table";
 
@@ -354,11 +355,8 @@ const openObjectPopup = (id: string) => {
       @imported="handleImported"
     />
 
-    <!-- Dialog импорта/экспорта геометрии -->
-    <BulkExportImport
-      v-model:open="showBulkExportImport"
-      @imported="handleGeometryImported"
-    />
+    <!-- Фильтры пассажиропотоков -->
+    <PassengerFlowFilters />
   </div>
 </template>
 
