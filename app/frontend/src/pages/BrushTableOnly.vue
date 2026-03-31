@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import BrushTable from '@/components/BrushTable/BrushTable.vue';
 import { useMapObjectStore } from '@/store';
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { Loader } from 'lucide-vue-next';
 
 const objectStore = useMapObjectStore();
+const loading = ref(true);
+
+const loadObjects = async () => {
+  console.log('[BrushTableOnly] Loading objects from DB');
+  await objectStore.loadAllObjectsFromDB();
+  loading.value = false;
+};
 
 const pyWebViewReadyHandler = async () => {
   console.log('[BrushTableOnly] pywebview ready - loading objects from DB');
-  await objectStore.loadAllObjectsFromDB();
+  await loadObjects();
   globalThis.removeEventListener('pywebviewready', pyWebViewReadyHandler);
 };
 
@@ -53,8 +61,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen w-screen overflow-hidden p-4">
+  <div class="h-screen w-screen overflow-hidden p-4 relative">
     <BrushTable />
+    
+    <!-- Спиннер загрузки -->
+    <div v-if="loading" class="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="flex flex-col items-center gap-4">
+        <Loader class="w-12 h-12 animate-spin text-primary" />
+        <p class="text-lg font-medium text-foreground">Загрузка инструментов...</p>
+      </div>
+    </div>
   </div>
 </template>
 

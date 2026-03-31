@@ -91,6 +91,7 @@ class ObjectRelationsController:
 
                 # Создаём связь
                 relation = ObjectRelation(
+                    id=None,  # autoincrement
                     parent_id=parent.id,
                     child_id=child.id,
                     relation_type=relation_type

@@ -2,13 +2,16 @@
 import { Map } from '@/components/Map';
 import { useMapObjectStore } from '@/store';
 import { useTilesStore } from '@/store/useTilesStore';
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
+import { Loader } from 'lucide-vue-next';
 
 const objectStore = useMapObjectStore();
+const loading = ref(true);
 
 const loadObjects = async () => {
   console.log('[MapOnly] Loading objects from DB');
   await objectStore.loadAllObjectsFromDB();
+  loading.value = false;
 };
 
 // Обработчик синхронизации между окнами
@@ -57,8 +60,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="h-screen w-screen overflow-hidden">
+  <div class="h-screen w-screen overflow-hidden relative">
     <Map />
+    
+    <!-- Спиннер загрузки -->
+    <div v-if="loading" class="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="flex flex-col items-center gap-4">
+        <Loader class="w-12 h-12 animate-spin text-primary" />
+        <p class="text-lg font-medium text-foreground">Загрузка карты...</p>
+      </div>
+    </div>
   </div>
 </template>
 
