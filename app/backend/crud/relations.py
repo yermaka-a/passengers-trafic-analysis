@@ -9,8 +9,9 @@ ObjectRelations:
 - auto_assign_stops_to_polygons() - автоматическое назначение
 """
 from typing import List, Optional
-from sqlalchemy import select
+from sqlalchemy import select, text
 import uuid
+import json
 
 from ..models import ObjectRelation, MapObject
 from ..models.object import binary_to_uuid
@@ -196,7 +197,7 @@ class ObjectRelationsController:
                         id=row[0],
                         name=row[1],
                         obj_type=row[2],
-                        latlng=row[3],
+                        latlng=json.loads(row[3]) if isinstance(row[3], str) else row[3],
                         description=row[4],
                         latitude=row[5],
                         longitude=row[6],
