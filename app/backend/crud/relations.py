@@ -13,6 +13,7 @@ from sqlalchemy import select
 import uuid
 
 from ..models import ObjectRelation, MapObject
+from ..models.object import binary_to_uuid
 from ..logger import log
 
 
@@ -41,21 +42,26 @@ class ObjectRelationsController:
                 parent_uuid = uuid.UUID(parent_id)
                 child_uuid = uuid.UUID(child_id)
                 
-                # Ищем объекты через select вместо session.get
-                parent = session.execute(
-                    select(MapObject).where(MapObject.id == parent_uuid.bytes)
-                ).scalar_one_or_none()
-                
-                child = session.execute(
-                    select(MapObject).where(MapObject.id == child_uuid.bytes)
-                ).scalar_one_or_none()
-
-                log.info("add_relation: проверка объектов", extra={
+                log.info("add_relation: поиск объектов", extra={
                     "parent_id": parent_id,
-                    "parent_uuid_bytes": parent_uuid.bytes.hex() if parent_uuid.bytes else None,
+                    "child_id": child_id
+                })
+                
+                # Получаем все объекты и ищем в памяти
+                all_objects = session.execute(select(MapObject)).scalars().all()
+                
+                parent = None
+                child = None
+                
+                for obj in all_objects:
+                    obj_uuid = binary_to_uuid(obj.id)
+                    if obj_uuid == parent_id:
+                        parent = obj
+                    if obj_uuid == child_id:
+                        child = obj
+
+                log.info("add_relation: результат поиска", extra={
                     "parent_found": parent is not None,
-                    "child_id": child_id,
-                    "child_uuid_bytes": child_uuid.bytes.hex() if child_uuid.bytes else None,
                     "child_found": child is not None
                 })
 
@@ -91,7 +97,7 @@ class ObjectRelationsController:
                 )
                 session.add(relation)
                 session.commit()
-                
+
                 log.info("add_relation: связь добавлена", extra={
                     "parent_id": parent_id,
                     "child_id": child_id,

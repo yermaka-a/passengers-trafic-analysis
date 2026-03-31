@@ -52,27 +52,27 @@ class Api:
         """Открыть панель в отдельном окне pywebview через Vue Router"""
         # Уникальный ID для окна
         window_id = str(uuid.uuid4())[:8]
-        
-        # Маршруты Vue Router для отдельных панелей
+
+        # Маршруты Vue Router для отдельных панелей (hash router)
         routes = {
-            'map': '/map',
-            'list': '/list',
-            'brushTable': '/brush',
+            'map': '/#/map',
+            'list': '/#/list',
+            'brushTable': '/#/brush',
         }
-        
-        route = routes.get(panel_id, '/map')
+
+        route = routes.get(panel_id, '/#/map')
         # URL для отдельной панели через роутинг
         url = f"http://localhost:5173{route}"
-        
+
         # Заголовки окон
         titles = {
             'map': 'Карта - Passenger Traffic Analysis',
             'list': 'Список объектов - Passenger Traffic Analysis',
             'brushTable': 'Инструменты - Passenger Traffic Analysis',
         }
-        
+
         title = titles.get(panel_id, 'Panel - Passenger Traffic Analysis')
-        
+
         # Создаём новое окно с ТОЙ ЖЕ САМОЙ ссылкой на API
         # min_size=(100, 100) позволяет уменьшать до очень маленького размера
         window = webview.create_window(
@@ -84,13 +84,13 @@ class Api:
             resizable=True,
             min_size=(100, 100),  # Минимальный размер для возможности уменьшения
         )
-        
+
         # Сохраняем окно
         self._windows[window_id] = {
             'window': window,
             'panel_id': panel_id,
         }
-        
+
         # Подписываемся на событие закрытия
         def on_closing():
             print(f'[API] Window {window_id} closing')
