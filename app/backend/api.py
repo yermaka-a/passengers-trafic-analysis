@@ -811,10 +811,10 @@ class Api:
     def get_all_passenger_flows(self, data: dict):
         """
         Получить все пассажиропотоки
-        
+
         Args:
             data: {"date_from": "YYYY-MM-DD", "date_to": "YYYY-MM-DD"}
-            
+
         Returns:
             {"status": "success", "flows": [...]}
         """
@@ -826,6 +826,20 @@ class Api:
             return {"status": "success", "flows": flows}
         except Exception as e:
             log.error("api_get_all_passenger_flows", extra={"error": str(e)})
+            return {"status": "failed", "message": str(e)}
+
+    def get_passenger_flows_with_coordinates(self, data: dict = None):
+        """
+        Получить все пассажиропотоки с координатами для визуализации
+
+        Returns:
+            {"status": "success", "flows": [...]}
+        """
+        try:
+            flows = self.passenger_flow.get_flows_with_coordinates()
+            return {"status": "success", "flows": flows}
+        except Exception as e:
+            log.error("api_get_passenger_flows_with_coordinates", extra={"error": str(e)})
             return {"status": "failed", "message": str(e)}
 
     def get_flows_by_route(self, data: dict):

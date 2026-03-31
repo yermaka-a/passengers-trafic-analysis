@@ -268,26 +268,26 @@ class PassengerFlowController:
     def get_all_flows(self, date_from: str = None, date_to: str = None) -> List[Dict]:
         """
         Получить все пассажиропотоки
-        
+
         Args:
             date_from: Дата от (YYYY-MM-DD)
             date_to: Дата до (YYYY-MM-DD)
-            
+
         Returns:
             Список потоков
         """
         try:
             with self._get_session() as session:
                 query = select(PassengerFlow)
-                
+
                 if date_from:
                     query = query.where(PassengerFlow.date >= date_from)
                 if date_to:
                     query = query.where(PassengerFlow.date <= date_to)
-                
+
                 query = query.order_by(PassengerFlow.date, PassengerFlow.name)
                 flows = session.execute(query).scalars().all()
-                
+
                 result = []
                 for flow in flows:
                     # Считаем количество остановок
@@ -296,7 +296,7 @@ class PassengerFlowController:
                             PassengerFlowStop.flow_id == flow.id
                         )
                     ).scalar()
-                    
+
                     result.append({
                         "flow_id": flow.uuid,
                         "name": flow.name,
@@ -306,12 +306,71 @@ class PassengerFlowController:
                         "stops_count": stops_count,
                         "route_id": binary_to_uuid(flow.route_id) if flow.route_id else None
                     })
-                
+
                 log.info("get_all_flows: найдено потоков", extra={"count": len(result)})
                 return result
-                
+
         except Exception as e:
             log.error("get_all_flows: ошибка", extra={"error": str(e)})
+            return []
+
+    def get_flows_with_coordinates(self) -> List[Dict]:
+        """
+        Получить все пассажиропотоки с координатами остановок для визуализации
+
+        Returns:
+            Список потоков с координатами
+        """
+        try:
+            with self._get_session() as session:
+                flows = session.execute(select(PassengerFlow)).scalars().all()
+
+                result = []
+                for flow in flows:
+                    # Получаем остановки потока с координатами
+                    flow_stops = session.execute(
+                        select(PassengerFlowStop)
+                        .where(PassengerFlowStop.flow_id == flow.id)
+                        .order_by(PassengerFlowStop.stop_order)
+                    ).scalars().all()
+
+                    # Получаем координаты остановок
+                    coordinates = []
+                    total_passengers = 0
+                    for fs in flow_stops:
+                        stop = session.execute(
+                            select(MapObject).where(MapObject.id == fs.stop_id)
+                        ).scalar_one_or_none()
+
+                        if stop and stop.latitude and stop.longitude:
+                            coordinates.append({
+                                "stop_id": fs.stop_uuid,
+                                "stop_name": stop.name,
+                                "lat": stop.latitude,
+                                "lng": stop.longitude,
+                                "order": fs.stop_order,
+                                "passengers_on": fs.passengers_on_board,
+                                "passengers_off": fs.passengers_off_board,
+                                "passengers_remaining": fs.passengers_remaining
+                            })
+                            total_passengers += fs.passengers_on_board
+
+                    if len(coordinates) >= 2:
+                        result.append({
+                            "flow_id": flow.uuid,
+                            "name": flow.name,
+                            "date": flow.date,
+                            "direction": flow.direction,
+                            "coordinates": coordinates,
+                            "total_passengers": total_passengers,
+                            "stops_count": len(coordinates)
+                        })
+
+                log.info("get_flows_with_coordinates: найдено потоков", extra={"count": len(result)})
+                return result
+
+        except Exception as e:
+            log.error("get_flows_with_coordinates: ошибка", extra={"error": str(e), "traceback": __import__('traceback').format_exc()})
             return []
 
     def get_flows_by_route(self, route_id: str, date: str = None) -> List[Dict]:

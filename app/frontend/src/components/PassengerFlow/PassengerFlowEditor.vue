@@ -59,7 +59,7 @@ interface FlowStop {
 
 const flowStops = ref<FlowStop[]>([]);
 const openCombobox = ref<string | null>(null);
-const searchQuery = ref("");
+const searchQueries = ref<Record<number, string>>({});
 
 // Все остановки для выбора
 const availableStops = computed(() => {
@@ -71,15 +71,16 @@ const availableStops = computed(() => {
       name: obj.customName || obj.name || "Без названия"
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
-  
-  // Фильтруем по поиску
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    return stops.filter(stop => stop.name.toLowerCase().includes(query));
-  }
-  
+
   return stops;
 });
+
+// Фильтровать остановки по поиску для конкретного индекса
+const getFilteredStops = (index: number) => {
+  const query = (searchQueries.value[index] || "").toLowerCase();
+  if (!query) return availableStops.value;
+  return availableStops.value.filter(stop => stop.name.toLowerCase().includes(query));
+};
 
 // Добавить остановку
 const addStop = () => {
@@ -113,7 +114,7 @@ const selectStop = (index: number, stopId: string) => {
     flowStops.value[index].stop_id = stopId;
     flowStops.value[index].stop_name = stop.name;
     openCombobox.value = null;
-    searchQuery.value = "";
+    searchQueries.value[index] = "";
   }
 };
 
@@ -284,7 +285,7 @@ defineExpose({ openForEdit, resetForm });
               
               <!-- Выбор остановки -->
               <div class="flex-1">
-                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { if (!val) { openCombobox = null; searchQuery = ''; } else { openCombobox = `stop-${index}`; } }">
+                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { if (!val) { openCombobox = null; searchQueries[index] = ''; } else { openCombobox = `stop-${index}`; } }">
                   <PopoverTrigger as-child>
                     <Button
                       variant="outline"
@@ -300,15 +301,16 @@ defineExpose({ openForEdit, resetForm });
                   </PopoverTrigger>
                   <PopoverContent class="w-[300px] p-0">
                     <Command>
-                      <CommandInput 
-                        v-model="searchQuery" 
-                        placeholder="Поиск остановки..." 
+                      <CommandInput
+                        :model-value="searchQueries[index] || ''"
+                        @update:model-value="searchQueries[index] = $event"
+                        placeholder="Поиск остановки..."
                       />
                       <CommandList>
                         <CommandEmpty>Ничего не найдено</CommandEmpty>
                         <CommandGroup>
                           <CommandItem
-                            v-for="s in availableStops"
+                            v-for="s in getFilteredStops(index)"
                             :key="s.id"
                             :value="s.id"
                             @select="selectStop(index, s.id)"
