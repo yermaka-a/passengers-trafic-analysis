@@ -43,8 +43,8 @@ class ObjectRelation(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    parent_id: Mapped[bytes] = mapped_column("parent_id", String(16).with_variant(String(16), 'sqlite'), nullable=False, index=True)
-    child_id: Mapped[bytes] = mapped_column("child_id", String(16).with_variant(String(16), 'sqlite'), nullable=False, index=True)
+    parent_id: Mapped[str] = mapped_column("parent_id", String(36).with_variant(String(36), 'sqlite'), nullable=False, index=True)
+    child_id: Mapped[str] = mapped_column("child_id", String(36).with_variant(String(36), 'sqlite'), nullable=False, index=True)
     relation_type: Mapped[str] = mapped_column(String(30), nullable=False, index=True, default='CONTAINS')
     created_at: Mapped[datetime] = mapped_column(DateTime, default_factory=datetime.utcnow)
 
