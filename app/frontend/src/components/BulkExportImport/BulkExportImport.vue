@@ -204,12 +204,12 @@ const handleDeleteAllPolylines = async () => {
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-      <DialogHeader>
+    <DialogContent class="max-w-[95vw] w-full max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogHeader class="px-6 py-4 border-b">
         <DialogTitle>Экспорт/Импорт геометрии</DialogTitle>
       </DialogHeader>
 
-      <div class="flex-1 overflow-auto py-4">
+      <div class="flex-1 overflow-auto px-6 py-4">
         <!-- Статистика -->
         <div class="mb-4 p-4 bg-muted rounded-lg">
           <div class="grid grid-cols-3 gap-4 text-center">
@@ -319,6 +319,13 @@ const handleDeleteAllPolylines = async () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="flex justify-end gap-2 px-6 py-4 border-t">
+        <Button @click="open = false" variant="outline">
+          Закрыть
+        </Button>
       </div>
     </DialogContent>
   </Dialog>

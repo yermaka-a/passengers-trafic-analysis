@@ -134,17 +134,32 @@ class ObjectRelationsController:
         """
         try:
             with self._get_session() as session:
-                relations = session.execute(
-                    select(ObjectRelation).where(
-                        ObjectRelation.parent_id == uuid.UUID(parent_id).bytes
-                    )
-                ).scalars().all()
+                # Используем text query для надёжности
+                from sqlalchemy import text
+                result = session.execute(
+                    text("""
+                        SELECT mo.* FROM map_objects mo
+                        INNER JOIN object_relations orel ON mo.id = orel.child_id
+                        WHERE orel.parent_id = :parent_id
+                    """),
+                    {"parent_id": uuid.UUID(parent_id).bytes}
+                )
                 
                 children = []
-                for relation in relations:
-                    child = session.get(MapObject, relation.child_id)
-                    if child:
-                        children.append(child)
+                for row in result:
+                    # Создаём MapObject из row
+                    child = MapObject(
+                        id=row[0],
+                        name=row[1],
+                        obj_type=row[2],
+                        latlng=row[3],
+                        description=row[4] if len(row) > 4 else None,
+                        latitude=row[5] if len(row) > 5 else None,
+                        longitude=row[6] if len(row) > 6 else None,
+                        created_at=row[7] if len(row) > 7 else None,
+                        updated_at=row[8] if len(row) > 8 else None
+                    )
+                    children.append(child)
                 
                 log.info("get_children: найдено объектов", extra={
                     "parent_id": parent_id,

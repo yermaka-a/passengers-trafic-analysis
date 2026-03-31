@@ -30,12 +30,32 @@ const handleOpenWindow = async (panelId: string) => {
 };
 
 const openPassengerFlows = () => {
-  // Открываем страницу пассажиропотоков через роутер
-  if ((window as any).__VUE_ROUTER__) {
-    (window as any).__VUE_ROUTER__.push('/passenger-flows');
-  } else {
-    // Fallback: открываем в новом окне
-    window.open('/passenger-flows', '_blank');
+  // Открываем страницу пассажиропотоков через hash router
+  window.location.hash = '#/passenger-flows';
+};
+
+const autoAssignStops = async () => {
+  if (!confirm("Пересчитать все связи между полигонами/полилиниями и маркерами? Это может занять несколько секунд.")) return;
+  
+  try {
+    const { auto_assign_stops } = (window as any).pywebview?.api || {};
+    if (!auto_assign_stops) {
+      alert('API недоступно');
+      return;
+    }
+    
+    const result = await auto_assign_stops({ tolerance_meters: 50 });
+    if (result?.status === "success") {
+      alert(`✅ Назначено ${result.assigned} связей`);
+      // Обновляем store
+      const { useMapObjectStore } = await import('@/store');
+      await useMapObjectStore().loadAllObjectsFromDB();
+    } else {
+      alert(`❌ Ошибка: ${result?.message}`);
+    }
+  } catch (e) {
+    console.error("autoAssignStops error:", e);
+    alert(`❌ Ошибка: ${e}`);
   }
 };
 </script>
@@ -101,6 +121,18 @@ const openPassengerFlows = () => {
             <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
           </svg>
           Пассажиропотоки
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="cursor-pointer"
+          @click="autoAssignStops"
+          title="Пересчитать связи между полигонами и маркерами"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          Пересчитать связи
         </Button>
       </div>
     </div>

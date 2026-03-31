@@ -118,6 +118,12 @@ const handleSaved = () => {
   loadFlows();
 };
 
+// Вернуться назад
+const goBack = () => {
+  // Просто переходим на главную через hash router
+  window.location.hash = '#/';
+};
+
 onMounted(() => {
   loadFlows();
 });
@@ -125,10 +131,16 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col h-full">
-    <!-- Header -->
-    <div class="flex items-center justify-between px-8 py-4 border-b">
+    <!-- Header с кнопкой назад -->
+    <div class="flex items-center gap-4 px-8 py-4 border-b">
+      <Button variant="ghost" size="sm" @click="goBack" title="Назад">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 19-7-7 7-7"/>
+          <path d="M19 12H5"/>
+        </svg>
+      </Button>
       <h1 class="text-2xl font-semibold">Пассажиропотоки</h1>
-      <Button @click="createNewFlow">
+      <Button @click="createNewFlow" class="ml-auto">
         <Plus class="w-4 h-4 mr-2" />
         Добавить поток
       </Button>
