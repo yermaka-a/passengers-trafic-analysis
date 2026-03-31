@@ -222,14 +222,14 @@ defineExpose({ openForEdit, resetForm });
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-      <DialogHeader>
+    <DialogContent class="max-w-[95vw] w-full max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogHeader class="px-6 py-4 border-b">
         <DialogTitle>
           {{ flowId ? "Редактировать пассажиропоток" : "Новый пассажиропоток" }}
         </DialogTitle>
       </DialogHeader>
 
-      <div class="flex-1 overflow-auto py-4">
+      <div class="flex-1 overflow-auto px-6 py-4">
         <!-- Основная информация -->
         <div class="grid grid-cols-2 gap-4 mb-6">
           <div class="space-y-2">
@@ -388,7 +388,7 @@ defineExpose({ openForEdit, resetForm });
       </div>
 
       <!-- Кнопки -->
-      <div class="flex justify-end gap-2 pt-4 border-t">
+      <div class="flex justify-end gap-2 px-6 py-4 border-t">
         <Button @click="open = false; resetForm()" variant="outline">
           <X class="w-4 h-4 mr-2" />
           Отмена

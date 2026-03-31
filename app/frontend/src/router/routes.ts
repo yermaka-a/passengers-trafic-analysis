@@ -46,4 +46,9 @@ export const ROUTES = [
     path: "/brush",
     component: () => import("@/pages/BrushTableOnly.vue"),
   },
+  {
+    name: "passengerFlows",
+    path: "/passenger-flows",
+    component: () => import("@/pages/PassengerFlows.vue"),
+  },
 ] as const satisfies readonly AppRouteRecord[];

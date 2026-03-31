@@ -9,14 +9,10 @@ import {
 import { Button } from "@/components/ui/button";
 import BrushTable from "@/components/BrushTable/BrushTable.vue";
 import LayoutMenu from "@/components/LayoutMenu/LayoutMenu.vue";
-import PassengerFlowEditor from "@/components/PassengerFlow/PassengerFlowEditor.vue";
 import { useLayoutStore } from "@/store/useLayoutStore";
-import { ref } from "vue";
 
 const layoutStore = useLayoutStore();
 const layout = layoutStore.layout;
-
-const showPassengerFlowEditor = ref(false);
 
 // Обработчики для кнопок
 const handleOpenWindow = async (panelId: string) => {
@@ -30,6 +26,16 @@ const handleOpenWindow = async (panelId: string) => {
     }
   } else {
     alert('Откройте приложение через python main.py для работы с окнами');
+  }
+};
+
+const openPassengerFlows = () => {
+  // Открываем страницу пассажиропотоков через роутер
+  if ((window as any).__VUE_ROUTER__) {
+    (window as any).__VUE_ROUTER__.push('/passenger-flows');
+  } else {
+    // Fallback: открываем в новом окне
+    window.open('/passenger-flows', '_blank');
   }
 };
 </script>
@@ -87,7 +93,7 @@ const handleOpenWindow = async (panelId: string) => {
           variant="outline"
           size="sm"
           class="cursor-pointer"
-          @click="showPassengerFlowEditor = true"
+          @click="openPassengerFlows"
           title="Пассажиропотоки"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
@@ -230,9 +236,6 @@ const handleOpenWindow = async (panelId: string) => {
         </div>
       </ResizablePanel>
     </ResizablePanelGroup>
-
-    <!-- Passenger Flow Editor -->
-    <PassengerFlowEditor v-model:open="showPassengerFlowEditor" />
   </div>
 </template>
 
