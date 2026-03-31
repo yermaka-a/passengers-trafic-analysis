@@ -128,6 +128,22 @@ const handleSearchInput = (index: number, value: string) => {
   searchQueries.value[index] = value;
 };
 
+// Обработка открытия/закрытия combobox
+const handleComboboxOpen = (index: number, val: boolean) => {
+  if (!val) {
+    openCombobox.value = null;
+    searchQueries.value[index] = "";
+  } else {
+    openCombobox.value = `stop-${index}`;
+    // Фокус на input после открытия
+    setTimeout(() => {
+      if (searchInputRefs.value[index]) {
+        searchInputRefs.value[index]?.focus();
+      }
+    }, 100);
+  }
+};
+
 // Пересчитать остаток пассажиров
 const recalculateRemaining = () => {
   let remaining = 0;
@@ -295,20 +311,7 @@ defineExpose({ openForEdit, resetForm });
               
               <!-- Выбор остановки -->
               <div class="flex-1">
-                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { 
-                  if (!val) { 
-                    openCombobox = null; 
-                    searchQueries[index] = ''; 
-                  } else { 
-                    openCombobox = `stop-${index}`;
-                    // Фокус на input после открытия
-                    setTimeout(() => {
-                      if (searchInputRefs.value[index]) {
-                        searchInputRefs.value[index]?.focus();
-                      }
-                    }, 100);
-                  }
-                }}">
+                <Popover :open="openCombobox === `stop-${index}`" @update:open="handleComboboxOpen(index, $event)">
                   <PopoverTrigger as-child>
                     <Button
                       variant="outline"
