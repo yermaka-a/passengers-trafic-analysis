@@ -355,6 +355,12 @@ const openObjectPopup = (id: string) => {
       @imported="handleImported"
     />
 
+    <!-- Dialog импорта/экспорта геометрии -->
+    <BulkExportImport
+      v-model:open="showBulkExportImport"
+      @imported="handleGeometryImported"
+    />
+
     <!-- Фильтры пассажиропотоков -->
     <PassengerFlowFilters />
   </div>

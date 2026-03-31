@@ -721,13 +721,18 @@ class Api:
             {"status": "success", "flow_id": "..."}
         """
         try:
+            # route_id может быть None или пустой строкой
+            route_id = data.get("route_id")
+            if not route_id or route_id.strip() == "":
+                route_id = None
+            
             flow_id = self.passenger_flow.create_flow(
                 name=data.get("name"),
                 date=data.get("date"),
                 time_period=data.get("time_period", "off_peak"),
                 direction=data.get("direction", "forward"),
                 description=data.get("description"),
-                route_id=data.get("route_id"),
+                route_id=route_id,
                 stops_list=data.get("stops")
             )
             if flow_id:

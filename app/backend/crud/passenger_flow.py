@@ -58,7 +58,7 @@ class PassengerFlowController:
                     time_period=time_period,
                     direction=direction,
                     description=description or "",
-                    route_id=uuid.UUID(route_id).bytes if route_id and route_id.strip() else None
+                    route_id=uuid.UUID(route_id).bytes if route_id else None
                 )
                 session.add(flow)
                 session.flush()

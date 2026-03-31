@@ -60,11 +60,12 @@ interface FlowStop {
 const flowStops = ref<FlowStop[]>([]);
 const openCombobox = ref<string | null>(null);
 const searchQueries = ref<Record<number, string>>({});
+const searchInputRefs = ref<Record<number, HTMLInputElement | null>>({});
 
-// Все остановки для выбора
-const availableStops = computed(() => {
+// Все остановки для выбора (отдельно для каждого индекса)
+const getAvailableStops = (index: number) => {
   const allObjects = Array.from(mapObjectStore.Objects.entries());
-  const stops = allObjects
+  let stops = allObjects
     .filter(([_, obj]) => obj.type === "StopMarker")
     .map(([id, obj]) => ({
       id,
@@ -72,14 +73,18 @@ const availableStops = computed(() => {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return stops;
-});
-
-// Фильтровать остановки по поиску для конкретного индекса
-const getFilteredStops = (index: number) => {
+  // Фильтруем по поиску для этого индекса
   const query = (searchQueries.value[index] || "").toLowerCase();
-  if (!query) return availableStops.value;
-  return availableStops.value.filter(stop => stop.name.toLowerCase().includes(query));
+  if (query) {
+    stops = stops.filter(stop => stop.name.toLowerCase().includes(query));
+  }
+
+  // Исключаем уже выбранные остановки
+  const selectedIds = flowStops.value
+    .filter((_, i) => i !== index)
+    .map(s => s.stop_id);
+  
+  return stops.filter(s => !selectedIds.includes(s.id));
 };
 
 // Добавить остановку
@@ -109,13 +114,18 @@ const removeStop = (index: number) => {
 
 // Выбрать остановку из списка
 const selectStop = (index: number, stopId: string) => {
-  const stop = availableStops.value.find(s => s.id === stopId);
+  const stop = getAvailableStops(index).find(s => s.id === stopId);
   if (stop && flowStops.value[index]) {
     flowStops.value[index].stop_id = stopId;
     flowStops.value[index].stop_name = stop.name;
     openCombobox.value = null;
     searchQueries.value[index] = "";
   }
+};
+
+// Обработка ввода поиска с debounce
+const handleSearchInput = (index: number, value: string) => {
+  searchQueries.value[index] = value;
 };
 
 // Пересчитать остаток пассажиров
@@ -223,7 +233,7 @@ defineExpose({ openForEdit, resetForm });
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="max-w-[95vw] w-full max-h-[90vh] p-0 flex flex-col overflow-hidden">
+    <DialogContent class="max-w-none w-[95vw] max-h-[90vh] p-0 flex flex-col overflow-hidden">
       <DialogHeader class="px-6 py-4 border-b">
         <DialogTitle>
           {{ flowId ? "Редактировать пассажиропоток" : "Новый пассажиропоток" }}
@@ -285,7 +295,20 @@ defineExpose({ openForEdit, resetForm });
               
               <!-- Выбор остановки -->
               <div class="flex-1">
-                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { if (!val) { openCombobox = null; searchQueries[index] = ''; } else { openCombobox = `stop-${index}`; } }">
+                <Popover :open="openCombobox === `stop-${index}`" @update:open="(val) => { 
+                  if (!val) { 
+                    openCombobox = null; 
+                    searchQueries[index] = ''; 
+                  } else { 
+                    openCombobox = `stop-${index}`;
+                    // Фокус на input после открытия
+                    setTimeout(() => {
+                      if (searchInputRefs.value[index]) {
+                        searchInputRefs.value[index]?.focus();
+                      }
+                    }, 100);
+                  }
+                }}">
                   <PopoverTrigger as-child>
                     <Button
                       variant="outline"
@@ -299,18 +322,23 @@ defineExpose({ openForEdit, resetForm });
                       <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent class="w-[300px] p-0">
-                    <Command>
+                  <PopoverContent class="w-[350px] p-0" align="start">
+                    <Command should-filter-string v-model:search-query="searchQueries[index]">
                       <CommandInput
-                        :model-value="searchQueries[index] || ''"
-                        @update:model-value="searchQueries[index] = $event"
+                        ref="el => searchInputRefs[index] = el"
                         placeholder="Поиск остановки..."
+                        @update:model-value="handleSearchInput(index, $event)"
                       />
                       <CommandList>
-                        <CommandEmpty>Ничего не найдено</CommandEmpty>
+                        <CommandEmpty v-if="searchQueries[index]?.length > 0">
+                          Ничего не найдено
+                        </CommandEmpty>
+                        <CommandEmpty v-else>
+                          Начните вводить название
+                        </CommandEmpty>
                         <CommandGroup>
                           <CommandItem
-                            v-for="s in getFilteredStops(index)"
+                            v-for="s in getAvailableStops(index)"
                             :key="s.id"
                             :value="s.id"
                             @select="selectStop(index, s.id)"
