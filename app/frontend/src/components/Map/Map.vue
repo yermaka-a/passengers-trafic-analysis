@@ -306,9 +306,25 @@ const createDeckLayers = () => {
 
   const objectsArray = Array.from(Objects.value?.values() ?? []);
   
-  // Фильтруем скрытые объекты
+  // Создаём карту скрытых объектов (полигоны/полилинии)
+  const hiddenParents = new Map<string, boolean>();
+  objectsArray
+    .filter(obj => (obj.type === "Polygon" || obj.type === "Polyline") && mapObjectStore.isObjectHidden(obj.id))
+    .forEach(obj => hiddenParents.set(obj.id, true));
+  
+  // Фильтруем скрытые объекты И их дочерние маркеры
   const visibleObjectsArray = objectsArray.filter(obj => {
-    const isHidden = mapObjectStore.isObjectHidden(obj.id);
+    // Проверяем скрыт ли сам объект
+    const isSelfHidden = mapObjectStore.isObjectHidden(obj.id);
+    
+    // Для StopMarker проверяем не скрыт ли родитель
+    let isParentHidden = false;
+    if (obj.type === "StopMarker") {
+      // Проверяем наличие в hiddenChildMarkers
+      isParentHidden = mapObjectStore.hiddenChildMarkers.has(obj.id);
+    }
+    
+    const isHidden = isSelfHidden || isParentHidden;
     if (isHidden) {
       console.log(`[Map] Скрыт объект: ${obj.id} (${obj.type})`);
     }

@@ -37,9 +37,20 @@ class ObjectRelationsController:
         """
         try:
             with self._get_session() as session:
+                # Конвертируем UUID строки в бинарный формат
+                parent_uuid = uuid.UUID(parent_id)
+                child_uuid = uuid.UUID(child_id)
+                
                 # Проверяем существование объектов
-                parent = session.get(MapObject, uuid.UUID(parent_id).bytes)
-                child = session.get(MapObject, uuid.UUID(child_id).bytes)
+                parent = session.get(MapObject, parent_uuid.bytes)
+                child = session.get(MapObject, child_uuid.bytes)
+                
+                log.info("add_relation: проверка объектов", extra={
+                    "parent_id": parent_id,
+                    "parent_found": parent is not None,
+                    "child_id": child_id,
+                    "child_found": child is not None
+                })
                 
                 if not parent or not child:
                     log.warning("add_relation: объект не найден", extra={
@@ -80,7 +91,7 @@ class ObjectRelationsController:
                 return True
                 
         except Exception as e:
-            log.error("add_relation: ошибка", extra={"error": str(e)})
+            log.error("add_relation: ошибка", extra={"error": str(e), "traceback": __import__('traceback').format_exc()})
             return False
 
     def remove_relation(self, parent_id: str, child_id: str) -> bool:

@@ -6,6 +6,13 @@ import { useMapStore } from "@/store";
 import { storeToRefs } from "pinia";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LayoutGrid, Table as TableIcon, ChevronDown, ChevronUp, Search, Download, Upload, Import, FileJson } from "lucide-vue-next";
 import { useTilesStore } from "@/store/useTilesStore";
 import type { TileLayer } from "@/store/useTilesStore";
@@ -81,14 +88,18 @@ const handleExportStops = async () => {
   }
 };
 
-// Поиск
+// Поиск и фильтры
+const filterType = ref<string>("all");
 const searchQuery = ref<string>("");
 
-// Фильтрация объектов (только поиск по имени)
+// Фильтрация объектов
 const filteredObjects = computed(() => {
   const allObjects = Array.from(Objects.value?.entries() ?? []);
 
   return allObjects.filter(([_, obj]) => {
+    // Фильтр по типу
+    const typeMatch = filterType.value === "all" || obj.type === filterType.value;
+
     // Поиск по имени
     const searchLower = searchQuery.value.toLowerCase();
     const nameMatch = !searchQuery.value ||
@@ -96,7 +107,7 @@ const filteredObjects = computed(() => {
       (obj.description && obj.description.toLowerCase().includes(searchLower)) ||
       obj.name.toLowerCase().includes(searchLower);
 
-    return nameMatch;
+    return typeMatch && nameMatch;
   });
 });
 
@@ -168,14 +179,29 @@ const openObjectPopup = (id: string) => {
     <div class="flex flex-wrap items-center justify-between gap-3 px-8 py-4 border-b">
       <h1 class="text-2xl font-semibold">Объекты на карте</h1>
       <div class="flex flex-wrap items-center gap-2">
-        <!-- Поиск -->
-        <div class="relative mr-auto">
-          <Search class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-          <Input
-            v-model="searchQuery"
-            placeholder="Поиск по названию..."
-            class="pl-8 w-[250px]"
-          />
+        <!-- Фильтры и поиск -->
+        <div class="flex items-center gap-2 mr-auto">
+          <Select v-model="filterType">
+            <SelectTrigger class="w-[150px]">
+              <SelectValue placeholder="Все типы" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все типы</SelectItem>
+              <SelectItem value="Polygon">Полигоны</SelectItem>
+              <SelectItem value="Polyline">Полилинии</SelectItem>
+              <SelectItem value="CircleMarker">Маркеры-круг</SelectItem>
+              <SelectItem value="StopMarker">Маркеры</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div class="relative">
+            <Search class="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              v-model="searchQuery"
+              placeholder="Поиск по названию..."
+              class="pl-8 w-[200px]"
+            />
+          </div>
         </div>
         
         <!-- Переключатель тайлов -->

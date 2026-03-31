@@ -628,55 +628,71 @@ class Api:
     def auto_assign_stops(self, data: dict):
         """
         Автоматически назначить остановки полигонам/полилиниям
-        
+
         Args:
             data: {"tolerance_meters": 50} (для полилиний)
-            
+
         Returns:
             {"status": "success", "assigned": N}
         """
         try:
             tolerance = data.get("tolerance_meters", 50)
-            
+
             # Получаем все объекты
             all_objects = self.storage.objects.get_all_objects()
-            
+
             polygons = [o for o in all_objects if o.obj_type == 'Polygon']
             polylines = [o for o in all_objects if o.obj_type == 'Polyline']
             stops = [o for o in all_objects if o.obj_type == 'StopMarker']
-            
+
+            log.info("auto_assign_stops: объекты", extra={
+                "polygons": len(polygons),
+                "polylines": len(polylines),
+                "stops": len(stops)
+            })
+
             assigned_count = 0
-            
+
             # Для каждого полигона находим остановки внутри
             for polygon in polygons:
                 coords = polygon.latlng
                 stops_in_polygon = self.spatial.find_stops_in_polygon(
-                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops],
+                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops if s.latitude and s.longitude],
                     coords
                 )
-                
+
+                log.info("auto_assign_stops: полигон", extra={
+                    "polygon_id": polygon.uuid,
+                    "stops_found": len(stops_in_polygon)
+                })
+
                 for stop_data in stops_in_polygon:
                     if self.relations.add_relation(polygon.uuid, stop_data["id"], "CONTAINS"):
                         assigned_count += 1
-            
+
             # Для каждой полилинии находим остановки рядом
             for polyline in polylines:
                 coords = polyline.latlng
                 stops_near_line = self.spatial.find_stops_near_polyline(
-                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops],
+                    [{"id": s.uuid, "lat": s.latitude, "lng": s.longitude} for s in stops if s.latitude and s.longitude],
                     coords,
                     tolerance
                 )
-                
+
+                log.info("auto_assign_stops: полилиния", extra={
+                    "polyline_id": polyline.uuid,
+                    "stops_found": len(stops_near_line)
+                })
+
                 for stop_data in stops_near_line:
                     if self.relations.add_relation(polyline.uuid, stop_data["id"], "NEAR"):
                         assigned_count += 1
-            
+
             log.info("auto_assign_stops", extra={"assigned": assigned_count})
             return {"status": "success", "assigned": assigned_count}
-            
+
         except Exception as e:
-            log.error("api_auto_assign_stops", extra={"error": str(e)})
+            log.error("api_auto_assign_stops", extra={"error": str(e), "traceback": __import__('traceback').format_exc()})
             return {"status": "failed", "message": str(e)}
 
     # ========================================================================
